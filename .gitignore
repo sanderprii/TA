@@ -1,11 +1,12 @@
-# Node dependencies
+# Node.js modules
 node_modules/
 
-# Prisma SQLite database
-prisma/dev.db
-
-# Environment variables
+# environment variables
 .env
 
-# Prisma migration history
-prisma/migrations/
+# Prisma database file
+prisma/dev.db
+prisma/.env
+
+# Log files
+npm-debug.log*

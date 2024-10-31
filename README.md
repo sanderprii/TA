@@ -8,7 +8,7 @@ The Workout Assistant Application is a web-based workout diary where you can add
 | Functionality           | Status      | Description                                                                 |
 |----------------------------|-------------|-----------------------------------------------------------------------------|
 | User Registration         |:heavy_check_mark: | Users can register and create an account within the application.                      |
-| Login            |     | Users can log in with their registered account.                       |
+| Login            |  :heavy_check_mark:   | Users can log in with their registered account.                       |
 | Profile Picture Upload    |    | Ability to add a profile picture.                                             |
 | Add Workouts     |             | Users can add new workouts, including date, type, and duration.               |
 | View Workouts    |        | All workouts are displayed in chronological order for the user.           |
@@ -27,17 +27,24 @@ The Workout Assistant Application is a web-based workout diary where you can add
 - Node.js
 - NPM (Node Package Manager)
 - Prisma ja SQLite
+- Nodemon
 
 ## Project Structure
 
 ``` 
-    ├── index.html
-    ├── style.css
-    ├── script.js
-    ├── server.js
-    ├── prisma/
-    │   ├── schema.prisma  
-    └── README.md
+  TA/
+├── public/
+│   └── client.js            
+├── views/
+│   ├── layouts/
+│   │   └── main.handlebars   
+│   ├── home.handlebars       
+│   ├── login.handlebars      
+│   └── register.handlebars   
+├── prisma/
+│   └── schema.prisma         
+├── server.js                 
+└── package.json              
     
 ```
 
@@ -46,49 +53,28 @@ The Workout Assistant Application is a web-based workout diary where you can add
 1. Clone the project
 
 ```
-   git clone https://github.com/sanderprii/Trenn
-   
-   
+   git clone https://github.com/sanderprii/TA.git
 ```
 2. Install dependencies
 ```
-npm install express
+npm install
+```
+3. **Create `.env``file** in the root directory and add the following environment variables:
+ ```plaintext
+    PORT=3000
+    SESSION_SECRET=your_secret_key
+ ```
 
-```
-3. Initialize Prisma
-```
-npx prisma init
-
-```
-4. Configure the database in prisma/schema.prisma
-   Open prisma/schema.prisma and set up the SQLite database connection and user model:
-```
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-model User {
-  id       Int    @id @default(autoincrement())
-  username String @unique
-  password String
-}
-```
-5. Set up the database and generate the Prisma client
+4. Set up the database and generate the Prisma client
 ```
 npx prisma migrate dev --name init
-npx prisma generate
 ```
 
-6. Start the server
+5. Start the server
 ```
-node server.js
+npm run dev
 ```
-## Open the index.html file in your web browser.
+## Open http://localhost:3000 in your browser to view the application.
 
 ## Additional Tools
 
