@@ -14,9 +14,27 @@ generator client {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  username String   @unique
+  id       Int       @id @default(autoincrement())
+  username String    @unique
   password String
-
+  trainings Training[]
 }
 
+model Training {
+  id        Int        @id @default(autoincrement())
+  type      String
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id])
+  exercises Exercise[] // Seos harjutustega
+}
+
+model Exercise {
+  id           Int      @id @default(autoincrement())
+  exerciseName String
+  wodType      String?  // 'time' või 'count' või muu
+  time         String?
+  count        Int?
+  rounds       Int?
+  trainingId   Int
+  training     Training @relation(fields: [trainingId], references: [id])
+}

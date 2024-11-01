@@ -10,7 +10,7 @@ The Workout Assistant Application is a web-based workout diary where you can add
 | User Registration         |:heavy_check_mark: | Users can register and create an account within the application.                      |
 | Login            |  :heavy_check_mark:   | Users can log in with their registered account.                       |
 | Profile Picture Upload    |    | Ability to add a profile picture.                                             |
-| Add Workouts     |             | Users can add new workouts, including date, type, and duration.               |
+| Add Workouts     |     :heavy_check_mark:         | Users can add new workouts, including date, type, and duration.               |
 | View Workouts    |        | All workouts are displayed in chronological order for the user.           |
 | Delete Workouts    |        | Ability to remove added workouts.                                    |
 | Filter Workouts  |      | Workouts can be filtered by date, type, and duration.           |
@@ -28,25 +28,6 @@ The Workout Assistant Application is a web-based workout diary where you can add
 - NPM (Node Package Manager)
 - Prisma ja SQLite
 - Nodemon
-
-## Project Structure
-
-``` 
-  TA/
-├── public/
-│   └── client.js            
-├── views/
-│   ├── layouts/
-│   │   └── main.handlebars   
-│   ├── home.handlebars       
-│   ├── login.handlebars      
-│   └── register.handlebars   
-├── prisma/
-│   └── schema.prisma         
-├── server.js                 
-└── package.json              
-    
-```
 
 ## Installation Guide
 

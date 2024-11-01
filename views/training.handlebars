@@ -1,0 +1,97 @@
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Add Training</h2>
+    <form id="training-form">
+        <div class="form-group">
+            <label for="training-type">Training Type:</label>
+            <select id="training-type" name="training-type" class="form-control">
+                <option value="">-- Select Training Type --</option>
+                <option value="WOD">WOD</option>
+                <option value="Weightlifting">Weightlifting</option>
+                <option value="Cardio">Cardio</option>
+            </select>
+        </div>
+
+        <!-- training type options -->
+        <div id="training-options" style="display: none;">
+            <!-- WOD -->
+            <div id="wod-options" class="training-options" style="display: none;">
+                <div class="exercise-line">
+                    <div class="form-group">
+                        <label>Exercise Name:</label>
+                        <input type="text" name="exercise-name-0" id="exercise-name" class="form-control" placeholder="Enter exercise name">
+                    </div>
+
+                    <label>Type:</label>
+                    <div class="form-check">
+                        <input type="radio" name="wod-type-0" value="time" class="form-check-input">
+                        <label class="form-check-label">Time</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="wod-type-0" value="count" class="form-check-input">
+                        <label class="form-check-label">Count</label>
+                    </div>
+
+                    <div class="time-input conditional-input" style="display: none;">
+                        <div class="form-group">
+                            <label>Enter time (min:sec):</label>
+                            <div class="form-inline">
+                                <input type="number" name="minutes-0" class="form-control mr-2" placeholder="Minutes">
+                                <span>:</span>
+                                <input type="number" name="seconds-0" class="form-control ml-2" placeholder="Seconds">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="count-input conditional-input" style="display: none;">
+                        <div class="form-group">
+                            <label>Enter count:</label>
+                            <input type="number" name="count-0" class="form-control" placeholder="Count">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="add-line-btn" class="btn btn-secondary">Add Line</button>
+            </div>
+
+
+            <!-- Weightlifting -->
+            <div id="weightlifting-options" class="training-options" style="display: none;">
+                <div class="form-group">
+                    <label>Exercise Name:</label>
+                    <input type="text" id="weight-exercise-name" class="form-control" placeholder="Enter exercise name">
+                </div>
+                <div class="form-group">
+                    <label>Count:</label>
+                    <input type="number" id="weight-count" class="form-control" placeholder="Count">
+                </div>
+                <div class="form-group">
+                    <label>Rounds:</label>
+                    <input type="number" id="rounds" class="form-control" placeholder="Rounds">
+                </div>
+            </div>
+
+            <!-- Cardio -->
+            <div id="cardio-options" class="training-options" style="display: none;">
+                <div class="form-group">
+                    <label>Exercise Name:</label>
+                    <input type="text" id="cardio-exercise-name" class="form-control" placeholder="Enter exercise name">
+                </div>
+                <div class="form-group">
+                    <label>Time (min:sec):</label>
+                    <div class="form-inline">
+                        <input type="number" id="cardio-minutes" class="form-control mr-2" placeholder="Minutes">
+                        <span>:</span>
+                        <input type="number" id="cardio-seconds" class="form-control ml-2" placeholder="Seconds">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-training" class="btn btn-primary mt-3">Save Training</button>
+        </div>
+    </form>
+
+
+    <h3 class="mt-5">Training List</h3>
+    <ul id="training-list" class="list-group"></ul>
+</div>
+
