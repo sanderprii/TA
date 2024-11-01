@@ -190,17 +190,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Function to render trainings in the list
         function renderTrainings(trainings) {
-            trainingList.innerHTML = '';
+            trainingList.innerHTML = ''; // empty the list
             trainings.forEach(training => {
                 const li = document.createElement('li');
-                li.className = 'list-group-item';
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+                const trainingInfo = document.createElement('div');
                 const exercisesText = training.exercises.map(exercise => {
                     return `${exercise.exerciseName} ${exercise.time ? `(Time: ${exercise.time})` : ''} ${exercise.count ? `(Count: ${exercise.count})` : ''}`;
                 }).join(', ');
-                li.textContent = `${training.type}: ${exercisesText}`;
+                trainingInfo.textContent = `${training.type}: ${exercisesText}`;
+
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger btn-sm';
+                deleteBtn.textContent = 'Delete';
+
+                // Delete button click event
+                deleteBtn.addEventListener('click', async () => {
+                    const confirmed = confirm('Are you sure you want to delete this training?');
+                    if (!confirmed) return;
+                    try {
+                        const response = await fetch(`/api/training/${training.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                        });
+
+                        if (response.ok) {
+                            // Remove the list item from the UI
+                            li.remove();
+                        } else {
+                            const result = await response.json();
+                            alert(`Error: ${result.error}`);
+                        }
+                    } catch (error) {
+                        alert('Error: ' + error.message);
+                    }
+                });
+
+                li.appendChild(trainingInfo);
+                li.appendChild(deleteBtn);
                 trainingList.appendChild(li);
             });
         }
+
 
 
         // Load existing trainings on page load

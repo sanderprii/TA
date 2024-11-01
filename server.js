@@ -167,6 +167,39 @@ app.get('/api/trainings', ensureAuthenticated, async (req, res) => {
     }
 });
 
+//Delete training
+
+app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
+    const trainingId = parseInt(req.params.id);
+
+    try {
+        // Controls if the training exists and if the user is authorized to delete it
+        const training = await prisma.training.findUnique({
+            where: { id: trainingId },
+            include: { user: true },
+        });
+
+        if (!training || training.userId !== req.session.userId) {
+            return res.status(404).json({ error: 'Training not found or not authorized.' });
+        }
+
+
+        await prisma.exercise.deleteMany({
+            where: { trainingId },
+        });
+
+
+        await prisma.training.delete({
+            where: { id: trainingId },
+        });
+
+        res.status(200).json({ message: 'Training deleted successfully!' });
+    } catch (error) {
+        console.error("Error deleting training:", error);
+        res.status(500).json({ error: 'Failed to delete training.', details: error.message });
+    }
+});
+
 
 // Start server
 app.listen(PORT, () => {
