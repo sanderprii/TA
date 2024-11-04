@@ -17,7 +17,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // For form data
 
 // Set up Handlebars view engine
-app.engine('handlebars', engine());
+app.engine('handlebars', engine({
+    helpers: {
+        eq: (a, b) => a === b,
+    },
+    defaultLayout: 'main',
+    extname: '.handlebars',
+}));
+
+
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
@@ -110,6 +118,60 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'An error occurred during login.' });
     }
 });
+
+// Profile view, protected
+
+app.get('/profile', ensureAuthenticated, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.session.userId },
+        });
+
+        // Age
+        const calculateAge = (birthDate) => {
+            const today = new Date();
+            const birthDateObj = new Date(birthDate);
+            let age = today.getFullYear() - birthDateObj.getFullYear();
+            const monthDiff = today.getMonth() - birthDateObj.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate())) {
+                age--;
+            }
+            return age;
+        };
+
+        const age = user.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
+
+        res.render('profile', {
+            title: 'My Profile',
+            user,
+            age
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+// Edit profile
+app.post('/profile', ensureAuthenticated, async (req, res) => {
+    const { fullName, dateOfBirth, sex } = req.body;
+    try {
+        await prisma.user.update({
+            where: { id: req.session.userId },
+            data: {
+                fullName,
+                dateOfBirth: new Date(dateOfBirth),
+                sex,
+            },
+        });
+        res.json({ message: 'Profile updated successfully!' });
+    } catch (error) {
+        console.error('Error updating user profile:', error);
+        res.status(500).json({ error: 'Failed to update profile.' });
+    }
+});
+
 
 // Log out API
 app.post('/api/logout', (req, res) => {

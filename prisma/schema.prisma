@@ -14,10 +14,13 @@ generator client {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  username String    @unique
-  password String
-  trainings Training[]
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  password     String
+  fullName     String?
+  dateOfBirth  DateTime?
+  sex          String?
+  trainings    Training[]
 }
 
 model Training {

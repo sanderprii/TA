@@ -1,0 +1,35 @@
+<div class="d-flex justify-content-center  ">
+    <div class="card w-50">
+        <div class="card-body">
+
+            <div id="profile-view">
+                <h2 class="text-center">My profile</h2>
+                <p><strong>Full Name:</strong> {{user.fullName}}</p>
+                <p><strong>Age:</strong> {{age}} years</p>
+
+                <p><strong>Sex:</strong> {{user.sex}}</p>
+                <button id="edit-btn" class="btn btn-primary float-end">Edit</button>
+            </div>
+
+            <form id="profile-edit" style="display: none;">
+                <h2 class="text-center">Edit Profile</h2>
+                <div class="mb-3">
+                    <label for="fullName" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="fullName" name="fullName" value="{{user.fullName}}">
+                </div>
+                <div class="mb-3">
+                    <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                    <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" value="{{user.dateOfBirth}}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Sex</label><br>
+                    <input type="radio" id="sexMale" name="sex" value="Man" {{#if (eq user.sex 'Man')}}checked{{/if}}>
+                    <label for="sexMale">Man</label><br>
+                    <input type="radio" id="sexFemale" name="sex" value="Woman" {{#if (eq user.sex 'Woman')}}checked{{/if}}>
+                    <label for="sexFemale">Woman</label>
+                </div>
+                <button type="submit" class="btn btn-success">Save</button>
+            </form>
+        </div>
+    </div>
+</div>
