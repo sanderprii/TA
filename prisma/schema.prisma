@@ -20,6 +20,7 @@ model User {
   fullName     String?
   dateOfBirth  DateTime?
   sex          String?
+  records      Record[]
   trainings    Training[]
 }
 
@@ -28,7 +29,7 @@ model Training {
   type      String
   userId    Int
   user      User       @relation(fields: [userId], references: [id])
-  exercises Exercise[] // Seos harjutustega
+  exercises Exercise[]
 }
 
 model Exercise {
@@ -40,4 +41,15 @@ model Exercise {
   rounds       Int?
   trainingId   Int
   training     Training @relation(fields: [trainingId], references: [id])
+}
+
+model Record {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  label  String
+  value  Int
+
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, label])
 }

@@ -363,3 +363,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// REcords
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const row = this.closest('.record-row');
+            const input = row.querySelector('.record-input');
+            const value = row.querySelector('.record-value');
+            const editBtn = row.querySelector('.edit-btn');
+            const saveBtn = row.querySelector('.save-btn');
+
+            // Show input and Save button, hide value and Edit button
+            input.classList.remove('d-none');
+            value.classList.add('d-none');
+            editBtn.classList.add('d-none');
+            saveBtn.classList.remove('d-none');
+        });
+    });
+
+    document.querySelectorAll('.save-btn').forEach(button => {
+        button.addEventListener('click', async function () {
+            const row = this.closest('.record-row');
+            const input = row.querySelector('.record-input');
+            const value = row.querySelector('.record-value');
+            const editBtn = row.querySelector('.edit-btn');
+            const saveBtn = row.querySelector('.save-btn');
+            const label = row.getAttribute('data-label');
+
+            try {
+                const recordValue = input.value;
+                const response = await fetch('/records', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [label]: recordValue })
+                });
+
+                if (response.ok) {
+                    value.textContent = recordValue || 'Insert record';
+                    alert('Record updated successfully!');
+                } else {
+                    alert('Failed to update record.');
+                }
+            } catch (error) {
+                console.error('Error updating record:', error);
+                alert('An error occurred.');
+            }
+
+            // Show value and Edit button, hide input and Save button
+            input.classList.add('d-none');
+            value.classList.remove('d-none');
+            editBtn.classList.remove('d-none');
+            saveBtn.classList.add('d-none');
+        });
+    });
+});

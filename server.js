@@ -271,6 +271,65 @@ app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// Records insert
+
+app.get('/records', ensureAuthenticated, async (req, res) => {
+    const defaultRecords = [
+        { label: 'Back squat', value: 0 },
+        { label: 'Front squat', value: 0 },
+        { label: 'Deadlift', value: 0 },
+        { label: 'Snatch', value: 0 },
+        { label: 'Clean and Jerk', value: 0 }
+    ];
+
+    try {
+        const records = await prisma.record.findMany({
+            where: { userId: req.session.userId }
+        });
+
+        const recordsWithDefaults = defaultRecords.map(record => {
+            const dbRecord = records.find(r => r.label === record.label);
+            return {
+                label: record.label,
+                value: dbRecord ? dbRecord.value : record.value
+            };
+        });
+
+        res.render('records', { title: 'Records', records: recordsWithDefaults });
+    } catch (error) {
+        console.error('Error fetching records:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Records update
+
+app.post('/records', ensureAuthenticated, async (req, res) => {
+    const [label] = Object.keys(req.body);
+    const value = parseInt(req.body[label]);
+
+    try {
+        await prisma.record.upsert({
+            where: {
+                userId_label: { userId: req.session.userId, label }
+            },
+            update: {
+                value
+            },
+            create: {
+                userId: req.session.userId,
+                label,
+                value
+            }
+        });
+
+        res.status(200).json({ message: 'Record updated successfully!' });
+    } catch (error) {
+        console.error('Error updating record:', error);
+        res.status(500).json({ error: 'Failed to update record.' });
+    }
+});
+
 
 
 // Send username
