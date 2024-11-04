@@ -1,3 +1,6 @@
+
+/* Main */
+
 body {
     background-color: #f8f9fa;
 }
@@ -7,7 +10,7 @@ h1, h2, h3 {
 }
 
 .navbar-custom {
-    background-color: #343a40;
+    background-color: black;
 
 
 }
@@ -15,8 +18,58 @@ h1, h2, h3 {
 .navbar-custom .navbar-brand,
 .navbar-custom .nav-link {
     color: #ffffff;
-
 }
+
+.navbar .container-fluid {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+}
+
+
+.navbar-center {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+}
+
+
+.navbar-left, .navbar-right {
+        display: flex;
+        align-items: center;
+}
+
+.navbar {
+        padding: 0;
+        height: 64px;
+}
+
+.navbar-logo {
+        height: 100%;
+        max-height: 64px;
+}
+
+.navbar-collapse {
+    display: flex !important;
+    flex-basis: auto;
+}
+
+.navbar-collapse.collapse {
+    display: flex !important;
+}
+
+.navbar-nav {
+    flex-direction: row;
+    margin-left: auto;
+}
+
+.nav-item {
+    margin-left: 15px;
+}
+
+
+/* Home page */
 .btn-tr {
     padding: 10px 20px;
     font-size: 16px;
@@ -28,14 +81,74 @@ h1, h2, h3 {
 
 }
 
+.home {
+
+    margin-top: 20px;
+}
+
 
 .btn-danger.btn-sm {
     padding: 0.25rem 0.5rem;
     font-size: 0.875rem;
 }
 
+/* login and register page */
+.container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
 
-.home {
 
-    margin-top: 20px;
+.container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#login-form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+#register-form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+#submit-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#submit-btn:hover {
+    background-color: #0056b3;
+}
+
+
+.container p {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.container-reg{
+    max-width: 1000px !important;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100% !important;
+    display: block;
 }

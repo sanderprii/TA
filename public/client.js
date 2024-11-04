@@ -29,34 +29,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Login Form Submission
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function (event) {
-            event.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+// Login Form Submission
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({username, password}),
-                });
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password}),
+            });
 
-                const result = await response.json();
-                if (response.ok) {
-                    alert(result.message);
-                    window.location.href = '/'; // Redirect to home page
-                } else {
-                    alert(result.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                window.location.href = '/'; // Redirect to home page
+            } else {
+                alert(result.error);
             }
-        });
-    }
-
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+}
     // Logout Button Click
     const logoutButton = document.getElementById('logout-btn');
     if (logoutButton) {

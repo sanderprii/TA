@@ -29,6 +29,13 @@ app.use(session({
     cookie: { secure: false }
 }));
 
+// Send username
+
+app.use((req, res, next) => {
+    res.locals.username = req.session.username;
+    next();
+});
+
 // Serve public folder
 app.use(express.static('public'));
 
@@ -92,7 +99,9 @@ app.post('/api/login', async (req, res) => {
 
         if (user && user.password === password) {
             req.session.userId = user.id;
+            req.session.username = user.username;
             res.status(200).json({ message: 'Login successful!', user });
+
         } else {
             res.status(401).json({ error: 'Invalid username or password.' });
         }
@@ -201,6 +210,20 @@ app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
 });
 
 
+
+// Send username
+app.get('/', (req, res) => {
+    console.log('GET / - req.session.username:', req.session.username);
+    if (req.session.userId) {
+        res.render('main', { username: req.session.username });
+    } else {
+        res.redirect('/login');
+    }
+});
+app.use((req, res, next) => {
+    res.locals.username = req.session.username;
+    next();
+});
 // Start server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
