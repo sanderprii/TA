@@ -49,6 +49,7 @@ model Record {
   label  String
   value  Int
 
+
   user   User   @relation(fields: [userId], references: [id])
 
   @@unique([userId, label])

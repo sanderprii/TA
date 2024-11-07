@@ -55,6 +55,15 @@ function ensureAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
+
+
+// Find Users lehe kuvamine
+app.get('/find-users', ensureAuthenticated, (req, res) => {
+    console.log('Search query received:', req.query.q);
+    res.render('findu', { title: 'Find Users' });
+});
+
+
 // Home page, protected route
 app.get('/', ensureAuthenticated, (req, res) => {
     res.render('home', { title: 'Home' });
@@ -330,6 +339,80 @@ app.post('/records', ensureAuthenticated, async (req, res) => {
     }
 });
 
+
+
+
+
+// API endpoint for searching users
+app.get('/api/search-users', ensureAuthenticated, async (req, res) => {
+    const query = req.query.q;
+
+    if (!query || query.trim() === '') {
+        return res.status(400).json({ error: 'Query parameter is required.' });
+    }
+
+    try {
+        const allUsers = await prisma.user.findMany({
+            select: {
+                id: true,
+                username: true,
+                fullName: true,
+            },
+        });
+
+        const queryLower = query.toLowerCase();
+
+        const filteredUsers = allUsers.filter(user => {
+            const usernameMatch = user.username.toLowerCase().includes(queryLower);
+            const fullNameMatch = user.fullName && user.fullName.toLowerCase().includes(queryLower);
+            return usernameMatch || fullNameMatch;
+        });
+
+        const users = filteredUsers.slice(0, 10);
+
+        res.json(users);
+    } catch (error) {
+        console.error('Error searching users:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+
+
+
+
+
+// View user records
+app.get('/user-records/:id', ensureAuthenticated, async (req, res) => {
+    const userId = parseInt(req.params.id);
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                username: true,
+                fullName: true,
+                records: {
+                    select: {
+                        label: true,
+                        value: true,
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            return res.status(404).send('User not found.');
+        }
+
+        res.render('user-records', { title: `${user.username}'s Records`, user });
+    } catch (error) {
+        console.error('Error fetching user records:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 
 // Send username

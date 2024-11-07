@@ -13,7 +13,11 @@
     <div class="container-fluid">
 
         <a class="navbar-brand" href="/">Training Assistant</a>
-
+        <div class="navbar-center">
+            {{#if username}}
+                <span class="navbar-text">Hi, {{username}}</span>
+            {{/if}}
+        </div>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
                 aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">

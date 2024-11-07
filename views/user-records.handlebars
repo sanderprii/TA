@@ -1,0 +1,14 @@
+{{!-- user-records.handlebars --}}
+
+
+<div class="container mt-5">
+    <h2>{{user.username}}'s Records</h2>
+    <p>Full Name: {{#if user.fullName}}{{user.fullName}}{{else}}No Full Name{{/if}}</p>
+    <ul class="list-group mt-3">
+        {{#each user.records}}
+            <li class="list-group-item">
+                <strong>{{this.label}}:</strong> {{this.value}} kg
+            </li>
+        {{/each}}
+    </ul>
+</div>
