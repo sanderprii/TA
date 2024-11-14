@@ -168,12 +168,13 @@ h1, h2, h3 {
 
 /* login and register page */
 .container {
-    max-width: 400px;
+    max-width: 2000px;
     margin: 0 auto;
     padding: 20px;
     background-color: #ffffff;
     border: 1px solid #ccc;
     border-radius: 5px;
+    width: 80%;
 }
 
 
