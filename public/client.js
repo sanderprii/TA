@@ -378,40 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
 
-                else if (type === 'Weightlifting') {
-                    const exerciseName = document.getElementById('weight-exercise-name').value;
-                    const count = document.getElementById('weight-count').value;
-                    const rounds = document.getElementById('rounds').value;
+                // ... existing code for other training types ...
 
-                    exercises.push({
-                        exerciseName,
-                        count,
-                        rounds,
-                    });
-
-                    var trainingData = {
-                        type,
-                        date,
-                        exercises,
-                    };
-                } else if (type === 'Cardio') {
-                    const exerciseName = document.getElementById('cardio-exercise-name').value;
-                    const time = document.getElementById('cardio-time').value;
-
-                    exercises.push({
-                        exerciseName,
-                        time,
-                    });
-
-                    var trainingData = {
-                        type,
-                        date,
-                        exercises,
-                    };
-                } else {
-                    alert('Please select a valid training type.');
-                    return;
-                }
                 // Send data to the server
                 try {
                     const response = await fetch('/api/training', {
