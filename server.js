@@ -59,7 +59,7 @@ function ensureAuthenticated(req, res, next) {
 
 // Find Users lehe kuvamine
 app.get('/find-users', ensureAuthenticated, (req, res) => {
-    console.log('Search query received:', req.query.q);
+
     res.render('findu', { title: 'Find Users' });
 });
 
@@ -170,16 +170,21 @@ app.post('/profile', ensureAuthenticated, async (req, res) => {
             where: { id: req.session.userId },
             data: {
                 fullName,
-                dateOfBirth: new Date(dateOfBirth),
+                dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
                 sex,
             },
         });
-        res.json({ message: 'Profile updated successfully!' });
+
+        // Send a success response back to the client
+        res.status(200).json({ message: 'Profile updated successfully!' });
     } catch (error) {
         console.error('Error updating user profile:', error);
-        res.status(500).json({ error: 'Failed to update profile.' });
+
+        // Send an error response back to the client
+        res.status(500).json({ error: 'An error occurred while updating your profile.' });
     }
 });
+
 
 
 // Log out API
@@ -194,41 +199,81 @@ app.post('/api/logout', (req, res) => {
 
 // API for training, protected
 app.post('/api/training', ensureAuthenticated, async (req, res) => {
-    const { type, exercises } = req.body;
+    const {
+        type,
+        date,
+        wodName,
+        wodType,
+        sets,
+        every,
+        forTime,
+        minutes,
+        rounds,
+        work,
+        rest,
+        exercises,
+    } = req.body;
+
     try {
-        // Save training
+        // Validate request data
+        if (!type || !date || !Array.isArray(exercises) || exercises.length === 0) {
+            return res.status(400).json({ error: 'Invalid training data.' });
+        }
+
+        // Build the data object
+        const trainingData = {
+            type,
+            wodName: wodName || null,
+            wodType: wodType || null,
+            date: new Date(date),
+            userId: req.session.userId,
+            exercises: {
+                create: exercises.map((exercise) => ({
+                    exerciseName: exercise.exerciseName,
+                    inputValue: exercise.inputValue || null,
+                    count: exercise.count ? parseInt(exercise.count) : null,
+                    rounds: exercise.rounds ? parseInt(exercise.rounds) : null,
+                    time: exercise.time || null,
+                })),
+            },
+        };
+
+        // Add optional fields based on wodType
+        if (wodType === 'For Time' && sets) {
+            trainingData.sets = parseInt(sets);
+        } else if (wodType === 'EMOM') {
+            trainingData.every = parseInt(every);
+            trainingData.forTime = parseInt(forTime);
+            trainingData.sets = parseInt(sets);
+        } else if (wodType === 'AMRAP' && minutes) {
+            trainingData.minutes = parseInt(minutes);
+        } else if (wodType === 'Tabata') {
+            trainingData.rounds = parseInt(rounds);
+            trainingData.work = parseInt(work);
+            trainingData.rest = parseInt(rest);
+        }
+
+        // Save training with associated exercises
         const training = await prisma.training.create({
-            data: {
-                type,
-                userId: req.session.userId,
-                exercises: {
-                    create: exercises.map(exercise => ({
-                        exerciseName: exercise.exerciseName,
-                        wodType: exercise.wodType,
-                        time: exercise.time || null,
-                        count: exercise.count ? parseInt(exercise.count) : null,
-                        rounds: exercise.rounds ? parseInt(exercise.rounds) : null,
-                    })),
-                },
-            },
-            include: {
-                exercises: true,
-            },
+            data: trainingData,
+            include: { exercises: true },
         });
 
-        // load all trainings
+        // Load all trainings for response
         const allTrainings = await prisma.training.findMany({
             where: { userId: req.session.userId },
-            include: {
-                exercises: true,
-            },
+            include: { exercises: true },
+            orderBy: { date: 'desc' },
         });
         res.status(201).json({ message: 'Training added successfully!', trainings: allTrainings });
     } catch (error) {
-        console.error("Error saving training:", error);
+        console.error('Error saving training:', error);
         res.status(500).json({ error: 'Failed to save training.', details: error.message });
     }
 });
+
+
+
 
 
 // Get trainings, protected

@@ -25,20 +25,32 @@ model User {
 }
 
 model Training {
-  id        Int        @id @default(autoincrement())
-  type      String
-  userId    Int
-  user      User       @relation(fields: [userId], references: [id])
-  exercises Exercise[]
+  id           Int        @id @default(autoincrement())
+  type         String
+  wodName      String?
+  wodType      String?    // For Time, EMOM, Tabata, AMRAP
+  sets         Int?
+  every        Int?
+  forTime      Int?
+  minutes      Int?
+  rounds       Int?
+  work         Int?
+  rest         Int?
+  date         DateTime?
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id])
+  exercises    Exercise[]
 }
+
+
 
 model Exercise {
   id           Int      @id @default(autoincrement())
   exerciseName String
-  wodType      String?  // 'time' või 'count' või muu
-  time         String?
+  inputValue   String?  // Could be time or count
   count        Int?
   rounds       Int?
+  time         String?
   trainingId   Int
   training     Training @relation(fields: [trainingId], references: [id])
 }

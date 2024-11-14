@@ -10,78 +10,70 @@
                 <option value="Cardio">Cardio</option>
             </select>
         </div>
-
-        <!-- training type options -->
+        <div class="form-group" id="training-date-div" style="display: none;">
+            <label for="training-date">Date</label>
+            <input type="date" id="training-date" class="form-control" required>
+        </div>
+        <!-- Training type options -->
         <div id="training-options" style="display: none;">
             <!-- WOD -->
             <div id="wod-options" class="training-options" style="display: none;">
-                <div class="exercise-line">
-                    <div class="form-group">
-                        <label>Exercise Name:</label>
-                        <input type="text" name="exercise-name-0" id="exercise-name" class="form-control" placeholder="Enter exercise name">
+                <div class="form-group">
+                    <label for="wod-name">WOD Name:</label>
+                    <input type="text" id="wod-name" name="wod-name" class="form-control" placeholder="Enter WOD name">
+                </div>
+                <div class="form-group">
+                    <label>WOD Type</label>
+                    <div>
+                        <label><input type="radio" name="wod-type" value="For Time"> For Time</label>
+                        <label><input type="radio" name="wod-type" value="EMOM"> EMOM</label>
+                        <label><input type="radio" name="wod-type" value="Tabata"> Tabata</label>
+                        <label><input type="radio" name="wod-type" value="AMRAP"> AMRAP</label>
                     </div>
+                </div>
 
-                    <label>Type:</label>
-                    <div class="form-check">
-                        <input type="radio" name="wod-type-0" value="time" class="form-check-input">
-                        <label class="form-check-label">Time</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="radio" name="wod-type-0" value="count" class="form-check-input">
-                        <label class="form-check-label">Count</label>
-                    </div>
+                <!-- Dynamic Inputs Based on WOD Type -->
+                <div id="wod-type-options"></div>
 
-                    <div class="time-input conditional-input" style="display: none;">
-                        <div class="form-group">
-                            <label>Enter time (min:sec):</label>
-                            <div class="form-inline">
-                                <input type="number" name="minutes-0" class="form-control mr-2" placeholder="Minutes">
-                                <span>:</span>
-                                <input type="number" name="seconds-0" class="form-control ml-2" placeholder="Seconds">
+                <div id="exercise-lines">
+                    <div class="exercise-line">
+                        <div class="form-row align-items-center">
+                            <div class="col">
+                                <input type="text" name="exercise-name" class="form-control" placeholder="Exercise Name">
+                            </div>
+                            <div class="col">
+                                <input type="text" name="wod-input" class="form-control" placeholder="Enter Time or Count">
                             </div>
                         </div>
                     </div>
-
-                    <div class="count-input conditional-input" style="display: none;">
-                        <div class="form-group">
-                            <label>Enter count:</label>
-                            <input type="number" name="count-0" class="form-control" placeholder="Count">
-                        </div>
-                    </div>
                 </div>
 
-                <button type="button" id="add-line-btn" class="btn btn-secondary">Add Line</button>
+                <button type="button" id="add-line-btn" class="btn btn-secondary mt-2">Add Line</button>
             </div>
-
 
             <!-- Weightlifting -->
             <div id="weightlifting-options" class="training-options" style="display: none;">
-                <div class="form-group">
-                    <label>Exercise Name:</label>
-                    <input type="text" id="weight-exercise-name" class="form-control" placeholder="Enter exercise name">
-                </div>
-                <div class="form-group">
-                    <label>Count:</label>
-                    <input type="number" id="weight-count" class="form-control" placeholder="Count">
-                </div>
-                <div class="form-group">
-                    <label>Rounds:</label>
-                    <input type="number" id="rounds" class="form-control" placeholder="Rounds">
+                <div class="form-row align-items-center">
+                    <div class="col">
+                        <input type="text" id="weight-exercise-name" class="form-control" placeholder="Exercise Name">
+                    </div>
+                    <div class="col">
+                        <input type="number" id="weight-count" class="form-control" placeholder="Count">
+                    </div>
+                    <div class="col">
+                        <input type="number" id="rounds" class="form-control" placeholder="Rounds">
+                    </div>
                 </div>
             </div>
 
             <!-- Cardio -->
             <div id="cardio-options" class="training-options" style="display: none;">
-                <div class="form-group">
-                    <label>Exercise Name:</label>
-                    <input type="text" id="cardio-exercise-name" class="form-control" placeholder="Enter exercise name">
-                </div>
-                <div class="form-group">
-                    <label>Time (min:sec):</label>
-                    <div class="form-inline">
-                        <input type="number" id="cardio-minutes" class="form-control mr-2" placeholder="Minutes">
-                        <span>:</span>
-                        <input type="number" id="cardio-seconds" class="form-control ml-2" placeholder="Seconds">
+                <div class="form-row align-items-center">
+                    <div class="col">
+                        <input type="text" id="cardio-exercise-name" class="form-control" placeholder="Exercise Name">
+                    </div>
+                    <div class="col">
+                        <input type="text" id="cardio-time" class="form-control" placeholder="Time (min:sec)">
                     </div>
                 </div>
             </div>
@@ -90,8 +82,28 @@
         </div>
     </form>
 
-
     <h3 class="mt-5">Training List</h3>
     <ul id="training-list" class="list-group"></ul>
 </div>
+<!-- Modal -->
+<div class="modal fade" id="training-modal" tabindex="-1" role="dialog" aria-labelledby="trainingModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
 
+                <h5 class="modal-title" id="trainingModalLabel">Training Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+
+            </div>
+            <div class="modal-body" id="training-modal-body">
+                <!-- Training details will be injected here -->
+            </div>
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+            </div>
+        </div>
+    </div>
+</div>
