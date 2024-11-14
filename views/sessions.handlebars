@@ -1,0 +1,29 @@
+<!-- sessions.handlebars -->
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Training Sessions</h2>
+
+    <!-- Legend -->
+    <div class="mb-3">
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: blue;"></span> WOD
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: green;"></span> Weightlifting
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: yellow;"></span> Cardio
+        </span>
+    </div>
+
+    <!-- Calendar Container -->
+    <div id="calendar"></div>
+</div>
+
+
+
+<script>
+    // noinspection JSUnresolvedVariable
+    const trainingsData = {{{trainings}}};
+    console.log('trainingsData:', trainingsData);
+</script>

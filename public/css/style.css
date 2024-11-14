@@ -227,3 +227,21 @@ h1, h2, h3 {
     width: 100% !important;
     display: block;
 }
+ /* training sessions */
+
+.legend-item {
+    display: inline-block;
+    margin-right: 15px;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+#calendar {
+    max-width: 900px;
+    margin: 0 auto;
+}

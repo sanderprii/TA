@@ -84,6 +84,30 @@ app.get('/training', ensureAuthenticated, (req, res) => {
     res.render('training', { title: 'Add Training' });
 });
 
+// Training sessions
+
+app.get('/sessions', ensureAuthenticated, async (req, res) => {
+    try {
+        // Fetch trainings for the current user
+        const trainings = await prisma.training.findMany({
+            where: { userId: req.session.userId },
+            include: { exercises: true },
+        });
+
+        // Pass trainings to the view
+        res.render('sessions', {
+            title: 'Training Sessions',
+            username: req.session.username,
+            trainings: JSON.stringify(trainings), // Pass as JSON string
+        });
+    } catch (error) {
+        console.error('Error fetching trainings:', error);
+        res.status(500).send('An error occurred while fetching trainings.');
+    }
+});
+
+
+
 // API for registration
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;

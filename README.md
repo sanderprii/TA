@@ -11,7 +11,7 @@ The Workout Assistant Application is a web-based workout diary where you can add
 | Login            |  :heavy_check_mark: | Users can log in with their registered account.                       |
 | Profile Picture Upload    |    | Ability to add a profile picture.                                             |
 | Add Workouts     |     :heavy_check_mark:   | Users can add new workouts, including date, type, and duration.               |
-| View Workouts    |        | All workouts are displayed in chronological order for the user.           |
+| View Workouts    |    :heavy_check_mark:    | All workouts are displayed in chronological order for the user.           |
 | Delete Workouts    | :heavy_check_mark: | Ability to remove added workouts.                                    |
 | Filter Workouts  |      | Workouts can be filtered by date, type, and duration.           |
 | Statistics and Analysis      |       | Display summaries and statistics of user workouts.                |

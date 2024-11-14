@@ -598,4 +598,124 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.warn('No record edit buttons found.');
     }
+
+    // Sessions Page Code
+    if (document.getElementById('calendar') &&
+        typeof trainingsData !== 'undefined' &&
+        typeof FullCalendar !== 'undefined') {
+        // The sessions page is loaded, and trainingsData is available
+        initializeCalendar();
+    } else if (document.getElementById('calendar') && typeof FullCalendar === 'undefined') {
+        console.error('FullCalendar is not loaded.');
+    } else {
+        console.error('Conditions not met to initialize the calendar.');
+        console.log('document.getElementById(\'calendar\'):', document.getElementById('calendar'));
+        console.log('typeof trainingsData:', typeof trainingsData);
+        console.log('typeof FullCalendar:', typeof FullCalendar);
+    }
+
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('calendar');
+
+    // Parse the trainings data
+    const trainings = trainingsData; // Ensure trainingsData is available
+
+    // Map trainings to events
+    const events = [];
+
+    trainings.forEach((training) => {
+        // Determine the color based on training type
+        let backgroundColor = '';
+        if (training.type === 'WOD') {
+            backgroundColor = 'blue';
+        } else if (training.type === 'Weightlifting') {
+            backgroundColor = 'green';
+        } else if (training.type === 'Cardio') {
+            backgroundColor = 'yellow';
+        }
+
+        // Create event
+        events.push({
+            id: training.id,
+            title: '', // Leave empty to show only color
+            start: training.date,
+            backgroundColor: backgroundColor,
+            borderColor: backgroundColor,
+            training: training, // Attach the training data
+        });
+    });
+
+    // Initialize the calendar
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: events,
+        eventContent: function (arg) {
+            // Custom rendering to show multiple colors
+            return {
+                html: `<div style="width:100%;height:10px;background-color:${arg.event.backgroundColor};margin-bottom:2px;"></div>`,
+            };
+        },
+        eventClick: function (info) {
+            // Show modal with training details
+            showTrainingModal(info.event.extendedProps.training);
+        },
+    });
+
+    calendar.render();
+}
+
+// Function to show the training details in a modal
+function showTrainingModal(training) {
+    // Build modal content
+    let modalContent = `
+    <h5>${training.type}</h5>
+    <p>Date: ${new Date(training.date).toLocaleDateString()}</p>
+  `;
+
+    if (training.type === 'WOD') {
+        modalContent += training.wodName ? `<p>WOD Name: ${training.wodName}</p>` : '';
+        modalContent += training.wodType ? `<p>WOD Type: ${training.wodType}</p>` : '';
+        // Add WOD-specific details
+    }
+
+    modalContent += '<ul>';
+    training.exercises.forEach((exercise) => {
+        modalContent += `<li>${exercise.exerciseName}: ${exercise.inputValue || exercise.count || exercise.time}</li>`;
+    });
+    modalContent += '</ul>';
+
+    // Create a modal element if it doesn't exist
+    let modal = document.getElementById('trainingModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'trainingModal';
+        modal.className = 'modal fade';
+        modal.tabIndex = -1;
+        modal.role = 'dialog';
+        modal.innerHTML = `
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Training Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="training-modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    `;
+        document.body.appendChild(modal);
+    }
+
+    // Set the modal content
+    document.getElementById('training-modal-body').innerHTML = modalContent;
+
+    // Show the modal using Bootstrap 5
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+}
+
 }); // End of document.addEventListener('DOMContentLoaded', ...)
