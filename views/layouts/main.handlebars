@@ -12,14 +12,11 @@
 
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-opacity-75">
     <div class="container-fluid">
 
-        <a class="navbar-brand" href="/">Training Assistant</a>
+        <a class="navbar-brand" href="/">IronTrack</a>
         <div class="navbar-center">
-            {{#if username}}
-                <span class="navbar-text">Hi, {{username}}</span>
-            {{/if}}
         </div>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
@@ -31,7 +28,7 @@
             <ul class="navbar-nav ms-auto align-items-center">
                 {{#if username}}
                     <li class="nav-item">
-                        <a href="/profile" class="nav-link">My Profile</a>
+                        <a href="/profile" class="nav-link btn btn-danger btn-prof">My Profile</a>
                     </li>
                     <li class="nav-item">
                         <button id="logout-btn" class="btn btn-danger nav-link">Log Out</button>
@@ -42,6 +39,8 @@
         </div>
     </div>
 </nav>
+<div class="background" style="background-image: url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');">
+</div>
 
 
 {{{body}}}

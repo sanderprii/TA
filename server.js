@@ -25,7 +25,6 @@ app.engine('handlebars', engine({
     extname: '.handlebars',
 }));
 
-
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
@@ -37,8 +36,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-// Send username
-
+// Send username to templates
 app.use((req, res, next) => {
     res.locals.username = req.session.username;
     next();
@@ -54,15 +52,6 @@ function ensureAuthenticated(req, res, next) {
     }
     res.redirect('/login');
 }
-
-
-
-// Find Users lehe kuvamine
-app.get('/find-users', ensureAuthenticated, (req, res) => {
-
-    res.render('findu', { title: 'Find Users' });
-});
-
 
 // Home page, protected route
 app.get('/', ensureAuthenticated, (req, res) => {
@@ -85,7 +74,6 @@ app.get('/training', ensureAuthenticated, (req, res) => {
 });
 
 // Training sessions
-
 app.get('/sessions', ensureAuthenticated, async (req, res) => {
     try {
         // Fetch trainings for the current user
@@ -105,8 +93,6 @@ app.get('/sessions', ensureAuthenticated, async (req, res) => {
         res.status(500).send('An error occurred while fetching trainings.');
     }
 });
-
-
 
 // API for registration
 app.post('/api/register', async (req, res) => {
@@ -142,7 +128,6 @@ app.post('/api/login', async (req, res) => {
             req.session.userId = user.id;
             req.session.username = user.username;
             res.status(200).json({ message: 'Login successful!', user });
-
         } else {
             res.status(401).json({ error: 'Invalid username or password.' });
         }
@@ -153,7 +138,6 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Profile view, protected
-
 app.get('/profile', ensureAuthenticated, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
@@ -185,7 +169,6 @@ app.get('/profile', ensureAuthenticated, async (req, res) => {
     }
 });
 
-
 // Edit profile
 app.post('/profile', ensureAuthenticated, async (req, res) => {
     const { fullName, dateOfBirth, sex } = req.body;
@@ -209,8 +192,6 @@ app.post('/profile', ensureAuthenticated, async (req, res) => {
     }
 });
 
-
-
 // Log out API
 app.post('/api/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -221,20 +202,14 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// API for training, protected
+// API for adding training, protected
 app.post('/api/training', ensureAuthenticated, async (req, res) => {
     const {
         type,
         date,
+        score,
         wodName,
         wodType,
-        sets,
-        every,
-        forTime,
-        minutes,
-        rounds,
-        work,
-        rest,
         exercises,
     } = req.body;
 
@@ -250,32 +225,14 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
             wodName: wodName || null,
             wodType: wodType || null,
             date: new Date(date),
+            score: score || null,
             userId: req.session.userId,
             exercises: {
                 create: exercises.map((exercise) => ({
-                    exerciseName: exercise.exerciseName,
-                    inputValue: exercise.inputValue || null,
-                    count: exercise.count ? parseInt(exercise.count) : null,
-                    rounds: exercise.rounds ? parseInt(exercise.rounds) : null,
-                    time: exercise.time || null,
+                    exerciseData: exercise.exerciseData || '',
                 })),
             },
         };
-
-        // Add optional fields based on wodType
-        if (wodType === 'For Time' && sets) {
-            trainingData.sets = parseInt(sets);
-        } else if (wodType === 'EMOM') {
-            trainingData.every = parseInt(every);
-            trainingData.forTime = parseInt(forTime);
-            trainingData.sets = parseInt(sets);
-        } else if (wodType === 'AMRAP' && minutes) {
-            trainingData.minutes = parseInt(minutes);
-        } else if (wodType === 'Tabata') {
-            trainingData.rounds = parseInt(rounds);
-            trainingData.work = parseInt(work);
-            trainingData.rest = parseInt(rest);
-        }
 
         // Save training with associated exercises
         const training = await prisma.training.create({
@@ -296,10 +253,6 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
     }
 });
 
-
-
-
-
 // Get trainings, protected
 app.get('/api/trainings', ensureAuthenticated, async (req, res) => {
     try {
@@ -308,6 +261,7 @@ app.get('/api/trainings', ensureAuthenticated, async (req, res) => {
             include: {
                 exercises: true,
             },
+            orderBy: { date: 'desc' },
         });
         res.json(allTrainings);
     } catch (error) {
@@ -316,13 +270,12 @@ app.get('/api/trainings', ensureAuthenticated, async (req, res) => {
     }
 });
 
-//Delete training
-
+// Delete training
 app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
     const trainingId = parseInt(req.params.id);
 
     try {
-        // Controls if the training exists and if the user is authorized to delete it
+        // Check if the training exists and if the user is authorized to delete it
         const training = await prisma.training.findUnique({
             where: { id: trainingId },
             include: { user: true },
@@ -332,11 +285,9 @@ app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
             return res.status(404).json({ error: 'Training not found or not authorized.' });
         }
 
-
         await prisma.exercise.deleteMany({
             where: { trainingId },
         });
-
 
         await prisma.training.delete({
             where: { id: trainingId },
@@ -349,68 +300,142 @@ app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
     }
 });
 
-// Records insert
+// Records view
+app.get('/records', ensureAuthenticated, (req, res) => {
+    res.render('records', { title: 'Records' });
+});
 
-app.get('/records', ensureAuthenticated, async (req, res) => {
-    const defaultRecords = [
-        { label: 'Back squat', value: 0 },
-        { label: 'Front squat', value: 0 },
-        { label: 'Deadlift', value: 0 },
-        { label: 'Snatch', value: 0 },
-        { label: 'Clean and Jerk', value: 0 }
-    ];
+// API for Records
+app.get('/api/records', ensureAuthenticated, async (req, res) => {
+    const type = req.query.type || 'WOD';
 
     try {
         const records = await prisma.record.findMany({
-            where: { userId: req.session.userId }
-        });
-
-        const recordsWithDefaults = defaultRecords.map(record => {
-            const dbRecord = records.find(r => r.label === record.label);
-            return {
-                label: record.label,
-                value: dbRecord ? dbRecord.value : record.value
-            };
-        });
-
-        res.render('records', { title: 'Records', records: recordsWithDefaults });
-    } catch (error) {
-        console.error('Error fetching records:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-// Records update
-
-app.post('/records', ensureAuthenticated, async (req, res) => {
-    const [label] = Object.keys(req.body);
-    const value = parseInt(req.body[label]);
-
-    try {
-        await prisma.record.upsert({
             where: {
-                userId_label: { userId: req.session.userId, label }
-            },
-            update: {
-                value
-            },
-            create: {
                 userId: req.session.userId,
-                label,
-                value
+                type,
+            },
+            orderBy: {
+                date: 'desc',
+            },
+        });
+
+        // Group records by name and get the latest one
+        const latestRecords = [];
+        const namesSet = new Set();
+
+        records.forEach((record) => {
+            if (!namesSet.has(record.name)) {
+                latestRecords.push(record);
+                namesSet.add(record.name);
             }
         });
 
-        res.status(200).json({ message: 'Record updated successfully!' });
+        res.json(latestRecords);
     } catch (error) {
-        console.error('Error updating record:', error);
-        res.status(500).json({ error: 'Failed to update record.' });
+        console.error('Error fetching records:', error);
+        res.status(500).json({ error: 'Failed to fetch records.' });
     }
 });
 
+// API endpoint to fetch records by name
+app.get('/api/records/:name', ensureAuthenticated, async (req, res) => {
+    const name = req.params.name;
+    const type = req.query.type || 'WOD';
 
+    try {
+        const records = await prisma.record.findMany({
+            where: {
+                userId: req.session.userId,
+                type,
+                name,
+            },
+            orderBy: {
+                date: 'desc',
+            },
+        });
 
+        res.json(records);
+    } catch (error) {
+        console.error('Error fetching records by name:', error);
+        res.status(500).json({ error: 'Failed to fetch records by name.' });
+    }
+});
 
+app.post('/api/records', ensureAuthenticated, async (req, res) => {
+    const { type, name, date, score, weight, time } = req.body;
+
+    try {
+        const recordData = {
+            type,
+            name,
+            date: new Date(date),
+            userId: req.session.userId,
+            score: score || null,
+            weight: weight ? parseFloat(weight) : null,
+            time: time || null,
+        };
+
+        await prisma.record.create({
+            data: recordData,
+        });
+
+        res.status(201).json({ message: 'Record added successfully!' });
+    } catch (error) {
+        console.error('Error adding record:', error);
+        res.status(500).json({ error: 'Failed to add record.' });
+    }
+});
+
+// API endpoint to fetch another user's records
+app.get('/api/user-records/:id', ensureAuthenticated, async (req, res) => {
+    const userId = parseInt(req.params.id);
+    const type = req.query.type || 'WOD';
+
+    try {
+        const userExists = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true },
+        });
+
+        if (!userExists) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const records = await prisma.record.findMany({
+            where: {
+                userId: userId,
+                type,
+            },
+            orderBy: {
+                date: 'desc',
+            },
+        });
+
+        // Group records by name and get the latest one
+        const latestRecords = [];
+        const namesSet = new Set();
+
+        records.forEach((record) => {
+            if (!namesSet.has(record.name)) {
+                latestRecords.push(record);
+                namesSet.add(record.name);
+            }
+        });
+
+        res.json(latestRecords);
+    } catch (error) {
+        console.error('Error fetching user records:', error);
+        res.status(500).json({ error: 'Failed to fetch user records.' });
+    }
+});
+
+// **Find Users Functionality**
+
+// Route to display the Find Users page
+app.get('/find-users', ensureAuthenticated, (req, res) => {
+    res.render('findu', { title: 'Find Users' });
+});
 
 // API endpoint for searching users
 app.get('/api/search-users', ensureAuthenticated, async (req, res) => {
@@ -421,23 +446,21 @@ app.get('/api/search-users', ensureAuthenticated, async (req, res) => {
     }
 
     try {
-        const allUsers = await prisma.user.findMany({
+        const users = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { username: { contains: query } },
+                    { fullName: { contains: query } },
+                ],
+                id: { not: req.session.userId }, // Exclude the current user
+            },
             select: {
                 id: true,
                 username: true,
                 fullName: true,
             },
+            take: 10, // Limit the number of results
         });
-
-        const queryLower = query.toLowerCase();
-
-        const filteredUsers = allUsers.filter(user => {
-            const usernameMatch = user.username.toLowerCase().includes(queryLower);
-            const fullNameMatch = user.fullName && user.fullName.toLowerCase().includes(queryLower);
-            return usernameMatch || fullNameMatch;
-        });
-
-        const users = filteredUsers.slice(0, 10);
 
         res.json(users);
     } catch (error) {
@@ -446,13 +469,7 @@ app.get('/api/search-users', ensureAuthenticated, async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-// View user records
+// Route to view another user's records
 app.get('/user-records/:id', ensureAuthenticated, async (req, res) => {
     const userId = parseInt(req.params.id);
 
@@ -463,12 +480,6 @@ app.get('/user-records/:id', ensureAuthenticated, async (req, res) => {
                 id: true,
                 username: true,
                 fullName: true,
-                records: {
-                    select: {
-                        label: true,
-                        value: true,
-                    },
-                },
             },
         });
 
@@ -476,27 +487,57 @@ app.get('/user-records/:id', ensureAuthenticated, async (req, res) => {
             return res.status(404).send('User not found.');
         }
 
-        res.render('user-records', { title: `${user.username}'s Records`, user });
+        res.render('user-records', {
+            title: `${user.username}'s Records`,
+            user,
+        });
     } catch (error) {
         console.error('Error fetching user records:', error);
         res.status(500).send('Internal Server Error');
     }
 });
 
+// Update training API
+app.put('/api/training/:id', ensureAuthenticated, async (req, res) => {
+    const trainingId = parseInt(req.params.id);
+    const { type, date, wodName, wodType, score, exercises } = req.body;
 
-// Send username
-app.get('/', (req, res) => {
-    console.log('GET / - req.session.username:', req.session.username);
-    if (req.session.userId) {
-        res.render('main', { username: req.session.username });
-    } else {
-        res.redirect('/login');
+    try {
+        // Verify ownership
+        const training = await prisma.training.findUnique({
+            where: { id: trainingId },
+        });
+
+        if (!training || training.userId !== req.session.userId) {
+            return res.status(403).json({ error: 'Not authorized to update this training.' });
+        }
+
+        // Update the training
+        const updatedTraining = await prisma.training.update({
+            where: { id: trainingId },
+            data: {
+                type,
+                date: new Date(date),
+                wodName,
+                wodType,
+                score,
+                exercises: {
+                    deleteMany: {}, // Clear existing exercises
+                    create: exercises.map((exercise) => ({
+                        exerciseData: exercise.exerciseData || '',
+                    })),
+                },
+            },
+            include: { exercises: true },
+        });
+
+        res.status(200).json({ message: 'Training updated successfully!', training: updatedTraining });
+    } catch (error) {
+        console.error('Error updating training:', error);
+        res.status(500).json({ error: 'Failed to update training.' });
     }
 });
-app.use((req, res, next) => {
-    res.locals.username = req.session.username;
-    next();
-});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

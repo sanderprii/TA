@@ -19,7 +19,24 @@
     <!-- Calendar Container -->
     <div id="calendar"></div>
 </div>
-
+<!-- Training Modal -->
+<div class="modal fade" id="training-modal" tabindex="-1" aria-labelledby="trainingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"> <!-- You can customize the header as needed -->
+                <h5 class="modal-title" id="trainingModalLabel">Training Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="training-modal-body">
+                <!-- Content will be injected here by showTrainingModal function -->
+            </div>
+            <div class="modal-footer">
+                <!-- Buttons (Edit, Save, Add to Records) will be injected here by showTrainingModal function -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <script>
