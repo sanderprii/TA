@@ -39,43 +39,47 @@
                     <div class="exercise-line">
                         <div class="form-row align-items-center">
                             <div class="col">
-                                <input type="text" name="exercise-name" class="form-control" placeholder="Exercise Name">
+                                <textarea type="text" name="exercise-name" class="form-control" rows="5" placeholder="WOD description"></textarea>
                             </div>
-                            <div class="col">
-                                <input type="text" name="wod-input" class="form-control" placeholder="Enter Time or Count">
+
+                            <div>
+                                <label for="score">Score:</label>
+                                <input type="text" id="wod-score" name="score" placeholder="Enter Score">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <button type="button" id="add-line-btn" class="btn btn-secondary mt-2">Add Line</button>
+
             </div>
 
             <!-- Weightlifting -->
             <div id="weightlifting-options" class="training-options" style="display: none;">
                 <div class="form-row align-items-center">
-                    <div class="col">
-                        <input type="text" id="weight-exercise-name" class="form-control" placeholder="Exercise Name">
+                    <div id="weightlifting-exercise-lines">
+                        <div class="col">
+                            <textarea type="text" name="exercise-name" class="form-control" rows="5" placeholder="Exercise Name"></textarea>
+                        </div>
                     </div>
-                    <div class="col">
-                        <input type="number" id="weight-count" class="form-control" placeholder="Count">
-                    </div>
-                    <div class="col">
-                        <input type="number" id="rounds" class="form-control" placeholder="Rounds">
-                    </div>
+
                 </div>
+
             </div>
 
             <!-- Cardio -->
             <div id="cardio-options" class="training-options" style="display: none;">
                 <div class="form-row align-items-center">
-                    <div class="col">
-                        <input type="text" id="cardio-exercise-name" class="form-control" placeholder="Exercise Name">
+                    <div id="cardio-exercise-lines">
+                        <div class="form-row align-items-center mt-2">
+                            <div class="col">
+                                <textarea type="text" rows="5" name="exercise-name" rows="5" class="form-control" placeholder="Exercise Name"></textarea>
+                            </div>
+
+                        </div>
                     </div>
-                    <div class="col">
-                        <input type="text" id="cardio-time" class="form-control" placeholder="Time (min:sec)">
-                    </div>
+
                 </div>
+
             </div>
 
             <button type="submit" id="submit-training" class="btn btn-primary mt-3">Save Training</button>
@@ -101,6 +105,8 @@
             </div>
             <div class="modal-footer">
 
+                <button type="button" id="edit-training-btn" class="btn btn-primary">Edit</button>
+                <button type="button" id="save-training-btn" class="btn btn-success" style="display: none;">Save</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 
             </div>

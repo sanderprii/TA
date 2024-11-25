@@ -2,11 +2,30 @@
 /* Main */
 
 body {
-    background-color: #f8f9fa;
+
+
+}
+
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: blur(2px);
+    z-index: -1;
 }
 
 h1, h2, h3 {
     color: #343a40;
+}
+
+.btn-prof:hover {
+    background: lightseagreen;
 }
 
 .navbar-custom {
@@ -146,13 +165,42 @@ h1, h2, h3 {
 /* Home page */
 .btn-tr {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 20px;
+    height: 50px;
     cursor: pointer;
     width: 100% !important;
     display: block;
     border-radius: 5px;
+    background: #008080;
+    transition: all 0.5s ease;
 
 
+}
+
+.btn-tr:hover {
+    background: lightseagreen;
+    height: 100px;
+
+    transition: all 0.5s ease;
+    align-content: center;
+}
+
+.btn-container {
+    position: relative;
+
+}
+
+.btn-description {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 12px;
+    margin-top: 5px;
+    color: white;
+    text-align: center;
+}
+
+.btn-container:hover .btn-description {
+    opacity: 1;
 }
 
 .home {
@@ -175,6 +223,7 @@ h1, h2, h3 {
     border: 1px solid #ccc;
     border-radius: 5px;
     width: 80%;
+    opacity: 0.9;
 }
 
 
@@ -229,6 +278,8 @@ h1, h2, h3 {
 }
  /* training sessions */
 
+
+
 .legend-item {
     display: inline-block;
     margin-right: 15px;
@@ -245,3 +296,32 @@ h1, h2, h3 {
     max-width: 900px;
     margin: 0 auto;
 }
+
+/* Profile page */
+
+.card{
+    opacity: 0.9;
+}
+
+/* record page */
+
+#records-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.record-item {
+    width: 150px;
+    height: 150px;
+    background: lightslategray;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* add training page */

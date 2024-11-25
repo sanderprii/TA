@@ -14,55 +14,43 @@ generator client {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  username     String    @unique
-  password     String
-  fullName     String?
-  dateOfBirth  DateTime?
-  sex          String?
-  records      Record[]
-  trainings    Training[]
+  id          Int        @id @default(autoincrement())
+  username    String     @unique
+  password    String
+  fullName    String?
+  dateOfBirth DateTime?
+  sex         String?
+  records     Record[]
+  trainings   Training[]
 }
 
 model Training {
-  id           Int        @id @default(autoincrement())
-  type         String
-  wodName      String?
-  wodType      String?    // For Time, EMOM, Tabata, AMRAP
-  sets         Int?
-  every        Int?
-  forTime      Int?
-  minutes      Int?
-  rounds       Int?
-  work         Int?
-  rest         Int?
-  date         DateTime?
-  userId       Int
-  user         User       @relation(fields: [userId], references: [id])
-  exercises    Exercise[]
+  id        Int        @id @default(autoincrement())
+  type      String
+  wodName   String?
+  wodType   String? // For Time, EMOM, Tabata, AMRAP
+  date      DateTime?
+  score     String?
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id])
+  exercises Exercise[]
 }
-
-
 
 model Exercise {
   id           Int      @id @default(autoincrement())
-  exerciseName String
-  inputValue   String?  // Could be time or count
-  count        Int?
-  rounds       Int?
-  time         String?
+  exerciseData String
   trainingId   Int
   training     Training @relation(fields: [trainingId], references: [id])
 }
 
 model Record {
-  id     Int    @id @default(autoincrement())
+  id     Int       @id @default(autoincrement())
+  type   String?
+  name   String?
+  date   DateTime?
+  score  String?
+  weight Float?
+  time   String?
   userId Int
-  label  String
-  value  Int
-
-
-  user   User   @relation(fields: [userId], references: [id])
-
-  @@unique([userId, label])
+  user   User      @relation(fields: [userId], references: [id])
 }

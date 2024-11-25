@@ -1,18 +1,15 @@
-<div class="container mt-5">
+<div class="container mt-5" id="records-page">
     <h2>Records</h2>
-    <form id="records-form">
-        {{#each records}}
-            <div class="form-group row record-row" data-label="{{this.label}}">
-                <label class="col-sm-2 col-form-label">{{this.label}}</label>
-                <div class="col-sm-8">
-                    <span class="record-value">{{#if this.value}}{{this.value}} kg{{else}}Add record{{/if}}</span>
-                    <input type="number" name="{{this.label}}" class="form-control record-input d-none" value="{{this.value}}" required>
-                </div>
-                <div class="col-sm-2">
-                    <button type="button" class="btn btn-secondary edit-btn">Edit</button>
-                    <button type="button" class="btn btn-success save-btn d-none">Save</button>
-                </div>
-            </div>
-        {{/each}}
-    </form>
+    <div class="d-flex justify-content-center gap-2 mb-3" role="group" aria-label="Record Types">
+        <button type="button" class="btn btn-secondary record-type-btn active" data-type="WOD">WOD</button>
+        <button type="button" class="btn btn-secondary record-type-btn" data-type="Weightlifting">Weightlifting</button>
+        <button type="button" class="btn btn-secondary record-type-btn" data-type="Cardio">Cardio</button>
+    </div>
+    <div id="records-container" class="record-box">
+        <!-- Records will be rendered here -->
+    </div>
+    <div class="d-flex justify-content-center">
+
+    <button type="button" id="add-record-btn" class="btn btn-primary mt-3">Add Record</button>
+    </div>
 </div>
