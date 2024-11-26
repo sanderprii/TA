@@ -50,7 +50,14 @@ function ensureAuthenticated(req, res, next) {
     if (req.session.userId) {
         return next();
     }
-    res.redirect('/login');
+
+    // Kontrollime, kas tegemist on API-päringuga
+    if (req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    } else {
+        // Kui pole API-päring, suuname kasutaja sisse logima
+        res.redirect('/login');
+    }
 }
 
 // Home page, protected route
@@ -339,6 +346,7 @@ app.get('/api/records', ensureAuthenticated, async (req, res) => {
 });
 
 // API endpoint to fetch records by name
+
 app.get('/api/records/:name', ensureAuthenticated, async (req, res) => {
     const name = req.params.name;
     const type = req.query.type || 'WOD';
@@ -353,6 +361,14 @@ app.get('/api/records/:name', ensureAuthenticated, async (req, res) => {
             orderBy: {
                 date: 'desc',
             },
+            select: {
+                id: true,
+                date: true,
+                score: true,
+                weight: true,
+                time: true,
+                // Lisa teised väljad vastavalt vajadusele
+            },
         });
 
         res.json(records);
@@ -361,6 +377,7 @@ app.get('/api/records/:name', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch records by name.' });
     }
 });
+
 
 app.post('/api/records', ensureAuthenticated, async (req, res) => {
     const { type, name, date, score, weight, time } = req.body;
@@ -386,6 +403,32 @@ app.post('/api/records', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to add record.' });
     }
 });
+
+// Kustuta rekord
+app.delete('/api/records/:id', ensureAuthenticated, async (req, res) => {
+    const recordId = parseInt(req.params.id);
+
+    try {
+        // Kontrolli, kas rekord eksisteerib ja kasutaja on volitatud seda kustutama
+        const record = await prisma.record.findUnique({
+            where: { id: recordId },
+        });
+
+        if (!record || record.userId !== req.session.userId) {
+            return res.status(404).json({ error: 'Record not found or not authorized.' });
+        }
+
+        await prisma.record.delete({
+            where: { id: recordId },
+        });
+
+        res.status(200).json({ message: 'Record deleted successfully!' });
+    } catch (error) {
+        console.error("Error deleting record:", error);
+        res.status(500).json({ error: 'Failed to delete record.', details: error.message });
+    }
+});
+
 
 // API endpoint to fetch another user's records
 app.get('/api/user-records/:id', ensureAuthenticated, async (req, res) => {

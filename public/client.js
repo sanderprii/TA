@@ -619,22 +619,52 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Function to show record details in a modal
-// Function to show record details in a modal
+        // Globaalsed muutujad
+        let recordModal; // Bootstrap modali instants
+        let recordModalElement; // Modali DOM element
+        let currentRecordName;
+
+// Funktsioon modali kuvamiseks
         async function showRecordModal(record) {
             const type = currentRecordType;
             const name = record.name;
+            currentRecordName = name;
 
             try {
                 const response = await fetch(`/api/records/${encodeURIComponent(name)}?type=${type}`);
                 const records = await response.json();
+                const reversedRecords = records.slice().reverse();
 
-                // Build modal content
+                // Valmistame andmed graafiku jaoks
+                const dates = [];
+                const values = [];
+                const recordIds = [];
+
+                reversedRecords.forEach(rec => {
+                    // Lisame kuupäeva
+                    dates.push(new Date(rec.date).toLocaleDateString());
+
+                    if (type === 'WOD') {
+                        values.push(parseFloat(rec.score));
+                    } else if (type === 'Weightlifting') {
+                        values.push(rec.weight);
+                    } else if (type === 'Cardio') {
+                        // Võtame ajastringist esimese numbri (minutid)
+                        const timeParts = rec.time.split(':');
+                        const minutes = parseInt(timeParts[0], 10);
+                        values.push(minutes);
+                    }
+                    recordIds.push(rec.id);
+                });
+
+                // Koosta modali sisu
                 let modalContent = `<h5>${name}</h5>`;
 
-                records.forEach((rec, index) => {
+                if (records.length > 0) {
+                    const rec = records[0]; // Võtame kõige hilisema rekordi
                     modalContent += '<hr>';
-                    modalContent += `<p><strong>Record ${index + 1}</strong></p>`;
+                    modalContent += `<div data-record-id="${rec.id}">`;
+
                     if (type === 'WOD') {
                         modalContent += `
                     <p>Score: ${rec.score}</p>
@@ -651,46 +681,213 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Date: ${new Date(rec.date).toLocaleDateString()}</p>
                 `;
                     }
-                });
 
-                // Create modal if it doesn't exist
-                let modal = document.getElementById('recordModal');
-                if (!modal) {
-                    modal = document.createElement('div');
-                    modal.id = 'recordModal';
-                    modal.className = 'modal fade';
-                    modal.tabIndex = -1;
-                    modal.role = 'dialog';
-                    modal.innerHTML = `
+
+                    // Lisame graafiku konteineri
+                    modalContent += `<canvas id="recordChart" width="400" height="200"></canvas>`;
+                    modalContent += `<p style="text-align: center; font-style: italic;">Click on record for delete</p>`;
+                    modalContent += `</div>`;
+
+
+
+                } else {
+                    modalContent += '<p>No records found.</p>';
+                }
+
+                // Kui modali elementi pole veel loodud, loo see
+                if (!recordModalElement) {
+                    recordModalElement = document.createElement('div');
+                    recordModalElement.id = 'recordModal';
+                    recordModalElement.className = 'modal fade';
+                    recordModalElement.tabIndex = -1;
+                    recordModalElement.setAttribute('aria-labelledby', 'recordModalLabel');
+                    recordModalElement.setAttribute('aria-hidden', 'true');
+                    recordModalElement.innerHTML = `
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Record Details</h5>
+                            <h5 class="modal-title" id="recordModalLabel">Record Details</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body" id="record-modal-body"></div>
                         <div class="modal-footer">
-                            <!-- Edit button can be added here if needed -->
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>
             `;
-                    document.body.appendChild(modal);
+                    document.body.appendChild(recordModalElement);
+                    recordModal = new bootstrap.Modal(recordModalElement);
+
+
+
+                    // Lisa sündmuste kuulaja fookuse haldamiseks
+                    recordModalElement.addEventListener('shown.bs.modal', () => {
+                        recordModalElement.querySelector('.modal-title').focus();
+                    });
+
+                    // Lisa sündmuste kuulaja modali sulgemiseks
+                    recordModalElement.addEventListener('hidden.bs.modal', () => {
+                        document.getElementById('records-container').focus();
+                    });
+
+                    // Initsialiseerime graafiku instantsi
+                    window.recordChartInstance = null;
+
                 }
 
-                // Set modal content
-                document.getElementById('record-modal-body').innerHTML = modalContent;
+                // Määra modali sisu
+                const modalBody = recordModalElement.querySelector('#record-modal-body');
+                modalBody.innerHTML = modalContent;
 
-                // Show modal
-                const bootstrapModal = new bootstrap.Modal(modal);
-                bootstrapModal.show();
+                if (window.recordChartInstance) {
+                    window.recordChartInstance.destroy();
+                    window.recordChartInstance = null;
+                }
+
+                // Näita modali
+                recordModal.show();
+
+                // Loome graafiku pärast modali näitamist
+                createRecordChart(dates, values, type, recordIds);
 
             } catch (error) {
                 console.error('Error fetching records:', error);
                 alert('An error occurred while fetching records.');
             }
         }
+
+        function createRecordChart(dates, values, type, recordIds) {
+            const ctx = document.getElementById('recordChart').getContext('2d');
+
+            // Hävitame olemasoleva graafiku, kui see eksisteerib
+            if (window.recordChartInstance) {
+                window.recordChartInstance.destroy();
+            }
+
+            // Määrame sildi
+            let label = '';
+            if (type === 'WOD') {
+                label = 'Score';
+            } else if (type === 'Weightlifting') {
+                label = 'Weight (kg)';
+            } else if (type === 'Cardio') {
+                label = 'Time (minutes)';
+            }
+
+            // Graafiku konfiguratsioon
+            const config = {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: label,
+                        data: values,
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        pointBackgroundColor: 'rgb(75, 192, 192)',
+                        pointRadius: 5,
+                    }]
+                },
+                options: {
+                    onClick: chartClickHandler,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: label
+                            },
+                            beginAtZero: false,
+                            ticks: {
+                                precision: 0 // Kuvab täisarvud ilma komakohtadeta
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {}
+                        }
+                    }
+                }}
+
+                // Cardio puhul kohandame Y-telje silte ja tööriistavihjeid
+                if (type === 'Cardio') {
+                // Vormindame Y-telje sildid
+                config.options.scales.y.ticks = {
+                    callback: function(value, index, ticks) {
+                        return value + ' min';
+                    },
+                    stepSize: 1,
+                    precision: 0
+                };
+
+                // Vormindame tööriistavihjed
+                config.options.plugins.tooltip.callbacks = {
+                    label: function(context) {
+                        const minutes = context.parsed.y;
+                        return `${label}: ${minutes} min`;
+                    }
+                };
+            }
+
+            // Loome graafiku
+            window.recordChartInstance = new Chart(ctx, config);
+
+            window.recordChartInstance.recordIds = recordIds;
+        }
+
+        function chartClickHandler(event, elements) {
+            if (elements.length > 0) {
+                // Get the first clicked element
+                const elementIndex = elements[0].index;
+
+                // Get the record ID associated with this data point
+                const recordId = window.recordChartInstance.recordIds[elementIndex];
+
+                // Get the data value and label if needed
+                const dataValue = window.recordChartInstance.data.datasets[0].data[elementIndex];
+                const dataLabel = window.recordChartInstance.data.labels[elementIndex];
+
+                // Show a confirmation dialog or a modal
+                const confirmed = confirm(`Do you want to delete the record on ${dataLabel}?`);
+                if (confirmed) {
+                    // Call the function to delete the record
+                    deleteRecordFromChart(recordId);
+                }
+            }
+        }
+
+        async function deleteRecordFromChart(recordId) {
+            try {
+                const response = await fetch(`/api/records/${recordId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (response.ok) {
+                    alert('Record deleted successfully!');
+                    // Refresh the modal content
+                    showRecordModal({ name: currentRecordName });
+                    // Refresh the main records list
+                    loadRecords();
+                } else {
+                    const result = await response.json();
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+
+
 
 
         // Function to open modal for adding a record
