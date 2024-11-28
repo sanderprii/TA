@@ -1,18 +1,17 @@
 {{!-- user-records.handlebars --}}
-
 {{!< main}}
 
-<div class="container mt-5" id="user-records-page" data-user-id="{{user.id}}">
+<div class="container mt-5" id="user-records-page" data-user-id="{{user.id}}" data-username="{{user.username}}">
     <h2>{{user.username}}'s Records</h2>
 
-    <!-- Buttons to switch between record types -->
-    <div class="btn-group mt-3" role="group" aria-label="Record Types">
+    <!-- Record Type Buttons -->
+    <div class="d-flex justify-content-center gap-2 mb-3" role="group" aria-label="Record Types">
         <button type="button" class="btn btn-secondary record-type-btn active" data-type="WOD">WOD</button>
         <button type="button" class="btn btn-secondary record-type-btn" data-type="Weightlifting">Weightlifting</button>
         <button type="button" class="btn btn-secondary record-type-btn" data-type="Cardio">Cardio</button>
     </div>
 
-    <!-- Records container -->
+    <!-- Records Container -->
     <div id="records-container" class="mt-4">
         <!-- Records will be displayed here -->
     </div>

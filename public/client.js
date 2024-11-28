@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login Form Submission
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
+
         loginForm.addEventListener('submit', async function (event) {
             event.preventDefault();
             const username = document.getElementById('username').value;
@@ -101,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Include WOD-specific fields
         let scoreInput, wodNameInput, wodTypeInput;
         if (training.type === 'WOD') {
+
             if (training.wodName) {
                 wodNameInput = document.createElement('input');
                 wodNameInput.type = 'text';
@@ -573,7 +575,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Records Page Scripts
     const recordsPage = document.getElementById('records-page');
+
     if (recordsPage) {
+
         const recordsContainer = document.getElementById('records-container');
         const recordTypeButtons = document.querySelectorAll('.record-type-btn');
         const addRecordBtn = document.getElementById('add-record-btn');
@@ -601,11 +605,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let recordContent = '';
                 if (currentRecordType === 'WOD') {
-                    recordContent = `<strong>${record.name}</strong> - Score: ${record.score}`;
+                    recordContent = `
+        <div>
+            <strong>${record.name}</strong>
+        </div>
+        <div>
+            Score: ${record.score}
+        </div>
+    `;
                 } else if (currentRecordType === 'Weightlifting') {
-                    recordContent = `<strong>${record.name}</strong> - Weight: ${record.weight} kg`;
+                    recordContent = `
+        <div>
+            <strong>${record.name}</strong>
+        </div>
+        <div>
+            Weight: ${record.weight} kg
+        </div>
+    `;
                 } else if (currentRecordType === 'Cardio') {
-                    recordContent = `<strong>${record.name}</strong> - Time: ${record.time}`;
+                    recordContent = `
+        <div>
+            <strong>${record.name}</strong>
+        </div>
+        <div>
+            Time: ${record.time}
+        </div>
+    `;
                 }
 
                 recordItem.innerHTML = recordContent;
@@ -626,6 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Funktsioon modali kuvamiseks
         async function showRecordModal(record) {
+
             const type = currentRecordType;
             const name = record.name;
             currentRecordName = name;
@@ -639,20 +665,64 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dates = [];
                 const values = [];
                 const recordIds = [];
+                const timeStrings = [];
+                const scoreStrings = [];
+                let isTimeBased = false;
 
                 reversedRecords.forEach(rec => {
                     // Lisame kuupäeva
                     dates.push(new Date(rec.date).toLocaleDateString());
 
                     if (type === 'WOD') {
-                        values.push(parseFloat(rec.score));
+                        // Kontrollime, kas `score` sisaldab koolonit, mis viitab ajale
+                        if (rec.score.includes(':')) {
+                            // Käsitleme `score` väärtust ajana
+                            const timeParts = rec.score.split(':').map(Number);
+                            let decimalMinutes = 0;
+
+                            if (timeParts.length === 3) {
+                                // hh:mm:ss
+                                decimalMinutes = timeParts[0] * 60 + timeParts[1] + timeParts[2] / 60;
+                            } else if (timeParts.length === 2) {
+                                // mm:ss
+                                decimalMinutes = timeParts[0] + timeParts[1] / 60;
+                            } else if (timeParts.length === 1) {
+                                // ss
+                                decimalMinutes = timeParts[0] / 60;
+                            }
+                            values.push(decimalMinutes);
+
+                            // Salvestame originaalse ajastringi tööriistavihje jaoks
+                            scoreStrings.push(rec.score);
+
+                            // Märgime, et see rekord on ajaväärtusega
+                            isTimeBased = true;
+                        } else {
+                            // Käsitleme `score` väärtust arvuna
+                            values.push(parseFloat(rec.score));
+                            scoreStrings.push(rec.score);
+                        }
                     } else if (type === 'Weightlifting') {
                         values.push(rec.weight);
                     } else if (type === 'Cardio') {
-                        // Võtame ajastringist esimese numbri (minutid)
-                        const timeParts = rec.time.split(':');
-                        const minutes = parseInt(timeParts[0], 10);
-                        values.push(minutes);
+                        // Konverteerime aja kümnendmurdudeks minutites
+                        const timeParts = rec.time.split(':').map(Number);
+                        let decimalMinutes = 0;
+
+                        if (timeParts.length === 3) {
+                            // hh:mm:ss
+                            decimalMinutes = timeParts[0] * 60 + timeParts[1] + timeParts[2] / 60;
+                        } else if (timeParts.length === 2) {
+                            // mm:ss
+                            decimalMinutes = timeParts[0] + timeParts[1] / 60;
+                        } else if (timeParts.length === 1) {
+                            // ss
+                            decimalMinutes = timeParts[0] / 60;
+                        }
+                        values.push(decimalMinutes);
+
+                        // Salvestame originaalse ajastringi tööriistavihje jaoks
+                        timeStrings.push(rec.time);
                     }
                     recordIds.push(rec.id);
                 });
@@ -749,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 recordModal.show();
 
                 // Loome graafiku pärast modali näitamist
-                createRecordChart(dates, values, type, recordIds);
+                createRecordChart(dates, values, type, recordIds, timeStrings, isTimeBased);
 
             } catch (error) {
                 console.error('Error fetching records:', error);
@@ -757,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        function createRecordChart(dates, values, type, recordIds) {
+        function createRecordChart(dates, values, type, recordIds, timeStrings, isTimeBased) {
             const ctx = document.getElementById('recordChart').getContext('2d');
 
             // Hävitame olemasoleva graafiku, kui see eksisteerib
@@ -768,7 +838,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Määrame sildi
             let label = '';
             if (type === 'WOD') {
-                label = 'Score';
+                label = isTimeBased ? 'Time (minutes)' : 'Score';
             } else if (type === 'Weightlifting') {
                 label = 'Weight (kg)';
             } else if (type === 'Cardio') {
@@ -806,13 +876,30 @@ document.addEventListener('DOMContentLoaded', () => {
                             },
                             beginAtZero: false,
                             ticks: {
-                                precision: 0 // Kuvab täisarvud ilma komakohtadeta
+                                precision: 0,
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return value;
+                                }
                             }
                         }
                     },
                     plugins: {
                         tooltip: {
-                            callbacks: {}
+                            callbacks: {
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    if (type === 'WOD' && isTimeBased) {
+                                        const scoreString = scoreStrings[index];
+                                        return `${label}: ${scoreString}`;
+                                    } else if (type === 'Cardio') {
+                                        const timeString = scoreStrings[index];
+                                        return `${label}: ${timeString}`;
+                                    } else {
+                                        return `${label}: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
                         }
                     }
                 }}
@@ -1030,13 +1117,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('calendar') &&
         typeof trainingsData !== 'undefined' &&
         typeof FullCalendar !== 'undefined') {
+
         // The sessions page is loaded, and trainingsData is available
         initializeCalendar();
     }
 
     function initializeCalendar() {
         const calendarEl = document.getElementById('calendar');
-
+        
         // Parse the trainings data
         const trainings = trainingsData; // Ensure trainingsData is available
 
@@ -1152,24 +1240,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = userRecordsPage.dataset.username;
 
         // Function to load records
-        async function loadUserRecords() {
+        async function loadRecords() {
             try {
                 const response = await fetch(`/api/user-records/${userId}?type=${currentRecordType}`);
                 const records = await response.json();
-                renderUserRecords(records);
+                renderRecords(records);
             } catch (error) {
-                console.error('Error loading user records:', error);
+                console.error('Error loading records:', error);
             }
         }
 
-        // Function to render user records
-        function renderUserRecords(records) {
+        // Function to render records
+        function renderRecords(records) {
             recordsContainer.innerHTML = ''; // Clear existing records
-
-            if (records.length === 0) {
-                recordsContainer.innerHTML = '<p>No records found.</p>';
-                return;
-            }
 
             records.forEach((record) => {
                 const recordItem = document.createElement('div');
@@ -1178,77 +1261,285 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let recordContent = '';
                 if (currentRecordType === 'WOD') {
-                    recordContent = `<strong>${record.name}</strong> - Score: ${record.score}`;
+                    recordContent = `
+                    <div>
+                        <strong>${record.name}</strong>
+                    </div>
+                    <div>
+                        Score: ${record.score}
+                    </div>
+                `;
                 } else if (currentRecordType === 'Weightlifting') {
-                    recordContent = `<strong>${record.name}</strong> - Weight: ${record.weight} kg`;
+                    recordContent = `
+                    <div>
+                        <strong>${record.name}</strong>
+                    </div>
+                    <div>
+                        Weight: ${record.weight} kg
+                    </div>
+                `;
                 } else if (currentRecordType === 'Cardio') {
-                    recordContent = `<strong>${record.name}</strong> - Time: ${record.time}`;
+                    recordContent = `
+                    <div>
+                        <strong>${record.name}</strong>
+                    </div>
+                    <div>
+                        Time: ${record.time}
+                    </div>
+                `;
                 }
-
-                // Add date
-                recordContent += `<br><small>${new Date(record.date).toLocaleDateString()}</small>`;
 
                 recordItem.innerHTML = recordContent;
 
                 // Add click event to open modal with record details
                 recordItem.addEventListener('click', () => {
-                    showUserRecordModal(record);
+                    showRecordModal(record);
                 });
 
                 recordsContainer.appendChild(recordItem);
             });
         }
 
-        // Function to show record details in a modal
-        function showUserRecordModal(record) {
-            // Build modal content
-            let modalContent = `<h5>${record.name}</h5>`;
+        // Global variables
+        let recordModal; // Bootstrap modal instance
+        let recordModalElement; // Modal DOM element
+        let currentRecordName;
 
-            modalContent += `
-                <p>Type: ${record.type}</p>
-                <p>Date: ${new Date(record.date).toLocaleDateString()}</p>
-            `;
+        // Function to show the record modal
+        async function showRecordModal(record) {
+            const type = currentRecordType;
+            const name = record.name;
+            currentRecordName = name;
 
-            if (currentRecordType === 'WOD') {
-                modalContent += `<p>Score: ${record.score}</p>`;
-            } else if (currentRecordType === 'Weightlifting') {
-                modalContent += `<p>Weight: ${record.weight} kg</p>`;
-            } else if (currentRecordType === 'Cardio') {
-                modalContent += `<p>Time: ${record.time}</p>`;
-            }
+            try {
+                const response = await fetch(`/api/user-records/${userId}/exercise/${encodeURIComponent(name)}?type=${type}`);
 
-            // Create modal if it doesn't exist
-            let modal = document.getElementById('userRecordModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'userRecordModal';
-                modal.className = 'modal fade';
-                modal.tabIndex = -1;
-                modal.role = 'dialog';
-                modal.innerHTML = `
+                const records = await response.json();
+                const reversedRecords = records.slice().reverse();
+
+                // Prepare data for the chart
+                const dates = [];
+                const values = [];
+                const recordIds = []; // We can omit this since we won't delete records
+                const scoreStrings = [];
+                let isTimeBased = false;
+
+                reversedRecords.forEach(rec => {
+                    // Add date
+                    dates.push(new Date(rec.date).toLocaleDateString());
+
+                    if (type === 'WOD') {
+                        // Check if score is time-based
+                        if (rec.score.includes(':')) {
+                            // Handle as time
+                            const timeParts = rec.score.split(':').map(Number);
+                            let decimalMinutes = 0;
+
+                            if (timeParts.length === 3) {
+                                decimalMinutes = timeParts[0] * 60 + timeParts[1] + timeParts[2] / 60;
+                            } else if (timeParts.length === 2) {
+                                decimalMinutes = timeParts[0] + timeParts[1] / 60;
+                            } else if (timeParts.length === 1) {
+                                decimalMinutes = timeParts[0] / 60;
+                            }
+                            values.push(decimalMinutes);
+
+                            scoreStrings.push(rec.score);
+                            isTimeBased = true;
+                        } else {
+                            // Numeric score
+                            values.push(parseFloat(rec.score));
+                            scoreStrings.push(rec.score);
+                        }
+                    } else if (type === 'Weightlifting') {
+                        values.push(rec.weight);
+                        scoreStrings.push(rec.weight.toString());
+                    } else if (type === 'Cardio') {
+                        // Convert time to decimal minutes
+                        const timeParts = rec.time.split(':').map(Number);
+                        let decimalMinutes = 0;
+
+                        if (timeParts.length === 3) {
+                            decimalMinutes = timeParts[0] * 60 + timeParts[1] + timeParts[2] / 60;
+                        } else if (timeParts.length === 2) {
+                            decimalMinutes = timeParts[0] + timeParts[1] / 60;
+                        } else if (timeParts.length === 1) {
+                            decimalMinutes = timeParts[0] / 60;
+                        }
+                        values.push(decimalMinutes);
+
+                        scoreStrings.push(rec.time);
+                        isTimeBased = true;
+                    }
+                });
+
+                // Build modal content
+                let modalContent = `<h5>${name}</h5>`;
+
+                if (records.length > 0) {
+                    const rec = records[0]; // Most recent record
+                    modalContent += '<hr>';
+                    modalContent += `<div>`;
+
+                    if (type === 'WOD') {
+                        modalContent += `
+                        <p>Score: ${rec.score}</p>
+                        <p>Date: ${new Date(rec.date).toLocaleDateString()}</p>
+                    `;
+                    } else if (type === 'Weightlifting') {
+                        modalContent += `
+                        <p>Weight: ${rec.weight} kg</p>
+                        <p>Date: ${new Date(rec.date).toLocaleDateString()}</p>
+                    `;
+                    } else if (type === 'Cardio') {
+                        modalContent += `
+                        <p>Time: ${rec.time}</p>
+                        <p>Date: ${new Date(rec.date).toLocaleDateString()}</p>
+                    `;
+                    }
+
+                    // Add chart container
+                    modalContent += `<canvas id="recordChart" width="400" height="200"></canvas>`;
+                    modalContent += `</div>`;
+                } else {
+                    modalContent += '<p>No records found.</p>';
+                }
+
+                // Create modal if it doesn't exist
+                if (!recordModalElement) {
+                    recordModalElement = document.createElement('div');
+                    recordModalElement.id = 'recordModal';
+                    recordModalElement.className = 'modal fade';
+                    recordModalElement.tabIndex = -1;
+                    recordModalElement.setAttribute('aria-labelledby', 'recordModalLabel');
+                    recordModalElement.setAttribute('aria-hidden', 'true');
+                    recordModalElement.innerHTML = `
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">Record Details</h5>
+                                <h5 class="modal-title" id="recordModalLabel">Record Details</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <div class="modal-body" id="user-record-modal-body"></div>
+                            <div class="modal-body" id="record-modal-body"></div>
                             <div class="modal-footer">
-                                <!-- No Add to Records button here -->
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
                 `;
-                document.body.appendChild(modal);
+                    document.body.appendChild(recordModalElement);
+                    recordModal = new bootstrap.Modal(recordModalElement);
+                }
+
+                // Set modal content
+                const modalBody = recordModalElement.querySelector('#record-modal-body');
+                modalBody.innerHTML = modalContent;
+
+                // Destroy existing chart if any
+                if (window.recordChartInstance) {
+                    window.recordChartInstance.destroy();
+                    window.recordChartInstance = null;
+                }
+
+                // Show modal
+                recordModal.show();
+
+                // Create chart
+                createRecordChart(dates, values, type, scoreStrings, isTimeBased);
+
+            } catch (error) {
+                console.error('Error fetching records:', error);
+                alert('An error occurred while fetching records.');
+            }
+        }
+
+        function createRecordChart(dates, values, type, scoreStrings, isTimeBased) {
+            const ctx = document.getElementById('recordChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (window.recordChartInstance) {
+                window.recordChartInstance.destroy();
             }
 
-            // Set modal content
-            document.getElementById('user-record-modal-body').innerHTML = modalContent;
+            // Set label
+            let label = '';
+            if (type === 'WOD') {
+                label = isTimeBased ? 'Time (minutes)' : 'Score';
+            } else if (type === 'Weightlifting') {
+                label = 'Weight (kg)';
+            } else if (type === 'Cardio') {
+                label = 'Time (minutes)';
+            }
 
-            // Show modal
-            const bootstrapModal = new bootstrap.Modal(modal);
-            bootstrapModal.show();
+            // Chart configuration
+            const config = {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: label,
+                        data: values,
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        pointBackgroundColor: 'rgb(75, 192, 192)',
+                        pointRadius: 5,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: label
+                            },
+                            beginAtZero: false,
+                            ticks: {
+                                precision: 0,
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    if ((type === 'WOD' && isTimeBased) || type === 'Cardio') {
+                                        const scoreString = scoreStrings[index];
+                                        return `${label}: ${scoreString}`;
+                                    } else {
+                                        return `${label}: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Adjust Y-axis ticks for time-based records
+            if ((type === 'WOD' && isTimeBased) || type === 'Cardio') {
+                config.options.scales.y.ticks = {
+                    precision: 0,
+                    stepSize: 1,
+                    callback: function(value) {
+                        return value;
+                    }
+                };
+            }
+
+            // Create the chart
+            window.recordChartInstance = new Chart(ctx, config);
         }
 
         // Event listeners for record type buttons
@@ -1259,13 +1550,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add active class to clicked button
                 btn.classList.add('active');
                 currentRecordType = btn.dataset.type;
-                loadUserRecords();
+                loadRecords();
             });
         });
 
         // Initial load
-        loadUserRecords();
+        loadRecords();
     }
+
 
 });
 

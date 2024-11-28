@@ -322,6 +322,7 @@ h1, h2, h3 {
     align-items: center;
     border-radius: 5px;
     text-align: center;
+    flex-direction: column;
 }
 
 /* add training page */

@@ -430,9 +430,52 @@ app.delete('/api/records/:id', ensureAuthenticated, async (req, res) => {
 });
 
 
+
+
+// API endpoint to fetch another user's records by exercise name
+app.get('/api/user-records/:userId/exercise/:name', ensureAuthenticated, async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const name = req.params.name;
+    const type = req.query.type || 'WOD';
+
+    try {
+        const userExists = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true },
+        });
+
+        if (!userExists) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const records = await prisma.record.findMany({
+            where: {
+                userId: userId,
+                type,
+                name,
+            },
+            orderBy: {
+                date: 'desc',
+            },
+            select: {
+                id: true,
+                date: true,
+                score: true,
+                weight: true,
+                time: true,
+            },
+        });
+
+        res.json(records);
+    } catch (error) {
+        console.error('Error fetching user records by name:', error);
+        res.status(500).json({ error: 'Failed to fetch user records by name.' });
+    }
+});
+
 // API endpoint to fetch another user's records
-app.get('/api/user-records/:id', ensureAuthenticated, async (req, res) => {
-    const userId = parseInt(req.params.id);
+app.get('/api/user-records/:userId', ensureAuthenticated, async (req, res) => {
+    const userId = parseInt(req.params.userId);
     const type = req.query.type || 'WOD';
 
     try {
