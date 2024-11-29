@@ -54,3 +54,10 @@ model Record {
   userId Int
   user   User      @relation(fields: [userId], references: [id])
 }
+
+model defaultWOD {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  type        String
+  description String
+}
