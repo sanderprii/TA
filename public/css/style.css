@@ -325,4 +325,42 @@ h1, h2, h3 {
     flex-direction: column;
 }
 
-/* add training page */
+/* training page */
+#wod-search {
+    border: 1px solid #ced4da;
+    border-radius: 20px;
+    padding: 10px 15px;
+    font-size: 16px;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    outline: none;
+    transition: box-shadow 0.3s ease;
+}
+
+#wod-search:focus {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-color: #80bdff;
+}
+
+#wod-search-results {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #ced4da;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0;
+    list-style: none;
+}
+
+#wod-search-results .list-group-item {
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+#wod-search-results .list-group-item:hover {
+    background-color: #f8f9fa;
+}

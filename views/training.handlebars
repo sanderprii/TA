@@ -10,6 +10,7 @@
                 <option value="Cardio">Cardio</option>
             </select>
         </div>
+
         <div class="form-group" id="training-date-div" style="display: none;">
             <label for="training-date">Date</label>
             <input type="date" id="training-date" class="form-control" required>
@@ -18,6 +19,11 @@
         <div id="training-options" style="display: none;">
             <!-- WOD -->
             <div id="wod-options" class="training-options" style="display: none;">
+                <div class="form-group" style="position: relative; width: 100%;">
+                    <label for="wod-search">Search Default WODs:</label>
+                    <input type="search" id="wod-search" name="wod-search" class="form-control" placeholder="Search for WODs...">
+                    <ul id="wod-search-results" class="list-group" style="display: none; position: absolute; z-index: 1000;"></ul>
+                </div>
                 <div class="form-group">
                     <label for="wod-name">WOD Name:</label>
                     <input type="text" id="wod-name" name="wod-name" class="form-control" placeholder="Enter WOD name">
@@ -32,14 +38,11 @@
                     </div>
                 </div>
 
-                <!-- Dynamic Inputs Based on WOD Type -->
-                <div id="wod-type-options"></div>
-
                 <div id="exercise-lines">
                     <div class="exercise-line">
                         <div class="form-row align-items-center">
                             <div class="col">
-                                <textarea type="text" name="exercise-name" class="form-control" rows="5" placeholder="WOD description"></textarea>
+                                <textarea id="wod-description" type="text" name="exercise-name" class="form-control" rows="5" placeholder="WOD description"></textarea>
                             </div>
 
                             <div>
