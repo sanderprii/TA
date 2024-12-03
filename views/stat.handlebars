@@ -1,0 +1,200 @@
+<div class="container">
+    <h1>Statistics and Analysis</h1>
+
+    <!-- Tabs/Buttons for sub-points -->
+    <div class="tabs">
+        <button id="overview-tab" class="tab-button active">Overview</button>
+        <button id="goals-tab" class="tab-button">Goals</button>
+    </div>
+
+    <!-- Overview section -->
+    <div id="overview-section" class="tab-content active">
+        <h2>Overview</h2>
+        <p>Total trainings: <span id="total-trainings"></span></p>
+
+        <h3>Trainings Per Month</h3>
+        <canvas id="trainings-per-month-chart" height="100"></canvas>
+
+        <h3>Trainings by Type</h3>
+        <canvas id="trainings-by-type-chart" height="100"></canvas>
+    </div>
+
+    <!-- Goals section -->
+    <div id="goals-section" class="tab-content">
+        <h2>Goals</h2>
+        <label for="monthly-goal-input">Monthly goals:</label>
+        <input type="number" id="monthly-goal-input" min="0">
+        <button id="update-goal-button">Update Goal</button>
+
+        <h3>Progress</h3>
+        <canvas id="progress-chart" height="25"></canvas>
+        <p>Trainings this month: <span id="trainings-this-month"></span>/<span id="monthly-goal-display"></span></p>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching logic
+        const overviewTab = document.getElementById('overview-tab');
+        const goalsTab = document.getElementById('goals-tab');
+        const overviewSection = document.getElementById('overview-section');
+        const goalsSection = document.getElementById('goals-section');
+
+        overviewTab.addEventListener('click', () => {
+            overviewTab.classList.add('active');
+            goalsTab.classList.remove('active');
+            overviewSection.classList.add('active');
+            goalsSection.classList.remove('active');
+        });
+
+        goalsTab.addEventListener('click', () => {
+            goalsTab.classList.add('active');
+            overviewTab.classList.remove('active');
+            goalsSection.classList.add('active');
+            overviewSection.classList.remove('active');
+        });
+
+        let progressChart; // Declare progressChart variable
+
+        // Fetch statistics data
+        fetch('/api/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    // Update total trainings
+                    document.getElementById('total-trainings').textContent = data.totalTrainings;
+
+                    // Trainings per month chart
+                    const months = data.trainingsPerMonth.map(item => `${item.month}/${item.year}`);
+                    const counts = data.trainingsPerMonth.map(item => item.count);
+
+                    // Reverse the arrays to show oldest to newest
+                    months.reverse();
+                    counts.reverse();
+
+                    const ctx1 = document.getElementById('trainings-per-month-chart').getContext('2d');
+                    const trainingsPerMonthChart = new Chart(ctx1, {
+                        type: 'line',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'Trainings per Month',
+                                data: counts,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                fill: false,
+                            }],
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true },
+                                x: {
+                                    ticks: {
+                                        autoSkip: true,
+                                        maxTicksLimit: 12,
+                                    },
+                                },
+                            },
+                        },
+                    });
+
+                    // Trainings by type chart
+                    const types = data.trainingsByType.map(item => item.type);
+                    const typeCounts = data.trainingsByType.map(item => item._count.type);
+
+                    const ctx2 = document.getElementById('trainings-by-type-chart').getContext('2d');
+                    const trainingsByTypeChart = new Chart(ctx2, {
+                        type: 'bar',
+                        data: {
+                            labels: types,
+                            datasets: [{
+                                label: 'Trainings by Type',
+                                data: typeCounts,
+                                backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                            }],
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true },
+                            },
+                        },
+                    });
+
+                    // Update Goals section
+                    document.getElementById('trainings-this-month').textContent = data.trainingsThisMonth;
+                    document.getElementById('monthly-goal-input').value = data.monthlyGoal || '';
+                    document.getElementById('monthly-goal-display').textContent = data.monthlyGoal || '';
+
+                    // Progress chart
+                    const ctx3 = document.getElementById('progress-chart').getContext('2d');
+                    const maxGoal = Math.max(data.monthlyGoal || 0, data.trainingsThisMonth) + 5;
+                    progressChart = new Chart(ctx3, {
+                        type: 'bar',
+                        data: {
+                            labels: [''],
+                            datasets: [
+                                {
+                                    data: [data.monthlyGoal || 0],
+                                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                },
+                                {
+                                    data: [data.trainingsThisMonth],
+                                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                                },
+                            ],
+                        },
+                        options: {
+                            indexAxis: 'y', // This makes the bar chart horizontal
+                            scales: {
+                                x: {
+                                    display: false,
+                                    grid: {
+                                        display: false, // Hide x-axis gridlines
+                                    },
+                                    beginAtZero: true,
+                                    max: maxGoal,
+                                },
+                                y: {
+                                    stacked: true,
+                                    display: false, // Hide y-axis
+                                    grid: {
+                                        display: false, // Hide y-axis gridlines
+                                    },
+                                },
+                            },
+                            plugins: {
+                                legend: { display: false },
+                            },
+                            tooltip: {
+                                enabled: false, // Disable tooltips if you don't want them
+                            },
+                        },
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching statistics:', error);
+                });
+
+        // Update monthly goal
+        document.getElementById('update-goal-button').addEventListener('click', () => {
+            const monthlyGoal = document.getElementById('monthly-goal-input').value;
+            fetch('/api/user/monthly-goal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ monthlyGoal }),
+            })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        // Update the display
+                        document.getElementById('monthly-goal-display').textContent = monthlyGoal;
+
+                        // Update the progress chart
+                        progressChart.data.datasets[0].data[0] = parseInt(monthlyGoal);
+                        progressChart.options.scales.x.max = Math.max(parseInt(monthlyGoal), progressChart.data.datasets[1].data[0]) + 5;
+                        progressChart.update();
+                    })
+                    .catch(error => {
+                        console.error('Error updating monthly goal:', error);
+                    });
+        });
+    });
+
+</script>

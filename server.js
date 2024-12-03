@@ -80,6 +80,12 @@ app.get('/training', ensureAuthenticated, (req, res) => {
     res.render('training', { title: 'Add Training' });
 });
 
+// Statistics and Analysis view
+app.get('/stat', ensureAuthenticated, (req, res) => {
+    res.render('stat', { title: 'Statistics and Analysis' });
+});
+
+
 // Training sessions
 app.get('/sessions', ensureAuthenticated, async (req, res) => {
     try {
@@ -644,6 +650,103 @@ app.get('/api/search-default-wods', async (req, res) => {
     } catch (error) {
         console.error('Error searching Default WODs:', error);
         res.status(500).json({ error: 'Failed to search Default WODs.' });
+    }
+});
+
+
+// API endpoint to fetch statistics
+app.get('/api/statistics', ensureAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+
+        // Total trainings
+        const totalTrainings = await prisma.training.count({ where: { userId } });
+
+        // Trainings per month for the last year
+        const now = new Date();
+        const months = [];
+        for (let i = 0; i < 12; i++) {
+            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push({
+                year: date.getFullYear(),
+                month: date.getMonth() + 1,
+            });
+        }
+
+        const trainingsPerMonth = [];
+        for (const m of months) {
+            const startDate = new Date(m.year, m.month - 1, 1);
+            const endDate = new Date(m.year, m.month, 0);
+            const count = await prisma.training.count({
+                where: {
+                    userId,
+                    date: {
+                        gte: startDate,
+                        lt: endDate,
+                    },
+                },
+            });
+            trainingsPerMonth.push({
+                year: m.year,
+                month: m.month,
+                count,
+            });
+        }
+
+        // Trainings by type
+        const trainingsByType = await prisma.training.groupBy({
+            by: ['type'],
+            where: { userId },
+            _count: {
+                type: true,
+            },
+        });
+
+        // Current month trainings
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const trainingsThisMonth = await prisma.training.count({
+            where: {
+                userId,
+                date: {
+                    gte: startOfMonth,
+                    lt: now,
+                },
+            },
+        });
+
+        // User's monthly goal
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { monthlyGoal: true },
+        });
+
+        res.json({
+            totalTrainings,
+            trainingsPerMonth,
+            trainingsByType,
+            trainingsThisMonth,
+            monthlyGoal: user.monthlyGoal,
+        });
+    } catch (error) {
+        console.error('Error fetching statistics:', error);
+        res.status(500).json({ error: 'Failed to fetch statistics.' });
+    }
+});
+
+// API endpoint to update user's monthly goal
+app.post('/api/user/monthly-goal', ensureAuthenticated, async (req, res) => {
+    const { monthlyGoal } = req.body;
+    try {
+        await prisma.user.update({
+            where: { id: req.session.userId },
+            data: {
+                monthlyGoal: parseInt(monthlyGoal),
+            },
+        });
+        res.json({ message: 'Monthly goal updated successfully.' });
+    } catch (error) {
+        console.error('Error updating monthly goal:', error);
+        res.status(500).json({ error: 'Failed to update monthly goal.' });
     }
 });
 

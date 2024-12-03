@@ -22,6 +22,7 @@ model User {
   sex         String?
   records     Record[]
   trainings   Training[]
+  monthlyGoal Int?
 }
 
 model Training {
