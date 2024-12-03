@@ -12,33 +12,59 @@
 
 </head>
 <body>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-opacity-75">
     <div class="container-fluid">
+        <!-- Navbar Brand -->
+        <a class="navbar-brand" href="{{#if isAffiliateOwner}}/gym{{else}}/{{/if}}">IronTrack</a>
 
-        <a class="navbar-brand" href="/">IronTrack</a>
-        <div class="navbar-center">
-        </div>
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <!-- Navbar Toggler -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse btn-cont" id="navbarContent">
+        <!-- Collapsible Navbar Content -->
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <!-- Center Navbar Buttons -->
+            {{#if isAffiliateOwner}}
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a href="/gym" class="nav-link">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/my-affiliate" class="nav-link">My Affiliate</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/classes" class="nav-link">Classes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/plans" class="nav-link">Plans</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/finance" class="nav-link">Finance</a>
+                    </li>
+                </ul>
+            {{/if}}
+
+            <!-- Right Side Navbar -->
             <ul class="navbar-nav ms-auto align-items-center">
                 {{#if username}}
-                    <li class="nav-item">
-                        <a href="/profile" class="nav-link btn btn-danger btn-prof">My Profile</a>
-                    </li>
+                    {{#unless isAffiliateOwner}}
+                        <li class="nav-item">
+                            <a href="/profile" class="nav-link btn btn-danger btn-prof">My Profile</a>
+                        </li>
+                    {{/unless}}
                     <li class="nav-item">
                         <button id="logout-btn" class="btn btn-danger nav-link">Log Out</button>
                     </li>
-
                 {{/if}}
             </ul>
         </div>
     </div>
 </nav>
+
+
 <div class="background" style="background-image: url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');">
 </div>
 
@@ -49,6 +75,30 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script src="/client.js"></script>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function(event) {
+                event.preventDefault();
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                    });
+                    if (response.ok) {
+                        window.location.href = '/login';
+                    } else {
+                        alert('Logout failed.');
+                    }
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                }
+            });
+        }
+    });
+</script>
 
 </body>
 </html>

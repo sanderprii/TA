@@ -7,14 +7,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (registerForm) {
         registerForm.addEventListener('submit', async function (event) {
             event.preventDefault();
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value.trim() || null;
+            const isAffiliateOwnerValue = document.querySelector('input[name="isAffiliateOwner"]:checked').value;
+            const isAffiliateOwner = isAffiliateOwnerValue === 'true' ? true : false;
+            const sex = document.getElementById('sex').value || null;
+            const dateOfBirthValue = document.getElementById('dateOfBirth').value;
+            const dateOfBirth = dateOfBirthValue ? new Date(dateOfBirthValue) : null;
 
             try {
                 const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password }),
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        email,
+                        isAffiliateOwner,
+                        sex,
+                        dateOfBirth,
+                    }),
                 });
 
                 const result = await response.json();
@@ -30,13 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
     // Login Form Submission
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-
         loginForm.addEventListener('submit', async function (event) {
             event.preventDefault();
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
             try {
@@ -49,7 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (response.ok) {
                     alert(result.message);
-                    window.location.href = '/'; // Redirect to home page
+                    if (result.isAffiliateOwner) {
+                        // Display the role selection options
+                        document.getElementById('login-form').style.display = 'none';
+                        document.getElementById('role-selection').style.display = 'block';
+                    } else {
+                        // Redirect to home page
+                        window.location.href = '/';
+                    }
                 } else {
                     alert(result.error);
                 }
@@ -1666,116 +1686,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initial load
         loadRecords();
     }
-
-// WOD Search and Modal logic starts here
-    const wodSearchInput = document.getElementById('wod-search');
-    const wodSearchResults = document.getElementById('wod-search-results');
-    const trainingTypeSelected = document.getElementById('training-type');
-
-    // Modal-related variables
-    const trainingModal = new bootstrap.Modal(document.getElementById('training-modal'));
-    const trainingModalBody = document.getElementById('training-modal-body');
-    const addTrainingBtn = document.getElementById('save-training-btn');
-    const editTrainingBtn = document.getElementById('edit-training-btn');
-
-    // Show search bar only for WOD type
-    trainingTypeSelected.addEventListener('change', () => {
-        const selectedType = trainingTypeSelected.value;
-        const wodOptions = document.getElementById('wod-options');
-        if (selectedType === 'WOD') {
-            wodOptions.style.display = 'block';
-        } else {
-            wodOptions.style.display = 'none';
-            wodSearchResults.style.display = 'none';
-        }
-    });
-
-    // Fetch Default WODs based on search query
-    async function searchWODs(query) {
-        try {
-            const response = await fetch(`/api/search-default-wods?q=${encodeURIComponent(query.toUpperCase())}`);
-            if (response.ok) {
-                return await response.json();
-            }
-        } catch (error) {
-            console.error('Error fetching WODs:', error);
-        }
-        return [];
-    }
-
-    // Handle WOD search input
-    wodSearchInput.addEventListener('input', async () => {
-        const query = wodSearchInput.value.trim();
-        if (query.length === 0) {
-            wodSearchResults.style.display = 'none';
-            wodSearchResults.innerHTML = '';
-            return;
-        }
-
-        const results = await searchWODs(query);
-        wodSearchResults.innerHTML = '';
-
-        if (results.length > 0) {
-            results.slice(0, 10).forEach(wod => {
-                const li = document.createElement('li');
-                li.textContent = wod.name;
-                li.className = 'list-group-item';
-                li.style.cursor = 'pointer';
-
-                // Click handler to show modal
-                li.addEventListener('click', () => {
-                    showWODModal(wod);
-                });
-
-                wodSearchResults.appendChild(li);
-            });
-            wodSearchResults.style.display = 'block';
-        } else {
-            wodSearchResults.style.display = 'none';
-        }
-    });
-
-    // Format description to add new lines after ":" and ","
-    function formatModalDescription(description) {
-        return description
-            .replace(/:/g, ':<br>') // Add a line break after ":"
-            .replace(/,/g, '<br>'); // Add a line break after ","
-    }
-
-    function formatDescription(description) {
-        return description
-            .replace(/:/g, ':\n')  // Lisa rea vahetus pärast ":"
-            .replace(/,/g, '\n');  // Asenda "," rea vahetusega
-    }
-
-    // Show WOD details in modal
-    function showWODModal(wod) {
-        trainingModalBody.innerHTML = `
-            <h5>${wod.name}</h5>
-            <p>${wod.type}</p>
-            <p>${formatModalDescription(wod.description)}</p>
-        `;
-
-        addTrainingBtn.style.display = 'block';
-        addTrainingBtn.textContent = 'Add Training';
-
-        editTrainingBtn.style.display = 'none';
-
-        // Add click event to Add Training button
-        addTrainingBtn.onclick = () => {
-            document.getElementById('wod-name').value = wod.name;
-            document.querySelector(`input[name="wod-type"][value="${wod.type}"]`).checked = true;
-            document.getElementById('wod-description').value = formatDescription(wod.description);
-
-            wodSearchResults.style.display = 'none';
-            trainingModal.hide();
-        };
-
-        trainingModal.show();
-    }
-
-
-
 
 
 });

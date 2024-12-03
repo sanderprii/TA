@@ -1,0 +1,78 @@
+
+<div class="container mt-4">
+    <h1>Class Schedule</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <button id="prev-week" class="btn btn-secondary">Previous Week</button>
+            <button id="next-week" class="btn btn-secondary">Next Week</button>
+        </div>
+        <div>
+            <span id="current-week" class="h5"></span>
+        </div>
+        <button id="add-training-btn" class="btn btn-primary">Add Training</button>
+    </div>
+    <div id="schedule">
+        <!-- Schedule will be rendered here -->
+    </div>
+</div>
+
+<!-- Modal for adding/editing training -->
+<div class="modal fade" id="trainingModal" tabindex="-1" aria-labelledby="trainingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="training-form">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="trainingModalLabel">Add Training</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form fields -->
+                    <div class="mb-3">
+                        <label for="trainingName" class="form-label">Training Name*</label>
+                        <input type="text" class="form-control" id="trainingName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="trainingDate" class="form-label">Date*</label>
+                        <input type="date" class="form-control" id="trainingDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="trainingTime" class="form-label">Time*</label>
+                        <input type="time" class="form-control" id="trainingTime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="trainer" class="form-label">Trainer</label>
+                        <input type="text" class="form-control" id="trainer">
+                    </div>
+                    <div class="mb-3">
+                        <label for="memberCapacity" class="form-label">Member Capacity*</label>
+                        <input type="number" class="form-control" id="memberCapacity">
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Repeat Every Week</label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="repeatWeekly" id="repeatYes" value="true">
+                            <label class="form-check-label" for="repeatYes">Yes</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="repeatWeekly" id="repeatNo" value="false" checked>
+                            <label class="form-check-label" for="repeatNo">No</label>
+                        </div>
+                    </div>
+                    <input type="hidden" id="trainingId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="delete-training-btn" class="btn btn-danger me-auto" style="display: none;">Delete</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Include gym.js -->
+<script src="/gym.js"></script>

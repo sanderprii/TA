@@ -14,15 +14,18 @@ generator client {
 }
 
 model User {
-  id          Int        @id @default(autoincrement())
-  username    String     @unique
-  password    String
-  fullName    String?
-  dateOfBirth DateTime?
-  sex         String?
-  records     Record[]
-  trainings   Training[]
-  monthlyGoal Int?
+  id               Int             @id @default(autoincrement())
+  username         String          @unique
+  password         String
+  fullName         String?
+  dateOfBirth      DateTime?
+  sex              String?
+  email            String?         @unique
+  isAffiliateOwner Boolean?
+  records          Record[]
+  trainings        Training[]
+  monthlyGoal      Int?
+  classSchedules   ClassSchedule[]
 }
 
 model Training {
@@ -61,4 +64,17 @@ model defaultWOD {
   name        String @unique
   type        String
   description String
+}
+
+model ClassSchedule {
+  id             Int      @id @default(autoincrement())
+  trainingName   String
+  time           DateTime
+  trainer        String?
+  memberCapacity Int
+  location       String?
+  repeatWeekly   Boolean  @default(false)
+  ownerId        Int
+  owner          User     @relation(fields: [ownerId], references: [id])
+  seriesId       Int?
 }

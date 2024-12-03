@@ -36,11 +36,18 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-// Send username to templates
-app.use((req, res, next) => {
-    res.locals.username = req.session.username;
-    next();
-});
+// Middleware to ensure user is an affiliate owner
+function ensureAffiliateOwner(req, res, next) {
+    if (req.session.isAffiliateOwner) {
+        return next();
+    } else {
+        res.redirect('/');
+    }
+}
+
+
+
+
 
 // Serve public folder
 app.use(express.static('public'));
@@ -48,17 +55,27 @@ app.use(express.static('public'));
 // Protect routes middleware
 function ensureAuthenticated(req, res, next) {
     if (req.session.userId) {
+        console.log('Authenticated user:', req.session.username);
+        console.log('isAffiliateOwner:', req.session.isAffiliateOwner);
         return next();
     }
 
-    // Kontrollime, kas tegemist on API-päringuga
+    // Check if it's an API request
     if (req.path.startsWith('/api/')) {
         return res.status(401).json({ error: 'Unauthorized' });
     } else {
-        // Kui pole API-päring, suuname kasutaja sisse logima
+        // Redirect to login page
         res.redirect('/login');
     }
 }
+
+
+// Send username and isAffiliateOwner to templates
+app.use((req, res, next) => {
+    res.locals.username = req.session.username;
+    res.locals.isAffiliateOwner = req.session.isAffiliateOwner || false;
+    next();
+});
 
 // Home page, protected route
 app.get('/', ensureAuthenticated, (req, res) => {
@@ -85,6 +102,47 @@ app.get('/stat', ensureAuthenticated, (req, res) => {
     res.render('stat', { title: 'Statistics and Analysis' });
 });
 
+// Route to choose role after login
+app.get('/choose-role', ensureAuthenticated, (req, res) => {
+    if (req.session.isAffiliateOwner) {
+        res.render('choose-role', { title: 'Choose Role' });
+    } else {
+        res.redirect('/'); // If not an affiliate owner, redirect to home
+    }
+});
+
+
+
+//  route for /gym
+app.get('/gym', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
+    res.render('gym', { title: 'Affiliate Owner Dashboard' });
+});
+
+// Other routes
+app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
+    // Render My Affiliate page
+});
+
+
+
+// Classes page for affiliate owners
+app.get('/classes', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
+    res.render('classes', { title: 'Classes' });
+});
+
+
+
+
+
+// Gym page for affiliate owners
+app.get('/gym', ensureAuthenticated, (req, res) => {
+    if (req.session.isAffiliateOwner) {
+        res.render('gym', { title: 'Affiliate Owner Dashboard' });
+    } else {
+        res.redirect('/'); // Regular users are redirected to home
+    }
+});
+
 
 // Training sessions
 app.get('/sessions', ensureAuthenticated, async (req, res) => {
@@ -109,7 +167,14 @@ app.get('/sessions', ensureAuthenticated, async (req, res) => {
 
 // API for registration
 app.post('/api/register', async (req, res) => {
-    const { username, password } = req.body;
+    const {
+        username,
+        password,
+        email,
+        isAffiliateOwner,
+        sex,
+        dateOfBirth,
+    } = req.body;
     try {
         const existingUser = await prisma.user.findUnique({
             where: { username },
@@ -119,8 +184,25 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: 'Username already exists.' });
         }
 
+        // Check if email is unique if provided
+        if (email) {
+            const existingEmail = await prisma.user.findUnique({
+                where: { email },
+            });
+            if (existingEmail) {
+                return res.status(400).json({ error: 'Email already in use.' });
+            }
+        }
+
         const user = await prisma.user.create({
-            data: { username, password },
+            data: {
+                username,
+                password,
+                email,
+                isAffiliateOwner,
+                sex,
+                dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+            },
         });
         res.status(201).json({ message: 'User created successfully!', user });
     } catch (error) {
@@ -128,6 +210,10 @@ app.post('/api/register', async (req, res) => {
         res.status(500).json({ error: 'An error occurred during registration.' });
     }
 });
+
+
+
+
 
 // API for login
 app.post('/api/login', async (req, res) => {
@@ -140,7 +226,12 @@ app.post('/api/login', async (req, res) => {
         if (user && user.password === password) {
             req.session.userId = user.id;
             req.session.username = user.username;
-            res.status(200).json({ message: 'Login successful!', user });
+            req.session.isAffiliateOwner = user.isAffiliateOwner || false; // Store in session
+
+            res.status(200).json({
+                message: 'Login successful!',
+                isAffiliateOwner: user.isAffiliateOwner || false,
+            });
         } else {
             res.status(401).json({ error: 'Invalid username or password.' });
         }
@@ -149,6 +240,8 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'An error occurred during login.' });
     }
 });
+
+
 
 // Profile view, protected
 app.get('/profile', ensureAuthenticated, async (req, res) => {
@@ -749,6 +842,230 @@ app.post('/api/user/monthly-goal', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to update monthly goal.' });
     }
 });
+
+
+
+
+
+
+
+
+
+// affiliate owner routes
+
+
+// API endpoint to get classes within a date range
+app.get('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
+    const { start, end } = req.query;
+
+    try {
+        const classes = await prisma.classSchedule.findMany({
+            where: {
+                ownerId,
+                time: {
+                    gte: new Date(start),
+                    lte: new Date(end)
+                }
+            },
+            orderBy: { time: 'asc' }
+        });
+        res.json(classes);
+    } catch (error) {
+        console.error('Error fetching classes:', error);
+        res.status(500).json({ error: 'Failed to fetch classes.' });
+    }
+});
+
+// API endpoint to create a new class
+app.post('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
+    const {
+        trainingName,
+        date,
+        time,
+        trainer,
+        memberCapacity,
+        location,
+        repeatWeekly
+    } = req.body;
+
+    try {
+        const classData = {
+            trainingName,
+            time: new Date(`${date}T${time}`),
+            trainer,
+            memberCapacity: memberCapacity ? parseInt(memberCapacity) : null,
+            location,
+            repeatWeekly,
+            ownerId
+        };
+
+        // Create the class
+        const newClass = await prisma.classSchedule.create({
+            data: classData
+        });
+
+// Assign seriesId to the original class
+        await prisma.classSchedule.update({
+            where: { id: newClass.id },
+            data: { seriesId: newClass.id }
+        });
+
+// If repeatWeekly is true, create future classes
+        if (repeatWeekly) {
+            const repeats = [];
+            let nextTime = new Date(newClass.time);
+            for (let i = 1; i <= 52; i++) {
+                nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+                repeats.push({
+                    trainingName,
+                    time: new Date(nextTime),
+                    trainer,
+                    memberCapacity: newClass.memberCapacity,
+                    location,
+                    repeatWeekly,
+                    ownerId,
+                    seriesId: newClass.id // Assign the seriesId
+                });
+            }
+            await prisma.classSchedule.createMany({ data: repeats });
+        }
+
+        res.status(201).json({ message: 'Class created successfully!' });
+    } catch (error) {
+        console.error('Error creating class:', error);
+        res.status(500).json({ error: 'Failed to create class.' });
+    }
+});
+
+// API endpoint to update a class
+app.put('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
+    const classId = parseInt(req.params.id);
+    const {
+        trainingName,
+        date,
+        time,
+        trainer,
+        memberCapacity,
+        location,
+        repeatWeekly
+    } = req.body;
+
+    try {
+        // Fetch existing class
+        const existingClass = await prisma.classSchedule.findUnique({
+            where: { id: classId }
+        });
+
+        if (!existingClass || existingClass.ownerId !== ownerId) {
+            return res.status(403).json({ error: 'Not authorized to update this class.' });
+        }
+
+        const classData = {
+            trainingName,
+            time: new Date(`${date}T${time}`),
+            trainer,
+            memberCapacity: memberCapacity ? parseInt(memberCapacity) : null,
+            location,
+            repeatWeekly
+        };
+
+        // Update the class
+        await prisma.classSchedule.update({
+            where: { id: classId },
+            data: classData
+        });
+
+        // Handle changes to repeatWeekly
+        if (existingClass.repeatWeekly && !repeatWeekly) {
+            // Changed from true to false
+            // Delete future classes in the series
+            await prisma.classSchedule.deleteMany({
+                where: {
+                    seriesId: existingClass.seriesId,
+                    time: {
+                        gt: existingClass.time
+                    },
+                    id: {
+                        not: existingClass.id
+                    }
+                }
+            });
+        } else if (!existingClass.repeatWeekly && repeatWeekly) {
+            // Changed from false to true
+            // Create future classes
+            const repeats = [];
+            let nextTime = new Date(classData.time);
+            for (let i = 1; i <= 52; i++) {
+                nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+                repeats.push({
+                    trainingName,
+                    time: new Date(nextTime),
+                    trainer,
+                    memberCapacity: classData.memberCapacity,
+                    location,
+                    repeatWeekly,
+                    ownerId,
+                    seriesId: existingClass.id
+                });
+            }
+            await prisma.classSchedule.createMany({ data: repeats });
+
+            // Update the seriesId of the existing class
+            await prisma.classSchedule.update({
+                where: { id: existingClass.id },
+                data: { seriesId: existingClass.id }
+            });
+        }
+
+        res.status(200).json({ message: 'Class updated successfully!' });
+    } catch (error) {
+        console.error('Error updating class:', error);
+        res.status(500).json({ error: 'Failed to update class.' });
+    }
+});
+
+
+app.delete('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
+    const classId = parseInt(req.params.id);
+
+    try {
+        const existingClass = await prisma.classSchedule.findUnique({
+            where: { id: classId }
+        });
+
+        if (!existingClass || existingClass.ownerId !== ownerId) {
+            return res.status(403).json({ error: 'Not authorized to delete this class.' });
+        }
+
+        if (existingClass.seriesId) {
+            // Delete this class and future classes in the series
+            await prisma.classSchedule.deleteMany({
+                where: {
+                    seriesId: existingClass.seriesId,
+                    time: {
+                        gte: existingClass.time
+                    }
+                }
+            });
+        } else {
+            // Delete only this class
+            await prisma.classSchedule.delete({
+                where: { id: classId }
+            });
+        }
+
+        res.status(200).json({ message: 'Class deleted successfully!' });
+    } catch (error) {
+        console.error('Error deleting class:', error);
+        res.status(500).json({ error: 'Failed to delete class.' });
+    }
+});
+
+
 
 
 // Start server
