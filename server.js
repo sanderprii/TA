@@ -8,6 +8,7 @@ const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
 const { engine } = require('express-handlebars');
 const prisma = new PrismaClient();
+const bcrypt = require('bcrypt');
 const app = express();
 const PORT = 3000;
 
@@ -118,6 +119,11 @@ app.get('/gym', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
     res.render('gym', { title: 'Affiliate Owner Dashboard' });
 });
 
+// route for plans
+app.get('/plans', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
+    res.render('plans', { title: 'Plans' });
+});
+
 // Other routes
 app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
     // Render My Affiliate page
@@ -165,6 +171,30 @@ app.get('/sessions', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// Function to validate password
+function validatePassword(password) {
+    // Define a regular expression that allows only certain characters
+    const passwordRegex = /^[A-Za-z0-9!@#$%^&*()_+=\-{}[\]:;"'<>,.?/|~`]{1,}$/;
+
+    if (!passwordRegex.test(password)) {
+        return {
+            isValid: false,
+            message: 'Password must be at least 8 characters long and can only contain letters, numbers, and special characters (!@#$%^&*()_+=-{}[]:"\'<>,.?/|~`).',
+        };
+    }
+    // Disallow dangerous characters
+    const dangerousCharRegex = /[`~\\]/; // Add any characters you consider dangerous
+    if (dangerousCharRegex.test(password)) {
+        return {
+            isValid: false,
+            message: 'Password contains invalid characters.',
+        };
+    }
+    // Additional validation rules can be added here (e.g., minimum length, character types)
+
+    return { isValid: true };
+}
+
 // API for registration
 app.post('/api/register', async (req, res) => {
     const {
@@ -194,10 +224,19 @@ app.post('/api/register', async (req, res) => {
             }
         }
 
+        // Validate the password
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid) {
+            return res.status(400).json({ error: passwordValidation.message });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const user = await prisma.user.create({
             data: {
                 username,
-                password,
+                password: hashedPassword, // Store the hashed password
                 email,
                 isAffiliateOwner,
                 sex,
@@ -223,15 +262,22 @@ app.post('/api/login', async (req, res) => {
             where: { username },
         });
 
-        if (user && user.password === password) {
-            req.session.userId = user.id;
-            req.session.username = user.username;
-            req.session.isAffiliateOwner = user.isAffiliateOwner || false; // Store in session
+        if (user) {
+            // Compare the provided password with the hashed password
+            const passwordMatch = await bcrypt.compare(password, user.password);
 
-            res.status(200).json({
-                message: 'Login successful!',
-                isAffiliateOwner: user.isAffiliateOwner || false,
-            });
+            if (passwordMatch) {
+                req.session.userId = user.id;
+                req.session.username = user.username;
+                req.session.isAffiliateOwner = user.isAffiliateOwner || false; // Store in session
+
+                res.status(200).json({
+                    message: 'Login successful!',
+                    isAffiliateOwner: user.isAffiliateOwner || false,
+                });
+            } else {
+                res.status(401).json({ error: 'Invalid username or password.' });
+            }
         } else {
             res.status(401).json({ error: 'Invalid username or password.' });
         }
@@ -240,7 +286,6 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'An error occurred during login.' });
     }
 });
-
 
 
 // Profile view, protected
@@ -1065,7 +1110,121 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async 
     }
 });
 
+// API endpoint to get all plans
+app.get('/api/plans', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
 
+    try {
+        const plans = await prisma.plan.findMany({
+            where: {
+                ownerId
+            },
+            orderBy: { id: 'asc' }
+        });
+        res.json(plans);
+    } catch (error) {
+        console.error('Error fetching plans:', error);
+        res.status(500).json({ error: 'Failed to fetch plans.' });
+    }
+});
+
+// API endpoint to create a new plan
+app.post('/api/plans', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
+    const {
+        name,
+        validityDays,
+        price,
+        additionalData
+    } = req.body;
+
+    try {
+        const planData = {
+            name,
+            validityDays: parseInt(validityDays),
+            price: parseFloat(price),
+            additionalData,
+            ownerId
+        };
+
+        // Create the plan
+        const newPlan = await prisma.plan.create({
+            data: planData
+        });
+
+        res.status(201).json({ message: 'Plan created successfully!', plan: newPlan });
+    } catch (error) {
+        console.error('Error creating plan:', error);
+        res.status(500).json({ error: 'Failed to create plan.' });
+    }
+});
+
+// API endpoint to update a plan
+app.put('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
+    const planId = parseInt(req.params.id);
+    const {
+        name,
+        validityDays,
+        price,
+        additionalData
+    } = req.body;
+
+    try {
+        // Verify ownership
+        const existingPlan = await prisma.plan.findUnique({
+            where: { id: planId }
+        });
+
+        if (!existingPlan || existingPlan.ownerId !== ownerId) {
+            return res.status(403).json({ error: 'Not authorized to update this plan.' });
+        }
+
+        const planData = {
+            name,
+            validityDays: parseInt(validityDays),
+            price: parseFloat(price),
+            additionalData
+        };
+
+        // Update the plan
+        const updatedPlan = await prisma.plan.update({
+            where: { id: planId },
+            data: planData
+        });
+
+        res.status(200).json({ message: 'Plan updated successfully!', plan: updatedPlan });
+    } catch (error) {
+        console.error('Error updating plan:', error);
+        res.status(500).json({ error: 'Failed to update plan.' });
+    }
+});
+
+// API endpoint to delete a plan
+app.delete('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const ownerId = req.session.userId;
+    const planId = parseInt(req.params.id);
+
+    try {
+        // Verify ownership
+        const existingPlan = await prisma.plan.findUnique({
+            where: { id: planId }
+        });
+
+        if (!existingPlan || existingPlan.ownerId !== ownerId) {
+            return res.status(403).json({ error: 'Not authorized to delete this plan.' });
+        }
+
+        await prisma.plan.delete({
+            where: { id: planId }
+        });
+
+        res.status(200).json({ message: 'Plan deleted successfully!' });
+    } catch (error) {
+        console.error('Error deleting plan:', error);
+        res.status(500).json({ error: 'Failed to delete plan.' });
+    }
+});
 
 
 // Start server

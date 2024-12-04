@@ -26,6 +26,7 @@ model User {
   trainings        Training[]
   monthlyGoal      Int?
   classSchedules   ClassSchedule[]
+  Plan             Plan[]
 }
 
 model Training {
@@ -77,4 +78,14 @@ model ClassSchedule {
   ownerId        Int
   owner          User     @relation(fields: [ownerId], references: [id])
   seriesId       Int?
+}
+
+model Plan {
+  id             Int     @id @default(autoincrement())
+  name           String
+  validityDays   Int
+  price          Float
+  additionalData String?
+  ownerId        Int
+  owner          User    @relation(fields: [ownerId], references: [id])
 }

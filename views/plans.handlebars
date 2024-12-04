@@ -1,0 +1,174 @@
+<!-- views/plans.handlebars -->
+
+{{!< main}}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Plans</h1>
+        <button id="add-plan-btn" class="btn btn-primary">Add Plan</button>
+    </div>
+    <div id="plans-container" class="d-flex flex-wrap">
+        <!-- Plans will be rendered here -->
+    </div>
+</div>
+
+<!-- Modal for adding/editing plans -->
+<div class="modal fade" id="planModal" tabindex="-1" aria-labelledby="planModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="plan-form">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="planModalLabel">Add Plan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form fields -->
+                    <div class="mb-3">
+                        <label for="planName" class="form-label">Plan Name</label>
+                        <input type="text" class="form-control" id="planName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="validityDays" class="form-label">Plan Validity Period (Days)</label>
+                        <input type="number" class="form-control" id="validityDays" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="planPrice" class="form-label">Plan Price</label>
+                        <input type="number" step="0.01" class="form-control" id="planPrice" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="additionalData" class="form-label">Additional Data</label>
+                        <textarea class="form-control" id="additionalData" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="planId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="delete-plan-btn" class="btn btn-danger me-auto" style="display: none;">Delete</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Include plans.js -->
+<script>
+
+    // public/plans.js
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const plansContainer = document.getElementById('plans-container');
+        const addPlanBtn = document.getElementById('add-plan-btn');
+        const planModalElement = document.getElementById('planModal');
+        const planModal = new bootstrap.Modal(planModalElement);
+        const planForm = document.getElementById('plan-form');
+        const deletePlanBtn = document.getElementById('delete-plan-btn');
+
+        let plansData = [];
+
+        // Load existing plans
+        loadPlans();
+
+        // Event Listeners
+        addPlanBtn.addEventListener('click', () => {
+            openPlanModal();
+        });
+
+        planForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const planId = document.getElementById('planId').value;
+            const planData = {
+                name: document.getElementById('planName').value,
+                validityDays: document.getElementById('validityDays').value,
+                price: document.getElementById('planPrice').value,
+                additionalData: document.getElementById('additionalData').value,
+            };
+
+            try {
+                if (planId) {
+                    // Update existing plan
+                    await fetch(`/api/plans/${planId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(planData)
+                    });
+                } else {
+                    // Create new plan
+                    await fetch('/api/plans', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(planData)
+                    });
+                }
+
+                planModal.hide();
+                loadPlans();
+            } catch (error) {
+                console.error('Error saving plan:', error);
+            }
+        });
+
+        deletePlanBtn.addEventListener('click', async function() {
+            const planId = document.getElementById('planId').value;
+            if (planId) {
+                if (confirm('Are you sure you want to delete this plan?')) {
+                    try {
+                        await fetch(`/api/plans/${planId}`, {
+                            method: 'DELETE'
+                        });
+                        planModal.hide();
+                        loadPlans();
+                    } catch (error) {
+                        console.error('Error deleting plan:', error);
+                    }
+                }
+            }
+        });
+
+        // Functions
+        async function loadPlans() {
+            try {
+                const response = await fetch('/api/plans');
+                plansData = await response.json();
+                renderPlans();
+            } catch (error) {
+                console.error('Error loading plans:', error);
+            }
+        }
+
+        function renderPlans() {
+            plansContainer.innerHTML = '';
+
+            plansData.forEach(plan => {
+                const planButton = document.createElement('button');
+                planButton.classList.add('btn', 'btn-outline-primary', 'm-2', 'plan-button');
+                planButton.style.width = '200px';
+                planButton.style.height = '200px';
+                planButton.innerHTML = `<h4>${plan.name}</h4><p>$${plan.price.toFixed(2)}</p>`;
+                planButton.addEventListener('click', () => {
+                    openPlanModal(plan);
+                });
+                plansContainer.appendChild(planButton);
+            });
+        }
+
+        function openPlanModal(plan = null) {
+            if (plan) {
+                document.getElementById('planModalLabel').textContent = 'Edit Plan';
+                document.getElementById('planName').value = plan.name;
+                document.getElementById('validityDays').value = plan.validityDays;
+                document.getElementById('planPrice').value = plan.price;
+                document.getElementById('additionalData').value = plan.additionalData || '';
+                document.getElementById('planId').value = plan.id;
+                deletePlanBtn.style.display = 'inline-block';
+            } else {
+                document.getElementById('planModalLabel').textContent = 'Add Plan';
+                planForm.reset();
+                document.getElementById('planId').value = '';
+                deletePlanBtn.style.display = 'none';
+            }
+            planModal.show();
+        }
+    });
+
+</script>
