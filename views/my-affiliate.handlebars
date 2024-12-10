@@ -1,0 +1,213 @@
+{{!-- Kui affiliate puudub, näita vormi, vastasel juhul näita andmeid ja Edit nuppu --}}
+<h1 class="text-center my-4">{{title}}</h1>
+
+{{#if noAffiliate}}
+    <div class="container my-5">
+        <div class="card p-4">
+            <div class="mb-3">
+                <label class="form-label">Affiliate Name</label>
+                <input type="text" id="affiliate-name" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Affiliate Address</label>
+                <input type="text" id="affiliate-address" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Training Type</label>
+                <input type="text" id="affiliate-training-type" class="form-control" />
+            </div>
+            <div class="mb-3 position-relative">
+                <label class="form-label">Trainers</label>
+                <input type="text" id="trainer-search" class="form-control" placeholder="Search by name or username" autocomplete="off" />
+                <ul id="trainer-search-results" class="list-group position-absolute w-100" style="top:100%; z-index:1000; display:none;"></ul>
+            </div>
+            <div class="mb-3">
+                <h5>Selected Trainers:</h5>
+                <ul id="selected-trainers" class="list-group"></ul>
+            </div>
+            <button id="save-affiliate-btn" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+{{else}}
+{{!-- Affiliate andmed juba olemas --}}
+    <div class="container my-5">
+        <div id="affiliate-view">
+            <h3>{{affiliate.name}}</h3>
+            <p><strong>Address:</strong> {{affiliate.address}}</p>
+            <p><strong>Training Type:</strong> {{affiliate.trainingType}}</p>
+            <h5>Trainers:</h5>
+            <ul class="list-group mb-3">
+                {{#each trainers}}
+                    <li class="list-group-item">{{this.fullName}} - {{this.username}}</li>
+                {{/each}}
+            </ul>
+            <button id="edit-affiliate-btn" class="btn btn-secondary">Edit</button>
+        </div>
+
+        <div id="affiliate-edit" style="display:none;">
+            <input type="hidden" id="affiliate-id" value="{{affiliate.id}}"/>
+            <div class="card p-4">
+                <div class="mb-3">
+                    <label class="form-label">Affiliate Name</label>
+                    <input type="text" id="affiliate-name" class="form-control" value="{{affiliate.name}}" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Affiliate Address</label>
+                    <input type="text" id="affiliate-address" class="form-control" value="{{affiliate.address}}" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Training Type</label>
+                    <input type="text" id="affiliate-training-type" class="form-control" value="{{affiliate.trainingType}}" />
+                </div>
+                <div class="mb-3 position-relative">
+                    <label class="form-label">Trainers</label>
+                    <input type="text" id="trainer-search" class="form-control" placeholder="Search by name or username" autocomplete="off" />
+                    <ul id="trainer-search-results" class="list-group position-absolute w-100" style="top:100%; z-index:1000; display:none;"></ul>
+                </div>
+                <div class="mb-3">
+                    <h5>Selected Trainers:</h5>
+                    <ul id="selected-trainers" class="list-group">
+                        {{#each trainers}}
+                            <li class="list-group-item d-flex justify-content-between align-items-center" data-trainer-id="{{this.trainerId}}">
+                                {{this.fullName}} - {{this.username}}
+                                <button type="button" class="btn btn-sm btn-danger remove-trainer-btn">&times;</button>
+                            </li>
+                        {{/each}}
+                    </ul>
+                </div>
+                <button id="save-affiliate-btn" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+{{/if}}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const trainerSearch = document.getElementById('trainer-search');
+        const trainerResults = document.getElementById('trainer-search-results');
+        const selectedTrainers = document.getElementById('selected-trainers');
+        const saveBtn = document.getElementById('save-affiliate-btn');
+
+        const editBtn = document.getElementById('edit-affiliate-btn');
+        const affiliateView = document.getElementById('affiliate-view');
+        const affiliateEdit = document.getElementById('affiliate-edit');
+
+        if(editBtn) {
+            editBtn.addEventListener('click', () => {
+                affiliateView.style.display = 'none';
+                affiliateEdit.style.display = 'block';
+            });
+        }
+
+        // Otsingu funktsionaalsus
+        let searchTimeout = null;
+        trainerSearch && trainerSearch.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(searchTimeout);
+            if(query.length > 0) {
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/api/search-users?q=${encodeURIComponent(query)}`);
+                        if(res.ok) {
+                            const users = await res.json();
+                            if(users.length > 0) {
+                                trainerResults.innerHTML = '';
+                                users.forEach(user => {
+                                    const li = document.createElement('li');
+                                    li.classList.add('list-group-item');
+                                    li.textContent = `${user.fullName || ''} - ${user.username}`;
+                                    li.dataset.trainerId = user.id;
+                                    li.dataset.fullName = user.fullName || '';
+                                    li.dataset.username = user.username;
+                                    li.addEventListener('click', () => {
+                                        // Lisa valitud treenerite hulka
+                                        addSelectedTrainer(user.id, user.fullName, user.username);
+                                        trainerResults.style.display = 'none';
+                                        trainerSearch.value = '';
+                                    });
+                                    trainerResults.appendChild(li);
+                                });
+                                trainerResults.style.display = 'block';
+                            } else {
+                                trainerResults.innerHTML = '<li class="list-group-item">No users found</li>';
+                                trainerResults.style.display = 'block';
+                            }
+                        } else {
+                            console.error('Search error');
+                        }
+                    } catch(err) {
+                        console.error(err);
+                    }
+                }, 300);
+            } else {
+                trainerResults.innerHTML = '';
+                trainerResults.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if(!trainerResults.contains(e.target) && e.target !== trainerSearch) {
+                trainerResults.style.display = 'none';
+            }
+        });
+
+        function addSelectedTrainer(id, fullName, username) {
+            // Kontrolli, et poleks juba lisatud
+            if([...selectedTrainers.querySelectorAll('li')].some(li => li.dataset.trainerId == id)) {
+                return;
+            }
+            const li = document.createElement('li');
+            li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+            li.dataset.trainerId = id;
+            li.textContent = `${fullName || ''} - ${username}`;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.classList.add('btn', 'btn-sm', 'btn-danger', 'remove-trainer-btn');
+            btn.innerHTML = '&times;';
+            btn.addEventListener('click', () => {
+                li.remove();
+            });
+            li.appendChild(btn);
+            selectedTrainers.appendChild(li);
+        }
+
+        // Eemalda treenerite event
+        selectedTrainers && selectedTrainers.addEventListener('click', (e) => {
+            if(e.target.classList.contains('remove-trainer-btn')) {
+                e.target.closest('li').remove();
+            }
+        });
+
+        saveBtn && saveBtn.addEventListener('click', async () => {
+            const affiliateIdInput = document.getElementById('affiliate-id');
+            const nameInput = document.getElementById('affiliate-name');
+            const addressInput = document.getElementById('affiliate-address');
+            const trainingTypeInput = document.getElementById('affiliate-training-type');
+
+            const trainerIds = [...selectedTrainers.querySelectorAll('li')].map(li => li.dataset.trainerId);
+
+            const data = {
+                affiliateId: affiliateIdInput ? affiliateIdInput.value : undefined,
+                name: nameInput.value,
+                address: addressInput.value,
+                trainingType: trainingTypeInput.value,
+                trainers: trainerIds
+            }
+
+            const res = await fetch('/api/affiliate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if(res.ok) {
+                location.reload();
+            } else {
+                console.error('Failed to save affiliate');
+            }
+        });
+
+    });
+</script>

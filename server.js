@@ -116,24 +116,61 @@ app.get('/choose-role', ensureAuthenticated, (req, res) => {
 
 //  route for /gym
 app.get('/gym', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
-    res.render('gym', { title: 'Affiliate Owner Dashboard' });
+    res.render('gym', { title: 'Affiliate Owner Dashboard', layout: 'owner' });
 });
 
 // route for plans
 app.get('/plans', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
-    res.render('plans', { title: 'Plans' });
+    res.render('plans', { title: 'Plans', layout: 'owner' });
 });
 
-// Other routes
-app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
-    // Render My Affiliate page
+// My Affiliate lehe kuvamine
+app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    try {
+        const affiliate = await prisma.affiliate.findFirst({
+            where: { ownerId: req.session.userId },
+            include: {
+                trainers: {
+                    include: {
+                        trainer: true
+                    }
+                }
+            }
+        });
+
+        if (!affiliate) {
+            // Pole veel affiliate infot
+            return res.render('my-affiliate', {
+                title: 'My Affiliate',
+                noAffiliate: true,
+                layout: 'owner'
+            });
+        }
+
+        // Kui affiliate on olemas
+        const trainers = affiliate.trainers.map(t => ({
+            fullName: t.trainer.fullName || '',
+            username: t.trainer.username,
+            trainerId: t.trainerId
+        }));
+
+        res.render('my-affiliate', {
+            title: 'My Affiliate',
+            affiliate,
+            trainers,
+            layout: 'owner'
+        });
+    } catch (error) {
+        console.error('Error loading affiliate:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 
 
 // Classes page for affiliate owners
 app.get('/classes', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
-    res.render('classes', { title: 'Classes' });
+    res.render('classes', { title: 'Classes', layout: 'owner' });
 });
 
 
@@ -905,22 +942,29 @@ app.get('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, r
     const { start, end } = req.query;
 
     try {
+        // Muuda kuupäeva alguse ja lõpu määratlust
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999); // Veendu, et päev lõpeb õigesti
+
         const classes = await prisma.classSchedule.findMany({
             where: {
                 ownerId,
                 time: {
-                    gte: new Date(start),
-                    lte: new Date(end)
+                    gte: startDate,
+                    lte: endDate
                 }
             },
             orderBy: { time: 'asc' }
         });
+
         res.json(classes);
     } catch (error) {
         console.error('Error fetching classes:', error);
         res.status(500).json({ error: 'Failed to fetch classes.' });
     }
 });
+
 
 // API endpoint to create a new class
 app.post('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
@@ -1225,6 +1269,95 @@ app.delete('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (r
         res.status(500).json({ error: 'Failed to delete plan.' });
     }
 });
+
+// API affiliate loomiseks või uuendamiseks
+app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
+    const { affiliateId, name, address, trainingType, trainers } = req.body;
+
+    try {
+        const trainerIds = Array.isArray(trainers) ? trainers.map(id => parseInt(id)) : [];
+
+        if (affiliateId) {
+            // Kontrolli, kas kasutajal on õigus seda affiliate't muuta
+            const existing = await prisma.affiliate.findUnique({
+                where: { id: parseInt(affiliateId) }
+            });
+
+            if (!existing || existing.ownerId !== req.session.userId) {
+                return res.status(403).json({ error: 'Not authorized or affiliate not found' });
+            }
+
+            // Uuenda põhivälju
+            await prisma.affiliate.update({
+                where: { id: parseInt(affiliateId) },
+                data: {
+                    name,
+                    address,
+                    trainingType,
+                }
+            });
+
+            // Leia olemasolevad treeneri seosed
+            const existingTrainers = await prisma.affiliateTrainer.findMany({
+                where: { affiliateId: parseInt(affiliateId) }
+            });
+
+            const existingTrainerIds = existingTrainers.map(t => t.trainerId);
+
+            // Treenerid, mida tuleb lisada
+            const newTrainerIds = trainerIds.filter(id => !existingTrainerIds.includes(id));
+
+            // Treenerid, mida tuleb eemaldada
+            const removedTrainerIds = existingTrainerIds.filter(id => !trainerIds.includes(id));
+
+            // Lisa uued treenerid
+            const createTrainers = newTrainerIds.map(tId => ({
+                affiliateId: parseInt(affiliateId),
+                trainerId: tId
+            }));
+
+            await prisma.affiliateTrainer.createMany({
+                data: createTrainers
+            });
+
+            // Kustuta eemaldatud treenerid
+            await prisma.affiliateTrainer.deleteMany({
+                where: {
+                    affiliateId: parseInt(affiliateId),
+                    trainerId: { in: removedTrainerIds }
+                }
+            });
+
+            res.status(200).json({ message: 'Affiliate updated successfully!' });
+        } else {
+            // Loo uus affiliate ja treeneriseosed
+            const newAffiliate = await prisma.affiliate.create({
+                data: {
+                    name,
+                    address,
+                    trainingType,
+                    ownerId: req.session.userId,
+                }
+            });
+
+            const createTrainers = trainerIds.map(tId => ({
+                affiliateId: newAffiliate.id,
+                trainerId: tId
+            }));
+
+            await prisma.affiliateTrainer.createMany({
+                data: createTrainers
+            });
+
+            res.status(201).json({ message: 'Affiliate created successfully!', affiliate: newAffiliate });
+        }
+    } catch (error) {
+        console.error('Error saving affiliate info:', error);
+        res.status(500).json({ error: 'Failed to save affiliate info.' });
+    }
+});
+
+
 
 
 // Start server

@@ -16,7 +16,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-opacity-75">
     <div class="container-fluid">
         <!-- Navbar Brand -->
-        <a class="navbar-brand" href="{{#if username}}/{{/if}}">IronTrack</a>
+        <a class="navbar-brand" href="{{#if isAffiliateOwner}}/gym{{else}}/{{/if}}">IronTrack</a>
 
         <!-- Navbar Toggler -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -27,15 +27,29 @@
         <!-- Collapsible Navbar Content -->
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <!-- Center Navbar Buttons -->
-
+            {{#if isAffiliateOwner}}
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a href="/gym" class="nav-link">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/my-affiliate" class="nav-link">My Affiliate</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/classes" class="nav-link">Classes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/plans" class="nav-link">Plans</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/finance" class="nav-link">Finance</a>
+                    </li>
+                </ul>
+            {{/if}}
 
             <!-- Right Side Navbar -->
             <ul class="navbar-nav ms-auto align-items-center">
                 {{#if username}}
-
-                        <li class="nav-item">
-                            <a href="/profile" class="nav-link btn btn-danger btn-prof">My Profile</a>
-                        </li>
 
                     <li class="nav-item">
                         <button id="logout-btn" class="btn btn-danger nav-link">Log Out</button>
@@ -60,26 +74,6 @@
 
 <script>
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async function(event) {
-                event.preventDefault();
-                try {
-                    const response = await fetch('/api/logout', {
-                        method: 'POST',
-                    });
-                    if (response.ok) {
-                        window.location.href = '/login';
-                    } else {
-                        alert('Logout failed.');
-                    }
-                } catch (error) {
-                    console.error('Error during logout:', error);
-                }
-            });
-        }
-    });
 </script>
 
 </body>
