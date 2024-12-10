@@ -62,12 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (response.ok) {
                     alert(result.message);
-                    if (result.isAffiliateOwner) {
-                        // Display the role selection options
-                        document.getElementById('login-form').style.display = 'none';
-                        document.getElementById('role-selection').style.display = 'block';
+                    if (result.isAffiliateOwner || result.isTrainer) {
+                        window.location.href = '/choose-role';
                     } else {
-                        // Redirect to home page
                         window.location.href = '/';
                     }
                 } else {

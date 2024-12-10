@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     trainingForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const trainingId = document.getElementById('trainingId').value;
+        const repeatWeeklyValue = document.querySelector('input[name="repeatWeekly"]:checked').value;
         const trainingData = {
             trainingName: document.getElementById('trainingName').value,
             date: document.getElementById('trainingDate').value,
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
             trainer: document.getElementById('trainer').value,
             memberCapacity: document.getElementById('memberCapacity').value,
             location: document.getElementById('location').value,
-            repeatWeekly: document.querySelector('input[name="repeatWeekly"]:checked').value === 'true'
+            repeatWeekly: (repeatWeeklyValue === 'true') // boolean parse
         };
 
         try {
@@ -147,7 +148,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Find classes for this time slot
                 const classesAtTime = classesData.filter(c => {
                     const classDate = new Date(c.time);
-                    return classDate.getTime() === cellDate.getTime();
+                    return classDate.getFullYear() === cellDate.getFullYear() &&
+                        classDate.getMonth() === cellDate.getMonth() &&
+                        classDate.getDate() === cellDate.getDate() &&
+                        classDate.getHours() === cellDate.getHours();
                 });
 
                 classesAtTime.forEach(c => {
@@ -171,24 +175,8 @@ document.addEventListener('DOMContentLoaded', function() {
         scheduleElement.appendChild(table);
     }
 
-    function formatDateInput(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    function formatTimeInput(date) {
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-    }
-
     function openTrainingModal(training = null) {
         if (training) {
-
-
-
             document.getElementById('trainingModalLabel').textContent = 'Edit Training';
             document.getElementById('trainingName').value = training.trainingName;
 
@@ -199,7 +187,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('trainer').value = training.trainer || '';
             document.getElementById('memberCapacity').value = training.memberCapacity || '';
             document.getElementById('location').value = training.location || '';
-            document.querySelector(`input[name="repeatWeekly"][value="${training.repeatWeekly}"]`).checked = true;
+
+            // Convert boolean to string to match the radio buttons value="true"/"false"
+            const repeatValue = training.repeatWeekly ? 'true' : 'false';
+            document.querySelector(`input[name="repeatWeekly"][value="${repeatValue}"]`).checked = true;
+
             document.getElementById('trainingId').value = training.id;
             deleteTrainingBtn.style.display = 'inline-block';
         } else {
@@ -229,5 +221,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatDateInput(date) {
         return date.toISOString().split('T')[0];
+    }
+
+    function formatTimeInput(date) {
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
     }
 });

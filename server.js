@@ -46,7 +46,13 @@ function ensureAffiliateOwner(req, res, next) {
     }
 }
 
-
+function ensureOwnerOrTrainer(req, res, next) {
+    if (req.session.isAffiliateOwner || req.session.isTrainer) {
+        return next();
+    } else {
+        res.redirect('/');
+    }
+}
 
 
 
@@ -75,6 +81,8 @@ function ensureAuthenticated(req, res, next) {
 app.use((req, res, next) => {
     res.locals.username = req.session.username;
     res.locals.isAffiliateOwner = req.session.isAffiliateOwner || false;
+    res.locals.isTrainer = req.session.isTrainer || false;
+    res.locals.currentRole = req.session.currentRole || null;
     next();
 });
 
@@ -105,19 +113,55 @@ app.get('/stat', ensureAuthenticated, (req, res) => {
 
 // Route to choose role after login
 app.get('/choose-role', ensureAuthenticated, (req, res) => {
-    if (req.session.isAffiliateOwner) {
-        res.render('choose-role', { title: 'Choose Role' });
-    } else {
-        res.redirect('/'); // If not an affiliate owner, redirect to home
-    }
+    const isOwner = req.session.isAffiliateOwner;
+    const isTrainer = req.session.isTrainer;
+
+    // Valikuvõimalused:
+    // - Kui on ainult owner: valik owner vs regular user
+    // - Kui on ainult trainer: valik trainer vs regular user
+    // - Kui on mõlemad: valik owner vs trainer vs regular user
+
+    let roles = [];
+    if (isOwner) roles.push({ url: '/gym?role=owner', label: 'Affiliate Owner', id: 'choose-owner' });
+    if (isTrainer) roles.push({ url: '/gym?role=trainer', label: 'Trainer' });
+    // Regular user alati kättesaadav
+    roles.push({ url: '/', label: 'Regular User' });
+
+    res.render('choose-role', { title: 'Choose Role', roles });
 });
 
 
 
 //  route for /gym
-app.get('/gym', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
-    res.render('gym', { title: 'Affiliate Owner Dashboard', layout: 'owner' });
+app.get('/gym', ensureAuthenticated, (req, res) => {
+    const role = req.query.role;
+
+    // Kui on defineeritud role query param ja kasutaja vastab tingimustele, uuenda currentRole
+    if (role === 'owner' && req.session.isAffiliateOwner) {
+        req.session.currentRole = 'owner';
+    } else if (role === 'trainer' && req.session.isTrainer) {
+        req.session.currentRole = 'trainer';
+    }
+
+    // Kui currentRole puudub ja kasutaja on owner või treener, suuna rollivaliku lehele
+    if (!req.session.currentRole && (req.session.isAffiliateOwner || req.session.isTrainer)) {
+        return res.redirect('/choose-role');
+    }
+
+    // Siin jõudes on kas user regular user (pole rolli vaja) või tal on already currentRole määratud.
+    const dashboardTitle = (req.session.currentRole === 'trainer')
+        ? 'Trainer Dashboard'
+        : (req.session.currentRole === 'owner')
+            ? 'Affiliate Owner Dashboard'
+            : 'Dashboard';
+
+    // Renderda gym leht owner layoutiga
+    res.render('gym', {
+        title: dashboardTitle,
+        layout: 'owner'
+    });
 });
+
 
 // route for plans
 app.get('/plans', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
@@ -169,7 +213,8 @@ app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, 
 
 
 // Classes page for affiliate owners
-app.get('/classes', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
+app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    // Loogika klasside laadimiseks
     res.render('classes', { title: 'Classes', layout: 'owner' });
 });
 
@@ -177,14 +222,7 @@ app.get('/classes', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
 
 
 
-// Gym page for affiliate owners
-app.get('/gym', ensureAuthenticated, (req, res) => {
-    if (req.session.isAffiliateOwner) {
-        res.render('gym', { title: 'Affiliate Owner Dashboard' });
-    } else {
-        res.redirect('/'); // Regular users are redirected to home
-    }
-});
+
 
 
 // Training sessions
@@ -292,6 +330,7 @@ app.post('/api/register', async (req, res) => {
 
 
 // API for login
+// API for login
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -300,17 +339,25 @@ app.post('/api/login', async (req, res) => {
         });
 
         if (user) {
-            // Compare the provided password with the hashed password
             const passwordMatch = await bcrypt.compare(password, user.password);
-
             if (passwordMatch) {
                 req.session.userId = user.id;
                 req.session.username = user.username;
-                req.session.isAffiliateOwner = user.isAffiliateOwner || false; // Store in session
+                req.session.isAffiliateOwner = user.isAffiliateOwner || false;
+
+                // Kontrollime, kas kasutaja on treener kuskil affiliate all
+                const trainerAffiliates = await prisma.affiliateTrainer.findMany({
+                    where: { trainerId: user.id },
+                    select: { affiliateId: true }
+                });
+
+                req.session.isTrainer = trainerAffiliates.length > 0; // True kui treener kuskil
+                req.session.trainerAffiliateIds = trainerAffiliates.map(a => a.affiliateId);
 
                 res.status(200).json({
                     message: 'Login successful!',
-                    isAffiliateOwner: user.isAffiliateOwner || false,
+                    isAffiliateOwner: req.session.isAffiliateOwner,
+                    isTrainer: req.session.isTrainer
                 });
             } else {
                 res.status(401).json({ error: 'Invalid username or password.' });
@@ -323,6 +370,7 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'An error occurred during login.' });
     }
 });
+
 
 
 // Profile view, protected
@@ -937,28 +985,66 @@ app.post('/api/user/monthly-goal', ensureAuthenticated, async (req, res) => {
 
 
 // API endpoint to get classes within a date range
-app.get('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
-    const ownerId = req.session.userId;
-    const { start, end } = req.query;
+app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    // Kui owner - saab näha enda affiliate klasse.
+    // Kui trainer - saab näha ainult neid klasse, mis kuuluvad affiliate'ile, kus ta treener.
 
-    try {
-        // Muuda kuupäeva alguse ja lõpu määratlust
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        endDate.setHours(23, 59, 59, 999); // Veendu, et päev lõpeb õigesti
-
-        const classes = await prisma.classSchedule.findMany({
+    let classes = [];
+    if (req.session.isAffiliateOwner) {
+        classes = await prisma.classSchedule.findMany({
+            where: { ownerId: req.session.userId },
+            orderBy: { time: 'asc' }
+        });
+    } else if (req.session.isTrainer) {
+        // Laeme kõik classid, mis kuuluvad affiliate'idele, mille treener ta on
+        classes = await prisma.classSchedule.findMany({
             where: {
-                ownerId,
-                time: {
-                    gte: startDate,
-                    lte: endDate
+                ownerId: {
+                    in: req.session.trainerAffiliateIds // Need affiliate'id kus ta treener
                 }
             },
             orderBy: { time: 'asc' }
         });
+    }
 
-        res.json(classes);
+    res.render('classes', { title: 'Classes', layout: 'owner', classes });
+});
+
+
+
+// API endpoint to create a new class
+app.get('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const { start, end } = req.query;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    // Kontrollime currentRole
+    try {
+        let whereClause = {
+            time: {
+                gte: startDate,
+                lte: endDate
+            }
+        };
+
+        if (req.session.currentRole === 'owner') {
+            // Owner rollis kasutaja näeb ainult oma affiliate klasse
+            whereClause.ownerId = req.session.userId;
+        } else if (req.session.currentRole === 'trainer') {
+            // Trainer rollis kasutaja näeb ainult nende affiliatide klasse, kus ta treener on
+            // Ei kuva tema enda affiliate classe, isegi kui ta on ka owner, seda rolli ei kasutata praegu
+            whereClause.ownerId = { in: req.session.trainerAffiliateIds || [] };
+        } else {
+            // Regular user või pole rolli - teoorias siia ei jõua ensureOwnerOrTrainer tõttu
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        const classes = await prisma.classSchedule.findMany({
+            where: whereClause,
+            orderBy: { time: 'asc' }
+        });
+
+        return res.json(classes);
     } catch (error) {
         console.error('Error fetching classes:', error);
         res.status(500).json({ error: 'Failed to fetch classes.' });
@@ -966,9 +1052,9 @@ app.get('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, r
 });
 
 
+// API endpoint to update a class
 // API endpoint to create a new class
-app.post('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
-    const ownerId = req.session.userId;
+app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
     const {
         trainingName,
         date,
@@ -980,46 +1066,68 @@ app.post('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, 
     } = req.body;
 
     try {
-        const classData = {
-            trainingName,
-            time: new Date(`${date}T${time}`),
-            trainer,
-            memberCapacity: memberCapacity ? parseInt(memberCapacity) : null,
-            location,
-            repeatWeekly,
-            ownerId
-        };
+        if (!req.session.currentRole) {
+            return res.status(403).json({ error: 'Role not selected.' });
+        }
 
-        // Create the class
+        // Parseeri repeatWeekly kindlalt booleaniksväärtuseks
+        const repeatWeeklyBool = (repeatWeekly === true || repeatWeekly === 'true');
+
+        let selectedOwnerId;
+        if (req.session.currentRole === 'owner') {
+            selectedOwnerId = req.session.userId;
+        } else if (req.session.currentRole === 'trainer') {
+            const trainerAffiliates = req.session.trainerAffiliateIds || [];
+            if (trainerAffiliates.length === 0) {
+                return res.status(403).json({ error: 'No affiliate available for trainer role.' });
+            }
+            selectedOwnerId = trainerAffiliates[0];
+        } else {
+            return res.status(403).json({ error: 'No permission.' });
+        }
+
+        const classTime = new Date(`${date}T${time}`);
         const newClass = await prisma.classSchedule.create({
-            data: classData
+            data: {
+                trainingName,
+                time: classTime,
+                trainer: trainer || null,
+                memberCapacity: parseInt(memberCapacity) || 0,
+                location: location || null,
+                repeatWeekly: repeatWeeklyBool,
+                ownerId: selectedOwnerId
+            }
         });
 
-// Assign seriesId to the original class
+        // Uuenda seriesId põhiklassil
         await prisma.classSchedule.update({
             where: { id: newClass.id },
             data: { seriesId: newClass.id }
         });
 
-// If repeatWeekly is true, create future classes
-        if (repeatWeekly) {
+        // Kui repeatWeekly = true, loo tulevased klassid
+        if (repeatWeeklyBool) {
             const repeats = [];
-            let nextTime = new Date(newClass.time);
+            let nextTime = new Date(classTime.getTime()); // algne treeninguaeg
+
+            // Loome 52 järgmist nädalat
             for (let i = 1; i <= 52; i++) {
-                nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+                nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Lisa 7 päeva iga iteratsiooniga
                 repeats.push({
                     trainingName,
                     time: new Date(nextTime),
-                    trainer,
+                    trainer: trainer || null,
                     memberCapacity: newClass.memberCapacity,
-                    location,
-                    repeatWeekly,
-                    ownerId,
-                    seriesId: newClass.id // Assign the seriesId
+                    location: newClass.location,
+                    repeatWeekly: true,
+                    ownerId: selectedOwnerId,
+                    seriesId: newClass.id
                 });
             }
+
             await prisma.classSchedule.createMany({ data: repeats });
         }
+
 
         res.status(201).json({ message: 'Class created successfully!' });
     } catch (error) {
@@ -1028,9 +1136,9 @@ app.post('/api/classes', ensureAuthenticated, ensureAffiliateOwner, async (req, 
     }
 });
 
+
 // API endpoint to update a class
-app.put('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
-    const ownerId = req.session.userId;
+app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
     const classId = parseInt(req.params.id);
     const {
         trainingName,
@@ -1043,70 +1151,92 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async (re
     } = req.body;
 
     try {
-        // Fetch existing class
         const existingClass = await prisma.classSchedule.findUnique({
             where: { id: classId }
         });
 
-        if (!existingClass || existingClass.ownerId !== ownerId) {
+        if (!existingClass) {
+            return res.status(404).json({ error: 'Class not found.' });
+        }
+
+        if (!req.session.currentRole) {
+            return res.status(403).json({ error: 'Role not selected.' });
+        }
+
+        // Kontrollime rolli, kas kasutajal on õigus seda klassi muuta
+        let allowedOwnerIds = [];
+        if (req.session.currentRole === 'owner') {
+            allowedOwnerIds = [req.session.userId];
+        } else if (req.session.currentRole === 'trainer') {
+            allowedOwnerIds = req.session.trainerAffiliateIds || [];
+        } else {
+            return res.status(403).json({ error: 'No permission.' });
+        }
+
+        if (!allowedOwnerIds.includes(existingClass.ownerId)) {
             return res.status(403).json({ error: 'Not authorized to update this class.' });
         }
 
-        const classData = {
-            trainingName,
-            time: new Date(`${date}T${time}`),
-            trainer,
-            memberCapacity: memberCapacity ? parseInt(memberCapacity) : null,
-            location,
-            repeatWeekly
-        };
+        const classTime = new Date(`${date}T${time}`);
+        const repeatWeeklyBool = (repeatWeekly === true || repeatWeekly === 'true');
 
-        // Update the class
-        await prisma.classSchedule.update({
+        // Vana repeatWeekly väärtus
+        const oldRepeatWeekly = existingClass.repeatWeekly;
+
+        // Uuenda põhi-treeningut
+        const updatedClass = await prisma.classSchedule.update({
             where: { id: classId },
-            data: classData
+            data: {
+                trainingName,
+                time: classTime,
+                trainer: trainer || null,
+                memberCapacity: parseInt(memberCapacity) || 0,
+                location: location || null,
+                repeatWeekly: repeatWeeklyBool
+            }
         });
 
-        // Handle changes to repeatWeekly
-        if (existingClass.repeatWeekly && !repeatWeekly) {
-            // Changed from true to false
-            // Delete future classes in the series
-            await prisma.classSchedule.deleteMany({
-                where: {
-                    seriesId: existingClass.seriesId,
-                    time: {
-                        gt: existingClass.time
-                    },
-                    id: {
-                        not: existingClass.id
+        // Kui repeatWeekly staatus muutus:
+        if (oldRepeatWeekly !== repeatWeeklyBool) {
+            // Kui repeatWeekly on nüüd false, kustutame kõik tulevased treeningud
+            if (!repeatWeeklyBool) {
+                // Kustuta kõik treeningud, mille seriesId = updatedClass.seriesId ja time > updatedClass.time
+                await prisma.classSchedule.deleteMany({
+                    where: {
+                        seriesId: updatedClass.seriesId,
+                        time: { gt: updatedClass.time }
                     }
-                }
-            });
-        } else if (!existingClass.repeatWeekly && repeatWeekly) {
-            // Changed from false to true
-            // Create future classes
-            const repeats = [];
-            let nextTime = new Date(classData.time);
-            for (let i = 1; i <= 52; i++) {
-                nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000);
-                repeats.push({
-                    trainingName,
-                    time: new Date(nextTime),
-                    trainer,
-                    memberCapacity: classData.memberCapacity,
-                    location,
-                    repeatWeekly,
-                    ownerId,
-                    seriesId: existingClass.id
                 });
-            }
-            await prisma.classSchedule.createMany({ data: repeats });
+            } else {
+                // Kui repeatWeekly on nüüd true, loome tulevased treeningud
+                // Eemalda kõik tulevased treeningud enne, et vältida duplikaate
+                await prisma.classSchedule.deleteMany({
+                    where: {
+                        seriesId: updatedClass.seriesId,
+                        time: { gt: updatedClass.time }
+                    }
+                });
 
-            // Update the seriesId of the existing class
-            await prisma.classSchedule.update({
-                where: { id: existingClass.id },
-                data: { seriesId: existingClass.id }
-            });
+                const repeats = [];
+                let nextTime = new Date(classTime);
+                for (let i = 1; i <= 52; i++) {
+                    nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    repeats.push({
+                        trainingName,
+                        time: new Date(nextTime),
+                        trainer: trainer || null,
+                        memberCapacity: updatedClass.memberCapacity,
+                        location: updatedClass.location,
+                        repeatWeekly: true,
+                        ownerId: existingClass.ownerId,
+                        seriesId: updatedClass.seriesId
+                    });
+                }
+
+                if (repeats.length > 0) {
+                    await prisma.classSchedule.createMany({ data: repeats });
+                }
+            }
         }
 
         res.status(200).json({ message: 'Class updated successfully!' });
@@ -1117,8 +1247,8 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async (re
 });
 
 
-app.delete('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
-    const ownerId = req.session.userId;
+// API endpoint to delete a class
+app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
     const classId = parseInt(req.params.id);
 
     try {
@@ -1126,22 +1256,35 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async 
             where: { id: classId }
         });
 
-        if (!existingClass || existingClass.ownerId !== ownerId) {
+        if (!existingClass) {
+            return res.status(404).json({ error: 'Class not found.' });
+        }
+
+        if (!req.session.currentRole) {
+            return res.status(403).json({ error: 'Role not selected.' });
+        }
+
+        let allowedOwnerIds = [];
+        if (req.session.currentRole === 'owner') {
+            allowedOwnerIds = [req.session.userId];
+        } else if (req.session.currentRole === 'trainer') {
+            allowedOwnerIds = req.session.trainerAffiliateIds || [];
+        } else {
+            return res.status(403).json({ error: 'No permission.' });
+        }
+
+        if (!allowedOwnerIds.includes(existingClass.ownerId)) {
             return res.status(403).json({ error: 'Not authorized to delete this class.' });
         }
 
         if (existingClass.seriesId) {
-            // Delete this class and future classes in the series
             await prisma.classSchedule.deleteMany({
                 where: {
                     seriesId: existingClass.seriesId,
-                    time: {
-                        gte: existingClass.time
-                    }
+                    time: { gte: existingClass.time }
                 }
             });
         } else {
-            // Delete only this class
             await prisma.classSchedule.delete({
                 where: { id: classId }
             });
@@ -1153,6 +1296,7 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureAffiliateOwner, async 
         res.status(500).json({ error: 'Failed to delete class.' });
     }
 });
+
 
 // API endpoint to get all plans
 app.get('/api/plans', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
