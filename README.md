@@ -19,8 +19,8 @@ The IronTrack Application is a web-based workout diary where you can add your wo
 | Notifications          |      | Reminders and notifications for regular training.                   |
 | Cloud Data Storage |      | Cloud storage for workout data, allowing multi-device access. |
 | Gym Owner Accounts           |      :heavy_check_mark:      | Gym owners can create accounts to manage their gym's workouts and services. |
-| Add Gym Workouts             |                | Gym owners can add workouts/classes to their gym's schedule.                |
-| User Registration for Gym Workouts |                | Users can register for gym workouts/classes added by gym owners.            |
+| Add Gym Workouts             |       :heavy_check_mark:         | Gym owners can add workouts/classes to their gym's schedule.                |
+| User Registration for Gym Workouts |        :heavy_check_mark:        | Users can register for gym workouts/classes added by gym owners.            |
 | Membership Payments          |                | Users can pay membership fees to gym owners through the platform.           |
 
 
