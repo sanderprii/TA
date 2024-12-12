@@ -29,6 +29,7 @@ model User {
   Plan             Plan[]
   Affiliate        Affiliate[]
   AffiliateTrainer AffiliateTrainer[]
+  classAttendances ClassAttendee[]
 }
 
 model Training {
@@ -70,16 +71,17 @@ model defaultWOD {
 }
 
 model ClassSchedule {
-  id             Int      @id @default(autoincrement())
+  id             Int             @id @default(autoincrement())
   trainingName   String
   time           DateTime
   trainer        String?
   memberCapacity Int
   location       String?
-  repeatWeekly   Boolean  @default(false)
+  repeatWeekly   Boolean         @default(false)
   ownerId        Int
-  owner          User     @relation(fields: [ownerId], references: [id])
+  owner          User            @relation(fields: [ownerId], references: [id])
   seriesId       Int?
+  attendees      ClassAttendee[]
 }
 
 model Plan {
@@ -109,6 +111,16 @@ model AffiliateTrainer {
   trainerId   Int
   trainer     User      @relation(fields: [trainerId], references: [id])
   // Optional: @@unique([affiliateId, trainerId]) to prevent duplicates
-
   @@unique([affiliateId, trainerId])
+}
+
+model ClassAttendee {
+  id            Int           @id @default(autoincrement())
+  classId       Int
+  classSchedule ClassSchedule @relation(fields: [classId], references: [id])
+  userId        Int
+  user          User          @relation(fields: [userId], references: [id])
+  createdAt     DateTime      @default(now())
+
+  @@unique([classId, userId]) // vältimaks duplikaatregistratsioone
 }

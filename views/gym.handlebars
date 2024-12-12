@@ -3,3 +3,27 @@
     <h1>Affiliate Owner Dashboard</h1>
     <!-- Add content specific to the affiliate owner here -->
 </div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/current-role')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.currentRole) {
+                        const navBar = document.querySelector('#nav-bar');
+                        const ownerNav = navBar.querySelector('.owner-nav');
+                        const trainerNav = navBar.querySelector('.trainer-nav');
+
+                        if (data.currentRole === 'owner') {
+                            ownerNav.style.display = 'block';
+                            trainerNav.style.display = 'none';
+                        } else if (data.currentRole === 'trainer') {
+                            ownerNav.style.display = 'none';
+                            trainerNav.style.display = 'block';
+                        }
+                    }
+                })
+                .catch(err => console.error('Error fetching current role:', err));
+    });
+</script>
