@@ -16,7 +16,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-opacity-75">
     <div class="container-fluid">
         <!-- Navbar Brand -->
-        <a class="navbar-brand" href="{{#if username}}/{{/if}}">IronTrack</a>
+        <a class="navbar-brand" href="{{#if username}}/{{else}}/info{{/if}}">IronTrack</a>
 
         <!-- Navbar Toggler -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -32,15 +32,23 @@
             <!-- Right Side Navbar -->
             <ul class="navbar-nav ms-auto align-items-center">
                 {{#if username}}
-
-                        <li class="nav-item">
-                            <a href="/profile" class="nav-link btn btn-danger btn-prof">My Profile</a>
-                        </li>
-
+                    <!-- Kui kasutajanimi on määratletud -->
+                    <li class="nav-item">
+                        <a href="/profile" class="nav-link btn btn-danger btn-prof">My Profile</a>
+                    </li>
                     <li class="nav-item">
                         <button id="logout-btn" class="btn btn-danger nav-link">Log Out</button>
                     </li>
+                {{else}}
+                    <!-- Kui kasutajanimi puudub -->
+                    <li class="nav-item">
+                        <a href="/login" class="nav-link btn btn-danger btn-prof">Log In</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/register" class="nav-link btn btn-danger btn-prof">Register</a>
+                    </li>
                 {{/if}}
+
             </ul>
         </div>
     </div>
@@ -70,7 +78,7 @@
                         method: 'POST',
                     });
                     if (response.ok) {
-                        window.location.href = '/login';
+                        window.location.href = '/info';
                     } else {
                         alert('Logout failed.');
                     }

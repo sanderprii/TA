@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/api/logout', { method: 'POST' });
                 if (response.ok) {
                     alert('Logged out successfully');
-                    window.location.href = '/login'; // Redirect to login page
+                    window.location.href = '/info'; // Redirect to login page
                 } else {
                     alert('Logout failed');
                 }

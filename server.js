@@ -72,7 +72,7 @@ function ensureAuthenticated(req, res, next) {
         return res.status(401).json({ error: 'Unauthorized' });
     } else {
         // Redirect to login page
-        res.redirect('/login');
+        res.redirect('/info');
     }
 }
 
@@ -89,6 +89,11 @@ app.use((req, res, next) => {
 // Home page, protected route
 app.get('/', ensureAuthenticated, (req, res) => {
     res.render('home', { title: 'Home' });
+});
+
+// info view
+app.get('/info', (req, res) => {
+    res.render('info', { title: 'info' });
 });
 
 // Register view

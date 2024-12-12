@@ -196,6 +196,44 @@ h1, h2, h3 {
     }
 }
 
+/* info page */
+
+h1, h2 {
+    font-weight: bold;
+}
+
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.text-secondary {
+    color: #6c757d !important;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.list-unstyled li {
+    padding: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
 /* login and register page */
 
 .role-button {
