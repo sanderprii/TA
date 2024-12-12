@@ -1,0 +1,522 @@
+<!-- register-training.handlebars -->
+
+
+
+
+<div class="container mt-4">
+    <h1>Register for Training</h1>
+
+    <div class="mb-3 position-relative">
+
+        <input type="text" class="form-control" id="affiliateSearch" placeholder="Type affiliate name...">
+        <div id="affiliateSuggestions" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
+    </div>
+
+
+
+    <div id="affiliateInfo" style="display:none;">
+        <h3>Affiliate Information</h3>
+        <p><strong>Name:</strong> <span id="affName"></span></p>
+        <p><strong>Address:</strong> <span id="affAddress"></span></p>
+        <p><strong>Training Type:</strong> <span id="affTrainingType"></span></p>
+        <h4>Trainers:</h4>
+        <ul id="affTrainers"></ul>
+
+        <button id="viewScheduleBtn" class="btn btn-secondary mt-3">View Schedule</button>
+    </div>
+
+    <div id="scheduleContainer" style="display:none;" class="mt-4">
+        <h2>Schedule</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <button id="prev-week" class="btn btn-secondary btn-sm">Previous Week</button>
+                <button id="next-week" class="btn btn-secondary btn-sm">Next Week</button>
+            </div>
+            <div>
+                <span id="current-week" class="h5"></span>
+            </div>
+        </div>
+        <!-- Päevade nupud väikese ekraani jaoks -->
+        <div id="day-buttons" class="mb-3 d-flex justify-content-between" style="display:none;">
+            <!-- Siia lisame dünaamiliselt 7 päeva nupud -->
+        </div>
+        <div id="schedule"></div>
+    </div>
+
+</div>
+
+<!-- Modal for class details and registration -->
+<div class="modal fade" id="classModal" tabindex="-1" aria-labelledby="classModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="classModalLabel" class="modal-title">Class Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="classCapacityInfo"><strong>Free spots:</strong> <span id="freeSpots"></span> / <strong>Class capacity:</strong> <span id="classCapacity"></span></p>
+                <p><strong>Training Name:</strong> <span id="modalTrainingName"></span></p>
+                <p><strong>Time:</strong> <span id="modalTime"></span></p>
+                <p><strong>Trainer:</strong> <span id="modalTrainer"></span></p>
+                <p><strong>Location:</strong> <span id="modalLocation"></span></p>
+                <input type="hidden" id="modalClassId">
+            </div>
+            <div class="modal-footer">
+                <button id="registerForClassBtn" type="button" class="btn btn-primary">Register for Class</button>
+                <button id="cancelClassBtn" type="button" class="btn btn-danger" style="display:none;">Cancel Training</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    // public/register-training.js
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        const affiliateSearch = document.getElementById('affiliateSearch');
+        const affiliateSuggestions = document.getElementById('affiliateSuggestions');
+        const affiliateInfo = document.getElementById('affiliateInfo');
+        const affName = document.getElementById('affName');
+        const affAddress = document.getElementById('affAddress');
+        const affTrainingType = document.getElementById('affTrainingType');
+        const affTrainers = document.getElementById('affTrainers');
+        const viewScheduleBtn = document.getElementById('viewScheduleBtn');
+        const scheduleContainer = document.getElementById('scheduleContainer');
+
+        const currentWeekElement = document.getElementById('current-week');
+        const scheduleElement = document.getElementById('schedule');
+
+        const dayButtonsContainer = document.getElementById('day-buttons');
+
+        const classModal = new bootstrap.Modal(document.getElementById('classModal'));
+        const registerForClassBtn = document.getElementById('registerForClassBtn');
+        const cancelClassBtn = document.getElementById('cancelClassBtn');
+        const modalTrainingName = document.getElementById('modalTrainingName');
+        const modalTime = document.getElementById('modalTime');
+        const modalTrainer = document.getElementById('modalTrainer');
+        const modalLocation = document.getElementById('modalLocation');
+        const modalClassId = document.getElementById('modalClassId');
+
+        let selectedAffiliateId = null;
+        let currentDate = new Date();
+        let classesData = [];
+
+        let isSmallScreen = window.innerWidth < 769; // kontrolli ekraani laiust
+        let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
+
+// Funktsioon tuvastamaks tänase päeva indeksit (0=Mon,...,6=Sun)
+        function getTodayDayIndex(date) {
+            const g = date.getDay(); // 0 (pühap) - 6(laup)
+            // Meie nädal algab esmaspäev(=1 getDay), seega teisendame:
+            // Mon(1)->0, Tue(2)->1, ..., Sun(0)->6
+            return g === 0 ? 6 : g - 1;
+        }
+
+        // Kui on väike ekraan, siis vaikimisi tänane päev
+        if (isSmallScreen) {
+            selectedDayIndex = getTodayDayIndex(new Date());
+        }
+
+        // Otsingukasti eventid
+        affiliateSearch.addEventListener('input', async function() {
+            const query = affiliateSearch.value.trim();
+            affiliateSuggestions.innerHTML = '';
+            if (query.length > 0) {
+                try {
+                    const response = await fetch(`/api/search-affiliates?q=${encodeURIComponent(query)}`);
+                    const affiliates = await response.json();
+                    if (Array.isArray(affiliates)) {
+                        affiliates.forEach(a => {
+                            const item = document.createElement('a');
+                            item.href = '#';
+                            item.classList.add('list-group-item', 'list-group-item-action');
+                            item.textContent = a.name;
+                            item.addEventListener('click', async (e) => {
+                                e.preventDefault();
+                                affiliateSearch.value = a.name;
+                                affiliateSuggestions.innerHTML = '';
+
+                                // Laeme kohe affiliate info ilma nupuvajutuseta
+                                await loadAffiliateInfo(a.name);
+                            });
+                            affiliateSuggestions.appendChild(item);
+                        });
+                    } else {
+                        console.error('Unexpected response format', affiliates);
+                    }
+                } catch (err) {
+                    console.error('Error searching affiliates:', err);
+                }
+            }
+        });
+
+        async function loadAffiliateInfo(name) {
+            try {
+                const response = await fetch(`/api/get-affiliate-by-name?name=${encodeURIComponent(name)}`);
+                const data = await response.json();
+                if (data && data.affiliate) {
+                    selectedAffiliateId = data.affiliate.ownerId;
+                    affName.textContent = data.affiliate.name;
+                    affAddress.textContent = data.affiliate.address;
+                    affTrainingType.textContent = data.affiliate.trainingType;
+                    affTrainers.innerHTML = '';
+                    data.trainers.forEach(t => {
+                        const li = document.createElement('li');
+                        li.textContent = t.fullName || t.username;
+                        affTrainers.appendChild(li);
+                    });
+                    affiliateInfo.style.display = 'block';
+                } else {
+                    affiliateInfo.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Error fetching affiliate data:', err);
+            }
+        }
+
+        viewScheduleBtn.addEventListener('click', async function() {
+            if (!selectedAffiliateId) return;
+            scheduleContainer.style.display = 'block';
+
+            // Peida otsinguriba ja affiliate info
+            const affiliateInfo = document.getElementById('affiliateInfo');
+            const affiliateSearchInput = document.getElementById('affiliateSearch');
+            const affiliateSuggestions = document.getElementById('affiliateSuggestions');
+
+            if (affiliateInfo) affiliateInfo.style.display = 'none';
+            if (affiliateSearchInput) affiliateSearchInput.style.display = 'none';
+            if (affiliateSuggestions) affiliateSuggestions.style.display = 'none';
+
+            loadSchedule();
+        });
+
+        document.getElementById('prev-week').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() - 7);
+            loadSchedule();
+        });
+
+        document.getElementById('next-week').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() + 7);
+            loadSchedule();
+        });
+
+        async function loadSchedule() {
+            const startOfWeek = getStartOfWeek(currentDate);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999); // Tagab, et pühapäeva lõpuni kaasatakse
+
+            currentWeekElement.textContent = `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
+
+            try {
+                const response = await fetch(`/api/classes-view?affiliateId=${selectedAffiliateId}&start=${startOfWeek.toISOString()}&end=${endOfWeek.toISOString()}`);
+                console.log('API Response:', response);
+                classesData = await response.json();
+                console.log('Classes Data:', classesData);
+                renderSchedule(startOfWeek);
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+            }
+        }
+
+        function renderSchedule(startOfWeek) {
+            scheduleElement.innerHTML = '';
+
+            isSmallScreen = window.innerWidth < 769; // kontrolli uuesti kui resize on toimunud
+
+            if (isSmallScreen) {
+                // Näita päevade nuppe
+                dayButtonsContainer.style.display = 'flex';
+                renderDayButtons(startOfWeek);
+                renderDailyView(startOfWeek);
+            } else {
+                // Peida päevade nupud
+                dayButtonsContainer.style.display = 'none';
+                renderWeeklyView(startOfWeek);
+            }
+        }
+
+        function renderWeeklyView(startOfWeek) {
+            const table = document.createElement('table');
+            table.classList.add('table', 'table-bordered', 'table-sm');
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const days = ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            days.forEach(day => {
+                const th = document.createElement('th');
+                th.textContent = day;
+                th.classList.add('text-center');
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+
+            for (let hour = 6; hour <= 22; hour++) {
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.textContent = `${hour}:00`;
+                timeCell.classList.add('text-center','fw-bold');
+                row.appendChild(timeCell);
+
+                for (let i = 0; i < 7; i++) {
+                    const cell = document.createElement('td');
+                    cell.classList.add('align-top');
+
+                    const cellDate = new Date(startOfWeek);
+                    cellDate.setDate(cellDate.getDate() + i);
+                    cellDate.setHours(hour, 0, 0, 0);
+
+                    const classesAtTime = classesData.filterMatches(cellDate);
+                    classesAtTime.forEach(c => {
+                        const classDiv = createClassDiv(c);
+                        cell.appendChild(classDiv);
+                    });
+
+                    row.appendChild(cell);
+                }
+
+                tbody.appendChild(row);
+            }
+
+            table.appendChild(tbody);
+            scheduleElement.appendChild(table);
+        }
+
+        function renderDailyView(startOfWeek) {
+            // Kuvame ainult ühe päeva, mille indeks on selectedDayIndex
+            // Päeva nimi ja number on juba nuppudes olemas, siit lihtsalt renderdame ajakavaga sarnase tabeli, aga ainult 1 päev
+            const table = document.createElement('table');
+            table.classList.add('table', 'table-bordered', 'table-sm');
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][selectedDayIndex];
+            const timeTh = document.createElement('th');
+            timeTh.textContent = 'Time';
+            timeTh.classList.add('text-center');
+            const dayTh = document.createElement('th');
+            dayTh.textContent = dayName;
+            dayTh.classList.add('text-center');
+            headerRow.appendChild(timeTh);
+            headerRow.appendChild(dayTh);
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            for (let hour = 6; hour <= 22; hour++) {
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.textContent = `${hour}:00`;
+                timeCell.classList.add('text-center','fw-bold');
+                row.appendChild(timeCell);
+
+                const cell = document.createElement('td');
+                cell.classList.add('align-top');
+
+                const cellDate = new Date(startOfWeek);
+                cellDate.setDate(cellDate.getDate() + selectedDayIndex);
+                cellDate.setHours(hour, 0, 0, 0);
+
+                const classesAtTime = classesData.filterMatches(cellDate);
+                classesAtTime.forEach(c => {
+                    const classDiv = createClassDiv(c);
+                    cell.appendChild(classDiv);
+                });
+
+                row.appendChild(cell);
+                tbody.appendChild(row);
+            }
+
+            table.appendChild(tbody);
+            scheduleElement.appendChild(table);
+        }
+
+        function renderDayButtons(startOfWeek) {
+            dayButtonsContainer.innerHTML = '';
+            const dayNamesShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            for (let i = 0; i < 7; i++) {
+                const btn = document.createElement('button');
+                btn.classList.add('btn', 'btn-outline-primary', 'btn-sm', 'day-btn');
+                const dayDate = new Date(startOfWeek);
+                dayDate.setDate(dayDate.getDate() + i);
+                const dayNumber = dayDate.getDate();
+                btn.textContent = `${dayNamesShort[i]} ${dayNumber}`;
+                if (i === selectedDayIndex) {
+                    btn.classList.add('btn-primary');
+                    btn.classList.remove('btn-outline-primary');
+                }
+                btn.addEventListener('click', () => {
+                    selectedDayIndex = i;
+                    // uuenda nuppude stiili
+                    document.querySelectorAll('.day-btn').forEach((b, idx) => {
+                        b.classList.remove('btn-primary');
+                        b.classList.add('btn-outline-primary');
+                        if (idx === i) {
+                            b.classList.add('btn-primary');
+                            b.classList.remove('btn-outline-primary');
+                        }
+                    });
+                    renderSchedule(startOfWeek);
+                });
+                dayButtonsContainer.appendChild(btn);
+            }
+        }
+
+        // Abifunktsioon, et leida antud kuupäevaga klassen
+        Array.prototype.filterMatches = function(cellDate) {
+            return this.filter(c => {
+                const classDate = new Date(c.time);
+                return classDate.getFullYear() === cellDate.getFullYear() &&
+                        classDate.getMonth() === cellDate.getMonth() &&
+                        classDate.getDate() === cellDate.getDate() &&
+                        classDate.getHours() === cellDate.getHours();
+            });
+        };
+
+        function createClassDiv(c) {
+            const classDiv = document.createElement('div');
+            classDiv.textContent = c.trainingName;
+            classDiv.classList.add('class-entry', 'mb-1', 'p-1', 'bg-primary', 'text-white', 'rounded');
+            classDiv.style.cursor = 'pointer';
+            classDiv.addEventListener('click', () => {
+                openClassModal(c);
+            });
+            return classDiv;
+        }
+
+        async function openClassModal(cls) {
+            modalTrainingName.textContent = cls.trainingName;
+            const classTime = new Date(cls.time);
+            modalTime.textContent = classTime.toLocaleString();
+            modalTrainer.textContent = cls.trainer || 'N/A';
+            modalLocation.textContent = cls.location || 'N/A';
+            modalClassId.value = cls.id;
+
+            // Uus samm: lae class info (capacity, enrolled count)
+            await loadClassInfo(cls.id);
+
+            // Kontrolli, kas kasutaja on registreeritud
+            await checkEnrollment(cls.id);
+
+            classModal.show();
+        }
+
+        async function loadClassInfo(classId) {
+            try {
+                const response = await fetch(`/api/class-info?classId=${classId}`);
+
+                const data = await response.json();
+                if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
+                    const freeSpots = data.memberCapacity - data.enrolledCount;
+                    document.getElementById('freeSpots').textContent = freeSpots;
+                    document.getElementById('classCapacity').textContent = data.memberCapacity;
+                } else {
+                    // Kui andmete lugemine ebaõnnestus, pane mingid vaikimisi väärtused
+                    document.getElementById('freeSpots').textContent = '?';
+                    document.getElementById('classCapacity').textContent = '?';
+                }
+            } catch (err) {
+                console.error('Error loading class info:', err);
+                document.getElementById('freeSpots').textContent = '?';
+                document.getElementById('classCapacity').textContent = '?';
+            }
+        }
+
+        document.getElementById('prev-week').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() - 7);
+            loadSchedule();
+        });
+
+        document.getElementById('next-week').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() + 7);
+            loadSchedule();
+        });
+
+        async function checkEnrollment(classId) {
+            try {
+                const response = await fetch(`/api/is-enrolled?classId=${classId}`);
+                const data = await response.json();
+                if (data.isEnrolled) {
+                    // Kasutaja on juba registreeritud
+                    registerForClassBtn.style.display = 'none';
+                    cancelClassBtn.style.display = 'inline-block';
+                } else {
+                    // Kasutaja ei ole registreeritud
+                    registerForClassBtn.style.display = 'inline-block';
+                    cancelClassBtn.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Error checking enrollment:', err);
+            }
+        }
+
+        // "Register for class" klikk on juba olemas
+        registerForClassBtn.addEventListener('click', async function() {
+            const classId = modalClassId.value;
+            if (!classId) return;
+            try {
+                const response = await fetch('/api/register-for-class', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ classId })
+                });
+                if (response.ok) {
+                    alert('Registered successfully!');
+                    // Näita nüüd "Cancel Training" nuppu
+                    registerForClassBtn.style.display = 'none';
+                    cancelClassBtn.style.display = 'inline-block';
+                } else {
+                    const err = await response.json();
+                    alert('Error registering: ' + err.error);
+                }
+            } catch (err) {
+                console.error('Error registering for class:', err);
+            }
+        });
+
+        // "Cancel training" klikk
+        cancelClassBtn.addEventListener('click', async function() {
+            const classId = modalClassId.value;
+            if (!classId) return;
+
+
+            try {
+                const response = await fetch(`/api/register-for-class?classId=${classId}`, {
+                    method: 'DELETE',
+                });
+                if (response.ok) {
+
+                    // Nüüd näita uuesti "Register for Class"
+                    registerForClassBtn.style.display = 'inline-block';
+                    cancelClassBtn.style.display = 'none';
+                } else {
+                    const err = await response.json();
+                    alert('Error canceling enrollment: ' + err.error);
+                }
+            } catch (err) {
+                console.error('Error canceling enrollment:', err);
+            }
+        });
+
+        function getStartOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = (day === 0 ? -6 : 1) - day;
+            d.setDate(d.getDate() + diff);
+            d.setHours(0,0,0,0);
+            return d;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString();
+        }
+    });
+
+
+</script>

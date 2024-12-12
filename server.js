@@ -111,6 +111,11 @@ app.get('/stat', ensureAuthenticated, (req, res) => {
     res.render('stat', { title: 'Statistics and Analysis' });
 });
 
+// Register-training view
+app.get('/register-training', ensureAuthenticated, (req, res) => {
+    res.render('register-training', { title: 'Register for Training' });
+});
+
 // Route to choose role after login
 app.get('/choose-role', ensureAuthenticated, (req, res) => {
     const isOwner = req.session.isAffiliateOwner;
@@ -127,10 +132,13 @@ app.get('/choose-role', ensureAuthenticated, (req, res) => {
     // Regular user alati kättesaadav
     roles.push({ url: '/', label: 'Regular User' });
 
-    res.render('choose-role', { title: 'Choose Role', roles });
+    res.render('choose-role', { title: 'Choose Role', roles, isOwner,
+        isTrainer });
 });
 
-
+app.get('/api/current-role', ensureAuthenticated, (req, res) => {
+    res.json({ currentRole: req.session.currentRole || null });
+});
 
 //  route for /gym
 app.get('/gym', ensureAuthenticated, (req, res) => {
@@ -158,8 +166,10 @@ app.get('/gym', ensureAuthenticated, (req, res) => {
     // Renderda gym leht owner layoutiga
     res.render('gym', {
         title: dashboardTitle,
-        layout: 'owner'
+        layout: 'owner',
+        currentRole: req.session.currentRole,
     });
+
 });
 
 
@@ -972,6 +982,229 @@ app.post('/api/user/monthly-goal', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to update monthly goal.' });
     }
 });
+
+
+// Search affiliates by name (autocomplete)
+app.get('/api/search-affiliates', ensureAuthenticated, async (req, res) => {
+    const q = req.query.q || '';
+    if (!q) return res.status(400).json({ error: 'Query required.' });
+
+    try {
+        const affiliates = await prisma.affiliate.findMany({
+            where: {
+                name: {
+                    contains: q
+                    // eemalda mode: 'insensitive' või uuenda Prisma versioon
+                }
+            },
+            select: { id: true, name: true },
+            take: 10
+        });
+        res.json(affiliates); // Kui results on tühi, tagastatakse []
+    } catch (error) {
+        console.error('Error searching affiliates:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get affiliate by name + trainers
+app.get('/api/get-affiliate-by-name', ensureAuthenticated, async (req, res) => {
+    const name = req.query.name;
+    if (!name) return res.status(400).json({ error: 'Name required.' });
+
+    try {
+        const affiliate = await prisma.affiliate.findFirst({
+            where: {
+                name: { equals: name}
+            },
+            include: {
+                trainers: {
+                    include: {
+                        trainer: true
+                    }
+                }
+            }
+        });
+
+        if (!affiliate) {
+            return res.json({ affiliate: null });
+        }
+
+        const trainers = affiliate.trainers.map(t => ({
+            id: t.trainerId,
+            username: t.trainer.username,
+            fullName: t.trainer.fullName
+        }));
+
+        res.json({ affiliate, trainers });
+    } catch (error) {
+        console.error('Error getting affiliate:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Classes view - read-only for a chosen affiliate
+app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
+    const { affiliateId, start, end } = req.query;
+    console.log('Received /api/classes-view request with affiliateId:', affiliateId, 'start:', start, 'end:', end);
+
+    if (!affiliateId || !start || !end) {
+        console.log('Missing parameters.');
+        return res.status(400).json({ error: 'Missing parameters.' });
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    endDate.setHours(23, 59, 59, 999); // Tagab, et pühapäeva lõpuni kaasatakse
+
+    try {
+        const classes = await prisma.classSchedule.findMany({
+            where: {
+                ownerId: parseInt(affiliateId, 10),
+                time: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            orderBy: { time: 'asc' }
+        });
+
+        console.log(`Found ${classes.length} classes for affiliateId ${affiliateId}`);
+        res.json(classes);
+    } catch (error) {
+        console.error('Error fetching classes:', error);
+        res.status(500).json({ error: 'Failed to fetch classes.' });
+    }
+});
+
+// Register user for a class
+app.post('/api/register-for-class', ensureAuthenticated, async (req, res) => {
+    const { classId } = req.body;
+    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+
+    try {
+        // Kontrolli, kas klass on olemas
+        const cls = await prisma.classSchedule.findUnique({
+            where: { id: parseInt(classId) }
+        });
+
+        if (!cls) {
+            return res.status(404).json({ error: 'Class not found.' });
+        }
+
+        // Kontrollime, kas capacity on täis?
+        const count = await prisma.classAttendee.count({
+            where: { classId: cls.id }
+        });
+
+        if (count >= cls.memberCapacity) {
+            return res.status(400).json({ error: 'Class is full.' });
+        }
+
+        // Lisa kasutaja sellele klassile
+        await prisma.classAttendee.create({
+            data: {
+                classId: cls.id,
+                userId: req.session.userId
+            }
+        });
+
+        res.json({ message: 'Registered successfully!' });
+    } catch (error) {
+        console.error('Error registering for class:', error);
+        res.status(500).json({ error: 'Failed to register for class.' });
+    }
+});
+
+// Kontrollib, kas kasutaja on juba klassis registreeritud
+app.get('/api/is-enrolled', ensureAuthenticated, async (req, res) => {
+    const classId = parseInt(req.query.classId);
+    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+
+    try {
+        const attendee = await prisma.classAttendee.findUnique({
+            where: {
+                classId_userId: {
+                    classId: classId,
+                    userId: req.session.userId
+                }
+            }
+        });
+
+        const isEnrolled = !!attendee;
+        res.json({ isEnrolled });
+    } catch (error) {
+        console.error('Error checking enrollment:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// Tühistab kasutaja registreeringu antud klassist
+app.delete('/api/register-for-class', ensureAuthenticated, async (req, res) => {
+    const classId = parseInt(req.query.classId);
+    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+
+    try {
+        const attendee = await prisma.classAttendee.findUnique({
+            where: {
+                classId_userId: {
+                    classId: classId,
+                    userId: req.session.userId
+                }
+            }
+        });
+
+        if (!attendee) {
+            return res.status(404).json({ error: 'You are not enrolled in this class.' });
+        }
+
+        await prisma.classAttendee.delete({
+            where: {
+                classId_userId: {
+                    classId: classId,
+                    userId: req.session.userId
+                }
+            }
+        });
+
+        res.json({ message: 'Your enrollment has been canceled.' });
+    } catch (error) {
+        console.error('Error canceling enrollment:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+app.get('/api/class-info', ensureAuthenticated, async (req, res) => {
+    const classId = parseInt(req.query.classId);
+    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+
+    try {
+        const cls = await prisma.classSchedule.findUnique({
+            where: { id: classId },
+            select: {
+                memberCapacity: true,
+            }
+        });
+
+        if (!cls) {
+            return res.status(404).json({ error: 'Class not found.' });
+        }
+
+        // Loe registreeritud kasutajate arv
+        const count = await prisma.classAttendee.count({
+            where: { classId: classId }
+        });
+
+        res.json({
+            memberCapacity: cls.memberCapacity,
+            enrolledCount: count
+        });
+    } catch (error) {
+        console.error('Error fetching class info:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
 
 
 

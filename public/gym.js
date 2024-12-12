@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const startOfWeek = getStartOfWeek(currentDate);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(endOfWeek.getDate() + 6);
-
+        endOfWeek.setHours(23,59,59,999);
         currentWeekElement.textContent = `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
 
         try {
