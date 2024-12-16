@@ -1060,19 +1060,31 @@ app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
 
     const startDate = new Date(start);
     const endDate = new Date(end);
+
+    startDate.setMinutes(startDate.getMinutes() - startDate.getTimezoneOffset()); // UTC → lokaal
+    endDate.setMinutes(endDate.getMinutes() - endDate.getTimezoneOffset());
+
+    console.log('Adjusted Start Date:', startDate);
+    console.log('Adjusted End Date:', endDate);
+
     endDate.setHours(23, 59, 59, 999); // Tagab, et pühapäeva lõpuni kaasatakse
 
     try {
+
+
         const classes = await prisma.classSchedule.findMany({
             where: {
                 ownerId: parseInt(affiliateId, 10),
                 time: {
-                    gte: startDate,
-                    lte: endDate
+                    gte: new Date(startDate.toISOString()), // Lisa selge UTC teisendus
+                    lte: new Date(endDate.toISOString())
                 }
             },
             orderBy: { time: 'asc' }
         });
+
+
+
 
         console.log(`Found ${classes.length} classes for affiliateId ${affiliateId}`);
         res.json(classes);

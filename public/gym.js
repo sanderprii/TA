@@ -8,9 +8,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const trainingModal = new bootstrap.Modal(trainingModalElement);
     const trainingForm = document.getElementById('training-form');
     const deleteTrainingBtn = document.getElementById('delete-training-btn');
+    const dayButtonsContainer = document.getElementById('day-buttons');
+
 
     let currentDate = new Date(); // Start with the current date
     let classesData = [];
+
+    let isSmallScreen = window.innerWidth < 769; // Kontrollime, kas ekraan on väike
+    let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
+
 
     // Load the schedule for the current week
     loadSchedule();
@@ -25,6 +31,17 @@ document.addEventListener('DOMContentLoaded', function() {
         currentDate.setDate(currentDate.getDate() + 7);
         loadSchedule();
     });
+
+    // Kui on väike ekraan, vaikimisi tänane päev
+    if (isSmallScreen) {
+        selectedDayIndex = getTodayDayIndex(new Date());
+    }
+
+    // Mon -> 0, Tue -> 1, jne. (Meie alguspunkt on esmaspäev, mitte pühapäev)
+    function getTodayDayIndex(date) {
+        const day = date.getDay(); // 0 (Sun) - 6 (Sat)
+        return day === 0 ? 6 : day - 1; // Mon = 0, ..., Sun = 6
+    }
 
     addTrainingBtn.addEventListener('click', () => {
         openTrainingModal();
@@ -102,78 +119,153 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Uuendame renderSchedule funktsiooni
     function renderSchedule(startOfWeek) {
-        scheduleElement.innerHTML = '';
+        scheduleElement.innerHTML = ''; // Puhastame ajakava
 
-        // Create a table for the schedule
-        const table = document.createElement('table');
-        table.classList.add('table', 'table-bordered', 'table-sm');
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-        // Table header with days of the week
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
+        // Konteiner päevade jaoks
+        const scheduleContainer = document.createElement('div');
+        scheduleContainer.classList.add('schedule-container');
 
-        const days = ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        days.forEach(day => {
-            const th = document.createElement('th');
-            th.textContent = day;
-            th.classList.add('text-center');
-            headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        // Table body with time slots
-        const tbody = document.createElement('tbody');
-
-        // Define time slots (e.g., from 6 AM to 22 PM)
-        for (let hour = 6; hour <= 22; hour++) {
-            const row = document.createElement('tr');
-
-            // Time label
-            const timeCell = document.createElement('td');
-            timeCell.textContent = `${hour}:00`;
-            timeCell.classList.add('text-center', 'fw-bold');
-            row.appendChild(timeCell);
-
-            // Cells for each day
-            for (let i = 0; i < 7; i++) {
-                const cell = document.createElement('td');
-                cell.classList.add('align-top');
-
-                const cellDate = new Date(startOfWeek);
-                cellDate.setDate(cellDate.getDate() + i);
-                cellDate.setHours(hour, 0, 0, 0);
-
-                // Find classes for this time slot
-                const classesAtTime = classesData.filter(c => {
-                    const classDate = new Date(c.time);
-                    return classDate.getFullYear() === cellDate.getFullYear() &&
-                        classDate.getMonth() === cellDate.getMonth() &&
-                        classDate.getDate() === cellDate.getDate() &&
-                        classDate.getHours() === cellDate.getHours();
-                });
-
-                classesAtTime.forEach(c => {
-                    const classDiv = document.createElement('div');
-                    classDiv.textContent = c.trainingName;
-                    classDiv.classList.add('class-entry', 'mb-1', 'p-1', 'bg-primary', 'text-white', 'rounded');
-                    classDiv.style.cursor = 'pointer';
-                    classDiv.addEventListener('click', () => {
-                        openTrainingModal(c);
-                    });
-                    cell.appendChild(classDiv);
-                });
-
-                row.appendChild(cell);
-            }
-
-            tbody.appendChild(row);
+        if (isSmallScreen) {
+            renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
         }
 
-        table.appendChild(tbody);
-        scheduleElement.appendChild(table);
+        for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(startOfWeek);
+            dayDate.setDate(dayDate.getDate() + i);
+
+            if (isSmallScreen && selectedDayIndex !== i) {
+                // Väikese ekraani jaoks kuvame ainult valitud päeva
+                continue;
+            }
+
+            // Päeva tulp
+            const dayColumn = document.createElement('div');
+            dayColumn.classList.add('day-column');
+
+            // Päeva pealkiri
+            const dayHeader = document.createElement('div');
+            dayHeader.textContent = `${days[i]} (${dayDate.toLocaleDateString()})`;
+            dayHeader.classList.add('day-header');
+            dayColumn.appendChild(dayHeader);
+
+            // Filtreerime treeningud selle päeva jaoks ja sorteerime aja järgi
+            const classesForDay = classesData
+                .filter(c => {
+                    const classDate = new Date(c.time);
+                    return (
+                        classDate.getFullYear() === dayDate.getFullYear() &&
+                        classDate.getMonth() === dayDate.getMonth() &&
+                        classDate.getDate() === dayDate.getDate()
+                    );
+                })
+                .sort((a, b) => new Date(a.time) - new Date(b.time)); // Sortime aja järgi
+
+            if (classesForDay.length === 0) {
+                // Kui pole treeninguid, näitame sõnumit
+                const noClassesMessage = document.createElement('p');
+                noClassesMessage.textContent = 'No trainings scheduled.';
+                noClassesMessage.classList.add('text-muted', 'fst-italic');
+                dayColumn.appendChild(noClassesMessage);
+            } else {
+                // Lisame treeningud päeva tulpadesse
+                classesForDay.forEach(classData => {
+                    const classDiv = createClassDiv(classData);
+                    dayColumn.appendChild(classDiv);
+                });
+            }
+
+            scheduleContainer.appendChild(dayColumn);
+        }
+
+        scheduleElement.appendChild(scheduleContainer);
     }
+
+// Event listener ekraani suuruse muutmiseks
+    window.addEventListener('resize', () => {
+        const wasSmallScreen = isSmallScreen;
+        isSmallScreen = window.innerWidth < 769;
+
+        if (wasSmallScreen !== isSmallScreen) {
+            renderSchedule(getStartOfWeek(currentDate));
+        }
+    });
+
+
+
+
+
+    // Funktsioon päevade nuppude loomiseks
+    function renderDayButtons(startOfWeek) {
+        dayButtonsContainer.innerHTML = '';
+        const dayNamesShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        for (let i = 0; i < 7; i++) {
+            const btn = document.createElement('button');
+            btn.classList.add('btn', 'btn-outline-primary', 'btn-sm', 'day-btn');
+            const dayDate = new Date(startOfWeek);
+            dayDate.setDate(dayDate.getDate() + i);
+            const dayNumber = dayDate.getDate();
+            btn.textContent = `${dayNamesShort[i]} ${dayNumber}`;
+
+            if (i === selectedDayIndex) {
+                btn.classList.add('btn-primary');
+                btn.classList.remove('btn-outline-primary');
+            }
+
+            btn.addEventListener('click', () => {
+                selectedDayIndex = i;
+                // uuenda nuppude stiili
+                document.querySelectorAll('.day-btn').forEach((b, idx) => {
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-outline-primary');
+                    if (idx === i) {
+                        b.classList.add('btn-primary');
+                        b.classList.remove('btn-outline-primary');
+                    }
+                });
+                renderSchedule(startOfWeek);
+            });
+
+            dayButtonsContainer.appendChild(btn);
+        }
+
+
+    }
+
+
+    window.addEventListener('resize', () => {
+        const wasSmallScreen = isSmallScreen;
+        isSmallScreen = window.innerWidth < 769;
+
+        if (wasSmallScreen !== isSmallScreen) {
+            // Renderda vaate muutus (päeva või nädala vaade)
+            renderSchedule(getStartOfWeek(currentDate));
+        }
+    });
+
+
+
+    function createClassDiv(classData) {
+        const classDiv = document.createElement('div');
+        classDiv.textContent = classData.trainingName;
+        classDiv.classList.add('class-entry', 'mb-1', 'p-1', 'bg-primary', 'text-white', 'rounded');
+        classDiv.style.cursor = 'pointer';
+
+        // Lisa sündmuse kuulaja, mis avab modaalakna klassi detailidega
+        classDiv.addEventListener('click', () => {
+            openTrainingModal(classData);
+        });
+
+        return classDiv;
+    }
+
+
+
+
 
     function openTrainingModal(training = null) {
         if (training) {

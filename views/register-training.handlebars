@@ -107,6 +107,7 @@
         let isSmallScreen = window.innerWidth < 769; // kontrolli ekraani laiust
         let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
 
+
 // Funktsioon tuvastamaks tänase päeva indeksit (0=Mon,...,6=Sun)
         function getTodayDayIndex(date) {
             const g = date.getDay(); // 0 (pühap) - 6(laup)
@@ -195,6 +196,7 @@
 
         document.getElementById('prev-week').addEventListener('click', () => {
             currentDate.setDate(currentDate.getDate() - 7);
+
             loadSchedule();
         });
 
@@ -204,6 +206,7 @@
         });
 
         async function loadSchedule() {
+
             const startOfWeek = getStartOfWeek(currentDate);
             const endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(endOfWeek.getDate() + 6);
@@ -216,6 +219,11 @@
                 console.log('API Response:', response);
                 classesData = await response.json();
                 console.log('Classes Data:', classesData);
+
+                if (!Array.isArray(classesData) || classesData.length === 0) {
+                    console.warn('No classes found for this week.');
+                }
+
                 renderSchedule(startOfWeek);
             } catch (error) {
                 console.error('Error loading schedule:', error);
@@ -224,118 +232,62 @@
 
         function renderSchedule(startOfWeek) {
             scheduleElement.innerHTML = '';
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-            isSmallScreen = window.innerWidth < 769; // kontrolli uuesti kui resize on toimunud
+            const scheduleContainer = document.createElement('div');
+            scheduleContainer.classList.add('schedule-container');
 
             if (isSmallScreen) {
-                // Näita päevade nuppe
-                dayButtonsContainer.style.display = 'flex';
-                renderDayButtons(startOfWeek);
-                renderDailyView(startOfWeek);
-            } else {
-                // Peida päevade nupud
-                dayButtonsContainer.style.display = 'none';
-                renderWeeklyView(startOfWeek);
+                renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
             }
-        }
 
-        function renderWeeklyView(startOfWeek) {
-            const table = document.createElement('table');
-            table.classList.add('table', 'table-bordered', 'table-sm');
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(startOfWeek);
+                dayDate.setDate(dayDate.getDate() + i);
 
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            const days = ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            days.forEach(day => {
-                const th = document.createElement('th');
-                th.textContent = day;
-                th.classList.add('text-center');
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
-
-            const tbody = document.createElement('tbody');
-
-            for (let hour = 6; hour <= 22; hour++) {
-                const row = document.createElement('tr');
-                const timeCell = document.createElement('td');
-                timeCell.textContent = `${hour}:00`;
-                timeCell.classList.add('text-center','fw-bold');
-                row.appendChild(timeCell);
-
-                for (let i = 0; i < 7; i++) {
-                    const cell = document.createElement('td');
-                    cell.classList.add('align-top');
-
-                    const cellDate = new Date(startOfWeek);
-                    cellDate.setDate(cellDate.getDate() + i);
-                    cellDate.setHours(hour, 0, 0, 0);
-
-                    const classesAtTime = classesData.filterMatches(cellDate);
-                    classesAtTime.forEach(c => {
-                        const classDiv = createClassDiv(c);
-                        cell.appendChild(classDiv);
-                    });
-
-                    row.appendChild(cell);
+                if (isSmallScreen && selectedDayIndex !== i) {
+                    continue; // Väikese ekraani puhul kuvame ainult valitud päeva
                 }
 
-                tbody.appendChild(row);
+                const dayColumn = document.createElement('div');
+                dayColumn.classList.add('day-column');
+
+                const dayHeader = document.createElement('div');
+                dayHeader.textContent = `${days[i]} (${dayDate.toLocaleDateString()})`;
+                dayHeader.classList.add('day-header');
+                dayColumn.appendChild(dayHeader);
+
+                const classesForDay = classesData
+                        .filter(c => {
+                            const classDate = new Date(c.time);
+                            return (
+                                    classDate.getFullYear() === dayDate.getFullYear() &&
+                                    classDate.getMonth() === dayDate.getMonth() &&
+                                    classDate.getDate() === dayDate.getDate()
+                            );
+                        })
+                        .sort((a, b) => new Date(a.time) - new Date(b.time));
+
+                if (classesForDay.length === 0) {
+                    const noClassesMessage = document.createElement('p');
+                    noClassesMessage.textContent = 'No trainings scheduled.';
+                    noClassesMessage.classList.add('text-muted', 'fst-italic');
+                    dayColumn.appendChild(noClassesMessage);
+                } else {
+                    classesForDay.forEach(classData => {
+                        const classDiv = createClassDiv(classData);
+                        dayColumn.appendChild(classDiv);
+                    });
+                }
+
+                scheduleContainer.appendChild(dayColumn);
             }
 
-            table.appendChild(tbody);
-            scheduleElement.appendChild(table);
+            scheduleElement.appendChild(scheduleContainer);
         }
 
-        function renderDailyView(startOfWeek) {
-            // Kuvame ainult ühe päeva, mille indeks on selectedDayIndex
-            // Päeva nimi ja number on juba nuppudes olemas, siit lihtsalt renderdame ajakavaga sarnase tabeli, aga ainult 1 päev
-            const table = document.createElement('table');
-            table.classList.add('table', 'table-bordered', 'table-sm');
 
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][selectedDayIndex];
-            const timeTh = document.createElement('th');
-            timeTh.textContent = 'Time';
-            timeTh.classList.add('text-center');
-            const dayTh = document.createElement('th');
-            dayTh.textContent = dayName;
-            dayTh.classList.add('text-center');
-            headerRow.appendChild(timeTh);
-            headerRow.appendChild(dayTh);
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
 
-            const tbody = document.createElement('tbody');
-            for (let hour = 6; hour <= 22; hour++) {
-                const row = document.createElement('tr');
-                const timeCell = document.createElement('td');
-                timeCell.textContent = `${hour}:00`;
-                timeCell.classList.add('text-center','fw-bold');
-                row.appendChild(timeCell);
-
-                const cell = document.createElement('td');
-                cell.classList.add('align-top');
-
-                const cellDate = new Date(startOfWeek);
-                cellDate.setDate(cellDate.getDate() + selectedDayIndex);
-                cellDate.setHours(hour, 0, 0, 0);
-
-                const classesAtTime = classesData.filterMatches(cellDate);
-                classesAtTime.forEach(c => {
-                    const classDiv = createClassDiv(c);
-                    cell.appendChild(classDiv);
-                });
-
-                row.appendChild(cell);
-                tbody.appendChild(row);
-            }
-
-            table.appendChild(tbody);
-            scheduleElement.appendChild(table);
-        }
 
         function renderDayButtons(startOfWeek) {
             dayButtonsContainer.innerHTML = '';
@@ -378,6 +330,7 @@
                         classDate.getHours() === cellDate.getHours();
             });
         };
+
 
         function createClassDiv(c) {
             const classDiv = document.createElement('div');
@@ -428,15 +381,20 @@
             }
         }
 
-        document.getElementById('prev-week').addEventListener('click', () => {
-            currentDate.setDate(currentDate.getDate() - 7);
-            loadSchedule();
-        });
+        function adjustWeek(date, weeks) {
+            const adjustedDate = new Date(date);
+            adjustedDate.setDate(date.getDate() + weeks * 7); // Lisab või lahutab täpselt 7 päeva
+            adjustedDate.setHours(0, 0, 0, 0); // Nullib kellaaja
+            console.log(`Adjusting week: weeks=${weeks}, original=${date.toISOString()}, adjusted=${adjustedDate.toISOString()}`);
+            return adjustedDate;
+        }
 
-        document.getElementById('next-week').addEventListener('click', () => {
-            currentDate.setDate(currentDate.getDate() + 7);
-            loadSchedule();
-        });
+
+
+
+
+
+
 
         async function checkEnrollment(classId) {
             try {
@@ -506,12 +464,15 @@
 
         function getStartOfWeek(date) {
             const d = new Date(date);
-            const day = d.getDay();
-            const diff = (day === 0 ? -6 : 1) - day;
+            const day = d.getDay(); // 0 = pühapäev, 6 = laupäev
+            const diff = (day === 0 ? -6 : 1) - day; // Esmaspäevaks teisendamine
             d.setDate(d.getDate() + diff);
-            d.setHours(0,0,0,0);
+            d.setHours(0, 0, 0, 0); // Nullib kellaaja
             return d;
         }
+
+
+
 
         function formatDate(date) {
             return date.toLocaleDateString();

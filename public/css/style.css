@@ -385,7 +385,7 @@ h1, h2 {
 
 /* Profile page */
 
-.card{
+.card-profile{
     opacity: 0.9;
 }
 
@@ -497,4 +497,74 @@ h1, h2 {
 .plan-button p {
     margin: 0;
     font-size: 18px;
+}
+
+/* classes page */
+
+
+.day-container {
+    border: 1px solid #ddd; /* Õhuke hall joon ümber päeva konteineri */
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9; /* Helge taust */
+}
+
+.class-entry {
+    border: 1px solid #007bff; /* Sinine joon treeningu ümber */
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Päevade ja treeningute konteineri stiil */
+.schedule-container {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* Iga päeva tulp */
+.day-column {
+    flex: 1;
+    border: 1px solid #ddd; /* Õhuke joon päeva ümber */
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #f9f9f9; /* Helge taust */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Päeva pealkiri */
+.day-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Treeningu kastike */
+.class-entry {
+    border: 1px solid #007bff; /* Sinine joon treeningu ümber */
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
+
+/* Väikese ekraani jaoks ainult üks päev */
+@media (max-width: 768px) {
+    .schedule-container {
+        flex-wrap: wrap;
+    }
+
+    .day-column {
+        flex: 1 1 100%; /* Muudab iga päeva täislaiuseks */
+    }
 }
