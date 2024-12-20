@@ -1,0 +1,18 @@
+[{
+  "_id": {
+    "$oid": "67633305028b52bbee671341"
+  },
+  "exerciseData": "Deadlift: 200kg",
+  "trainingId": {
+    "$oid": "67633301028b52bbee67133f"
+  }
+},
+{
+  "_id": {
+    "$oid": "67633306028b52bbee671342"
+  },
+  "exerciseData": "Run: 5km",
+  "trainingId": {
+    "$oid": "67633302028b52bbee671340"
+  }
+}]

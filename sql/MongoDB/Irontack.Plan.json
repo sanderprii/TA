@@ -1,0 +1,24 @@
+[{
+  "_id": {
+    "$oid": "6763330d028b52bbee671349"
+  },
+  "name": "Monthly Plan",
+  "validityDays": 30,
+  "price": 50,
+  "additionalData": "Access to all classes",
+  "ownerId": {
+    "$oid": "67633277028b52bbee67133c"
+  }
+},
+{
+  "_id": {
+    "$oid": "6763330e028b52bbee67134a"
+  },
+  "name": "Annual Plan",
+  "validityDays": 365,
+  "price": 500,
+  "additionalData": "Access to all classes and gym",
+  "ownerId": {
+    "$oid": "676332df028b52bbee67133e"
+  }
+}]

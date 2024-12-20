@@ -1,0 +1,26 @@
+[{
+  "_id": {
+    "$oid": "67633301028b52bbee67133f"
+  },
+  "type": "Strength",
+  "wodName": "Deadlift Max",
+  "wodType": "For Time",
+  "date": "2023-12-01",
+  "score": "200kg",
+  "userId": {
+    "$oid": "67633277028b52bbee67133c"
+  }
+},
+{
+  "_id": {
+    "$oid": "67633302028b52bbee671340"
+  },
+  "type": "Cardio",
+  "wodName": "5k Run",
+  "wodType": "AMRAP",
+  "date": "2023-12-02",
+  "score": "25:30",
+  "userId": {
+    "$oid": "676332df028b52bbee67133e"
+  }
+}]

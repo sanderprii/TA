@@ -1,0 +1,28 @@
+[{
+  "_id": {
+    "$oid": "6763330b028b52bbee671347"
+  },
+  "trainingName": "Morning Yoga",
+  "time": "2023-12-18T08:00:00Z",
+  "trainer": "Alice",
+  "memberCapacity": 20,
+  "location": "Main Studio",
+  "repeatWeekly": true,
+  "ownerId": {
+    "$oid": "67633277028b52bbee67133c"
+  }
+},
+{
+  "_id": {
+    "$oid": "6763330c028b52bbee671348"
+  },
+  "trainingName": "Evening Crossfit",
+  "time": "2023-12-18T18:00:00Z",
+  "trainer": "Bob",
+  "memberCapacity": 15,
+  "location": "Gym A",
+  "repeatWeekly": false,
+  "ownerId": {
+    "$oid": "676332df028b52bbee67133e"
+  }
+}]

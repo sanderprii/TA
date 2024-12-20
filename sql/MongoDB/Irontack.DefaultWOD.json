@@ -1,0 +1,16 @@
+[{
+  "_id": {
+    "$oid": "67633309028b52bbee671345"
+  },
+  "name": "Fran",
+  "type": "For Time",
+  "description": "21-15-9 reps of Thrusters and Pull-ups"
+},
+{
+  "_id": {
+    "$oid": "6763330a028b52bbee671346"
+  },
+  "name": "Murph",
+  "type": "For Time",
+  "description": "1 mile run, 100 pull-ups, 200 push-ups, 300 squats, 1 mile run"
+}]

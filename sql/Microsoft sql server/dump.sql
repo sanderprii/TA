@@ -1,0 +1,323 @@
+USE [master]
+GO
+/****** Object:  Database [irontrack]    Script Date: 18.12.2024 22:21:15 ******/
+CREATE DATABASE [irontrack]
+ CONTAINMENT = NONE
+ ON  PRIMARY
+( NAME = N'irontrack', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\irontrack.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+ LOG ON
+( NAME = N'irontrack_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\irontrack_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
+GO
+ALTER DATABASE [irontrack] SET COMPATIBILITY_LEVEL = 160
+GO
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [irontrack].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [irontrack] SET ANSI_NULL_DEFAULT OFF
+GO
+ALTER DATABASE [irontrack] SET ANSI_NULLS OFF
+GO
+ALTER DATABASE [irontrack] SET ANSI_PADDING OFF
+GO
+ALTER DATABASE [irontrack] SET ANSI_WARNINGS OFF
+GO
+ALTER DATABASE [irontrack] SET ARITHABORT OFF
+GO
+ALTER DATABASE [irontrack] SET AUTO_CLOSE OFF
+GO
+ALTER DATABASE [irontrack] SET AUTO_SHRINK OFF
+GO
+ALTER DATABASE [irontrack] SET AUTO_UPDATE_STATISTICS ON
+GO
+ALTER DATABASE [irontrack] SET CURSOR_CLOSE_ON_COMMIT OFF
+GO
+ALTER DATABASE [irontrack] SET CURSOR_DEFAULT  GLOBAL
+GO
+ALTER DATABASE [irontrack] SET CONCAT_NULL_YIELDS_NULL OFF
+GO
+ALTER DATABASE [irontrack] SET NUMERIC_ROUNDABORT OFF
+GO
+ALTER DATABASE [irontrack] SET QUOTED_IDENTIFIER OFF
+GO
+ALTER DATABASE [irontrack] SET RECURSIVE_TRIGGERS OFF
+GO
+ALTER DATABASE [irontrack] SET  ENABLE_BROKER
+GO
+ALTER DATABASE [irontrack] SET AUTO_UPDATE_STATISTICS_ASYNC OFF
+GO
+ALTER DATABASE [irontrack] SET DATE_CORRELATION_OPTIMIZATION OFF
+GO
+ALTER DATABASE [irontrack] SET TRUSTWORTHY OFF
+GO
+ALTER DATABASE [irontrack] SET ALLOW_SNAPSHOT_ISOLATION OFF
+GO
+ALTER DATABASE [irontrack] SET PARAMETERIZATION SIMPLE
+GO
+ALTER DATABASE [irontrack] SET READ_COMMITTED_SNAPSHOT OFF
+GO
+ALTER DATABASE [irontrack] SET HONOR_BROKER_PRIORITY OFF
+GO
+ALTER DATABASE [irontrack] SET RECOVERY FULL
+GO
+ALTER DATABASE [irontrack] SET  MULTI_USER
+GO
+ALTER DATABASE [irontrack] SET PAGE_VERIFY CHECKSUM
+GO
+ALTER DATABASE [irontrack] SET DB_CHAINING OFF
+GO
+ALTER DATABASE [irontrack] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF )
+GO
+ALTER DATABASE [irontrack] SET TARGET_RECOVERY_TIME = 60 SECONDS
+GO
+ALTER DATABASE [irontrack] SET DELAYED_DURABILITY = DISABLED
+GO
+ALTER DATABASE [irontrack] SET ACCELERATED_DATABASE_RECOVERY = OFF
+GO
+EXEC sys.sp_db_vardecimal_storage_format N'irontrack', N'ON'
+GO
+ALTER DATABASE [irontrack] SET QUERY_STORE = ON
+GO
+ALTER DATABASE [irontrack] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
+GO
+USE [irontrack]
+GO
+/****** Object:  Table [dbo].[Affiliate]    Script Date: 18.12.2024 22:21:16 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Affiliate](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [name] [nvarchar](255) NOT NULL,
+    [address] [nvarchar](255) NOT NULL,
+    [trainingType] [nvarchar](255) NOT NULL,
+    [ownerId] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[AffiliateTrainer]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[AffiliateTrainer](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [affiliateId] [int] NULL,
+    [trainerId] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+    CONSTRAINT [UQ_AffiliateTrainer] UNIQUE NONCLUSTERED
+(
+    [affiliateId] ASC,
+[trainerId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[ClassAttendee]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[ClassAttendee](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [classId] [int] NULL,
+    [userId] [int] NULL,
+    [createdAt] [datetime] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+    CONSTRAINT [UQ_ClassAttendee] UNIQUE NONCLUSTERED
+(
+    [classId] ASC,
+[userId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[ClassSchedule]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[ClassSchedule](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [trainingName] [nvarchar](255) NOT NULL,
+    [time] [datetime] NOT NULL,
+    [trainer] [nvarchar](255) NULL,
+    [memberCapacity] [int] NOT NULL,
+    [location] [nvarchar](255) NULL,
+    [repeatWeekly] [bit] NULL,
+    [ownerId] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[defaultWOD]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[defaultWOD](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [name] [nvarchar](255) NOT NULL,
+    [type] [nvarchar](255) NOT NULL,
+    [description] [nvarchar](max) NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+    UNIQUE NONCLUSTERED
+(
+[name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[Exercise]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[Exercise](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [exerciseData] [nvarchar](max) NOT NULL,
+    [trainingId] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[Plans]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[Plans](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [name] [nvarchar](255) NOT NULL,
+    [validityDays] [int] NOT NULL,
+    [price] [float] NOT NULL,
+    [additionalData] [nvarchar](max) NULL,
+    [ownerId] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[Record]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[Record](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [type] [nvarchar](255) NULL,
+    [name] [nvarchar](255) NULL,
+    [date] [date] NULL,
+    [score] [nvarchar](255) NULL,
+    [weight] [float] NULL,
+    [time] [nvarchar](50) NULL,
+    [userId] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[Training]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[Training](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [type] [nvarchar](255) NOT NULL,
+    [wodName] [nvarchar](255) NULL,
+    [wodType] [nvarchar](50) NULL,
+    [date] [date] NULL,
+    [score] [nvarchar](255) NULL,
+    [userId] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY]
+    GO
+/****** Object:  Table [dbo].[Users]    Script Date: 18.12.2024 22:21:16 ******/
+    SET ANSI_NULLS ON
+    GO
+    SET QUOTED_IDENTIFIER ON
+    GO
+CREATE TABLE [dbo].[Users](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [username] [nvarchar](255) NOT NULL,
+    [password] [nvarchar](255) NOT NULL,
+    [fullName] [nvarchar](255) NULL,
+    [dateOfBirth] [date] NULL,
+    [sex] [nvarchar](50) NULL,
+    [email] [nvarchar](255) NULL,
+    [isAffiliateOwner] [bit] NULL,
+    [monthlyGoal] [int] NULL,
+    PRIMARY KEY CLUSTERED
+(
+[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+    UNIQUE NONCLUSTERED
+(
+[email] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+    UNIQUE NONCLUSTERED
+(
+[username] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+    ) ON [PRIMARY]
+    GO
+ALTER TABLE [dbo].[ClassAttendee] ADD  DEFAULT (getdate()) FOR [createdAt]
+    GO
+ALTER TABLE [dbo].[ClassSchedule] ADD  DEFAULT ((0)) FOR [repeatWeekly]
+    GO
+ALTER TABLE [dbo].[Affiliate]  WITH CHECK ADD FOREIGN KEY([ownerId])
+    REFERENCES [dbo].[Users] ([id])
+    GO
+ALTER TABLE [dbo].[AffiliateTrainer]  WITH CHECK ADD FOREIGN KEY([affiliateId])
+    REFERENCES [dbo].[Affiliate] ([id])
+    GO
+ALTER TABLE [dbo].[AffiliateTrainer]  WITH CHECK ADD FOREIGN KEY([trainerId])
+    REFERENCES [dbo].[Users] ([id])
+    GO
+ALTER TABLE [dbo].[ClassAttendee]  WITH CHECK ADD FOREIGN KEY([classId])
+    REFERENCES [dbo].[ClassSchedule] ([id])
+    GO
+ALTER TABLE [dbo].[ClassAttendee]  WITH CHECK ADD FOREIGN KEY([userId])
+    REFERENCES [dbo].[Users] ([id])
+    GO
+ALTER TABLE [dbo].[ClassSchedule]  WITH CHECK ADD FOREIGN KEY([ownerId])
+    REFERENCES [dbo].[Users] ([id])
+    GO
+ALTER TABLE [dbo].[Exercise]  WITH CHECK ADD FOREIGN KEY([trainingId])
+    REFERENCES [dbo].[Training] ([id])
+    GO
+ALTER TABLE [dbo].[Plans]  WITH CHECK ADD FOREIGN KEY([ownerId])
+    REFERENCES [dbo].[Users] ([id])
+    GO
+ALTER TABLE [dbo].[Record]  WITH CHECK ADD FOREIGN KEY([userId])
+    REFERENCES [dbo].[Users] ([id])
+    GO
+ALTER TABLE [dbo].[Training]  WITH CHECK ADD FOREIGN KEY([userId])
+    REFERENCES [dbo].[Users] ([id])
+    GO
+    USE [master]
+    GO
+ALTER DATABASE [irontrack] SET  READ_WRITE
+GO

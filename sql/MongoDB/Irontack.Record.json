@@ -1,0 +1,28 @@
+[{
+  "_id": {
+    "$oid": "67633307028b52bbee671343"
+  },
+  "type": "Weightlifting",
+  "name": "Deadlift",
+  "date": "2023-12-01",
+  "score": "200kg",
+  "weight": 200,
+  "time": null,
+  "userId": {
+    "$oid": "67633277028b52bbee67133c"
+  }
+},
+{
+  "_id": {
+    "$oid": "67633308028b52bbee671344"
+  },
+  "type": "Running",
+  "name": "5k Run",
+  "date": "2023-12-02",
+  "score": "25:30",
+  "weight": null,
+  "time": "25:30",
+  "userId": {
+    "$oid": "676332df028b52bbee67133e"
+  }
+}]

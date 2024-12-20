@@ -1,0 +1,26 @@
+[{
+  "_id": {
+    "$oid": "67633277028b52bbee67133c"
+  },
+  "username": "Mari",
+  "password": "password123",
+  "fullName": "Mari Maasikas",
+  "dateOfBirth": "1990-01-01",
+  "sex": "Woman",
+  "email": "mari@example.com",
+  "isAffiliateOwner": true,
+  "monthlyGoal": 5
+},
+{
+  "_id": {
+    "$oid": "676332df028b52bbee67133e"
+  },
+  "username": "Mati",
+  "password": "securepass",
+  "fullName": "Mati Tuli",
+  "dateOfBirth": "1985-06-15",
+  "sex": "Man",
+  "email": "mati@example.com",
+  "isAffiliateOwner": false,
+  "monthlyGoal": 8
+}]

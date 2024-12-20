@@ -1,0 +1,22 @@
+[{
+  "_id": {
+    "$oid": "67633311028b52bbee67134d"
+  },
+  "affiliateId": {
+    "$oid": "6763330f028b52bbee67134b"
+  },
+  "trainerId": {
+    "$oid": "67633277028b52bbee67133c"
+  }
+},
+{
+  "_id": {
+    "$oid": "67633312028b52bbee67134e"
+  },
+  "affiliateId": {
+    "$oid": "67633310028b52bbee67134c"
+  },
+  "trainerId": {
+    "$oid": "676332df028b52bbee67133e"
+  }
+}]
