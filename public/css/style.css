@@ -30,7 +30,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -509,15 +509,7 @@ h1, h2 {
     background-color: #f9f9f9; /* Helge taust */
 }
 
-.class-entry {
-    border: 1px solid #007bff; /* Sinine joon treeningu ümber */
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: #fff;
-    font-weight: bold;
-}
+
 
 /* Päevade ja treeningute konteineri stiil */
 .schedule-container {
@@ -547,16 +539,42 @@ h1, h2 {
 
 /* Treeningu kastike */
 .class-entry {
-    border: 1px solid #007bff; /* Sinine joon treeningu ümber */
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: #fff;
-    font-weight: bold;
+                                                       align-items: center;
+                                                       background-color: #fff;
+                                                       border-radius: 12px;
+                                                       box-shadow: transparent 0 0 0 3px,rgba(18, 18, 18, .1) 0 6px 20px;
+                                                       box-sizing: border-box;
+                                                       color: #121212;
+                                                       cursor: pointer;
+                                                       display: flex;
+                                                       flex: 1 1 auto;
+                                                       font-family: Inter,sans-serif;
+                                                       font-size: 1.2rem;
+                                                       font-weight: 700;
+                                                       justify-content: center;
+                                                       line-height: 1;
+    flex-direction: column;
+                                                       outline: none;
+                                                       padding: 1rem 1.2rem;
+                                                       text-align: center;
+                                                       text-decoration: none;
+                                                       transition: box-shadow .2s,-webkit-box-shadow .2s;
+                                                       white-space: nowrap;
+                                                       border: 0;
+                                                       user-select: none;
+                                                       -webkit-user-select: none;
+                                                       touch-action: manipulation;
     width: 100%;
-    text-align: center;
+    margin: 5px 0;
+    max-height:100px;
+    min-height: 100px;
+                                                   }
+
+.class-entry:hover {
+    box-shadow: #121212 0 0 0 3px, transparent 0 0 0 0;
 }
+
+
 
 /* Väikese ekraani jaoks ainult üks päev */
 @media (max-width: 768px) {

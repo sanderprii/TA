@@ -80,6 +80,8 @@ model ClassSchedule {
   repeatWeekly   Boolean         @default(false)
   ownerId        Int
   owner          User            @relation(fields: [ownerId], references: [id])
+  affiliateId    Int
+  affiliate      Affiliate       @relation(fields: [affiliateId], references: [id])
   seriesId       Int?
   attendees      ClassAttendee[]
 }
@@ -95,13 +97,14 @@ model Plan {
 }
 
 model Affiliate {
-  id           Int                @id @default(autoincrement())
-  name         String
-  address      String
-  trainingType String
-  ownerId      Int
-  owner        User               @relation(fields: [ownerId], references: [id])
-  trainers     AffiliateTrainer[]
+  id            Int                @id @default(autoincrement())
+  name          String
+  address       String
+  trainingType  String
+  ownerId       Int
+  owner         User               @relation(fields: [ownerId], references: [id])
+  trainers      AffiliateTrainer[]
+  ClassSchedule ClassSchedule[]
 }
 
 model AffiliateTrainer {
@@ -110,6 +113,7 @@ model AffiliateTrainer {
   affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
   trainerId   Int
   trainer     User      @relation(fields: [trainerId], references: [id])
+
   // Optional: @@unique([affiliateId, trainerId]) to prevent duplicates
   @@unique([affiliateId, trainerId])
 }

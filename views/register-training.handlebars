@@ -27,8 +27,8 @@
 
     <div id="scheduleContainer" style="display:none;" class="mt-4">
         <h2>Schedule</h2>
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
+        <div class="justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between">
                 <button id="prev-week" class="btn btn-secondary btn-sm">Previous Week</button>
                 <button id="next-week" class="btn btn-secondary btn-sm">Next Week</button>
             </div>
@@ -104,7 +104,7 @@
         let currentDate = new Date();
         let classesData = [];
 
-        let isSmallScreen = window.innerWidth < 769; // kontrolli ekraani laiust
+        let isSmallScreen = window.innerWidth < 1143; // kontrolli ekraani laiust
         let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
 
 
@@ -334,9 +334,26 @@
 
         function createClassDiv(c) {
             const classDiv = document.createElement('div');
-            classDiv.textContent = c.trainingName;
-            classDiv.classList.add('class-entry', 'mb-1', 'p-1', 'bg-primary', 'text-white', 'rounded');
+
+            classDiv.classList.add('class-entry');
             classDiv.style.cursor = 'pointer';
+
+            // Treeningu nimi
+            const title = document.createElement('div');
+            title.textContent = c.trainingName;
+            title.classList.add('fw-bold');
+
+            // Treeningu aeg
+            const classTime = new Date(c.time);
+            const timeString = classTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const time = document.createElement('div');
+            time.textContent = timeString;
+            time.classList.add('text-muted');
+
+            // Lisa nimi ja aeg classDiv-i
+            classDiv.appendChild(title);
+            classDiv.appendChild(time);
+
             classDiv.addEventListener('click', () => {
                 openClassModal(c);
             });

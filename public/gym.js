@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date(); // Start with the current date
     let classesData = [];
 
-    let isSmallScreen = window.innerWidth < 769; // Kontrollime, kas ekraan on väike
+    let isSmallScreen = window.innerWidth < 1143; // Kontrollime, kas ekraan on väike
     let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
 
 
@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify(trainingData)
                 });
             } else {
+
                 // Create new training
                 await fetch('/api/classes', {
                     method: 'POST',
@@ -252,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function createClassDiv(classData) {
         const classDiv = document.createElement('div');
         classDiv.textContent = classData.trainingName;
-        classDiv.classList.add('class-entry', 'mb-1', 'p-1', 'bg-primary', 'text-white', 'rounded');
+        classDiv.classList.add('class-entry');
         classDiv.style.cursor = 'pointer';
 
         // Lisa sündmuse kuulaja, mis avab modaalakna klassi detailidega

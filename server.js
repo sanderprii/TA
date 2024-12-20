@@ -1064,8 +1064,7 @@ app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
     startDate.setMinutes(startDate.getMinutes() - startDate.getTimezoneOffset()); // UTC → lokaal
     endDate.setMinutes(endDate.getMinutes() - endDate.getTimezoneOffset());
 
-    console.log('Adjusted Start Date:', startDate);
-    console.log('Adjusted End Date:', endDate);
+
 
     endDate.setHours(23, 59, 59, 999); // Tagab, et pühapäeva lõpuni kaasatakse
 
@@ -1256,7 +1255,7 @@ app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
             orderBy: { time: 'asc' }
         });
     }
-
+    console.log(classes)
     res.render('classes', { title: 'Classes', layout: 'owner', classes });
 });
 
@@ -1278,12 +1277,19 @@ app.get('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, r
         };
 
         if (req.session.currentRole === 'owner') {
+
+
             // Owner rollis kasutaja näeb ainult oma affiliate klasse
             whereClause.ownerId = req.session.userId;
         } else if (req.session.currentRole === 'trainer') {
-            // Trainer rollis kasutaja näeb ainult nende affiliatide klasse, kus ta treener on
-            // Ei kuva tema enda affiliate classe, isegi kui ta on ka owner, seda rolli ei kasutata praegu
-            whereClause.ownerId = { in: req.session.trainerAffiliateIds || [] };
+            // Treener näeb ainult nende affiliatide klasse, kus ta on treener
+            const trainerAffiliates = await prisma.affiliateTrainer.findMany({
+                where: { trainerId: req.session.userId },
+                select: { affiliateId: true },
+            });
+
+            const affiliateIds = trainerAffiliates.map((relation) => relation.affiliateId);
+            whereClause.affiliateId = { in: affiliateIds };
         } else {
             // Regular user või pole rolli - teoorias siia ei jõua ensureOwnerOrTrainer tõttu
             return res.status(403).json({ error: 'Forbidden' });
@@ -1312,7 +1318,8 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
         trainer,
         memberCapacity,
         location,
-        repeatWeekly
+        repeatWeekly,
+        affiliateId,
     } = req.body;
 
     try {
@@ -1324,14 +1331,34 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
         const repeatWeeklyBool = (repeatWeekly === true || repeatWeekly === 'true');
 
         let selectedOwnerId;
+        let selectedAffiliateId;
+
         if (req.session.currentRole === 'owner') {
+            const affiliate = await prisma.affiliate.findFirst({
+                where: { ownerId: req.session.userId },
+                select: { id: true },
+            });
+
             selectedOwnerId = req.session.userId;
+            selectedAffiliateId = affiliate.id;
         } else if (req.session.currentRole === 'trainer') {
-            const trainerAffiliates = req.session.trainerAffiliateIds || [];
-            if (trainerAffiliates.length === 0) {
-                return res.status(403).json({ error: 'No affiliate available for trainer role.' });
-            }
-            selectedOwnerId = trainerAffiliates[0];
+
+
+            const trainerAffiliates = await prisma.affiliateTrainer.findMany({
+                where: { trainerId: req.session.userId },
+                select: { affiliateId: true },
+            });
+
+            selectedAffiliateId = affiliateId || trainerAffiliates[0].affiliateId;
+
+            const affiliate = await prisma.affiliate.findUnique({
+                where: { id: selectedAffiliateId },
+                select: { ownerId: true },
+            });
+
+            selectedOwnerId = affiliate.ownerId;
+
+
         } else {
             return res.status(403).json({ error: 'No permission.' });
         }
@@ -1345,6 +1372,7 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
                 memberCapacity: parseInt(memberCapacity) || 0,
                 location: location || null,
                 repeatWeekly: repeatWeeklyBool,
+                affiliateId: selectedAffiliateId,
                 ownerId: selectedOwnerId
             }
         });
@@ -1371,6 +1399,7 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
                     location: newClass.location,
                     repeatWeekly: true,
                     ownerId: selectedOwnerId,
+                    affiliateId: selectedAffiliateId,
                     seriesId: newClass.id
                 });
             }
@@ -1418,7 +1447,22 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
         if (req.session.currentRole === 'owner') {
             allowedOwnerIds = [req.session.userId];
         } else if (req.session.currentRole === 'trainer') {
-            allowedOwnerIds = req.session.trainerAffiliateIds || [];
+
+            const trainerAffiliates = await prisma.affiliateTrainer.findMany({
+                where: { trainerId: req.session.userId },
+                select: { affiliateId: true },
+            });
+
+            // Võta kõik seotud affiliate'id
+            const affiliateIds = trainerAffiliates.map((relation) => relation.affiliateId);
+
+            // Otsi nende affiliate'ide ownerId-d
+            const affiliates = await prisma.affiliate.findMany({
+                where: { id: { in: affiliateIds } },
+                select: { ownerId: true },
+            });
+
+            allowedOwnerIds = affiliates.map((affiliate) => affiliate.ownerId);
         } else {
             return res.status(403).json({ error: 'No permission.' });
         }
@@ -1518,7 +1562,24 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async 
         if (req.session.currentRole === 'owner') {
             allowedOwnerIds = [req.session.userId];
         } else if (req.session.currentRole === 'trainer') {
-            allowedOwnerIds = req.session.trainerAffiliateIds || [];
+
+            const trainerAffiliates = await prisma.affiliateTrainer.findMany({
+                where: { trainerId: req.session.userId },
+                select: { affiliateId: true },
+            });
+
+            // Võta kõik seotud affiliate'id
+            const affiliateIds = trainerAffiliates.map((relation) => relation.affiliateId);
+
+            // Otsi nende affiliate'ide ownerId-d
+            const affiliates = await prisma.affiliate.findMany({
+                where: { id: { in: affiliateIds } },
+                select: { ownerId: true },
+            });
+
+            allowedOwnerIds = affiliates.map((affiliate) => affiliate.ownerId);
+
+
         } else {
             return res.status(403).json({ error: 'No permission.' });
         }
