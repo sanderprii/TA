@@ -1588,16 +1588,30 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async 
             return res.status(403).json({ error: 'Not authorized to delete this class.' });
         }
 
+        // Kustuta esmalt seotud andmed
         if (existingClass.seriesId) {
+            // Kustuta seotud ClassAttendee kirjed
+            await prisma.classAttendee.deleteMany({
+                where: { classId: { in: await prisma.classSchedule.findMany({
+                            where: { seriesId: existingClass.seriesId },
+                            select: { id: true },
+                        }).then((classes) => classes.map((cls) => cls.id)) },
+                },
+            });
+
+            // Kustuta kõik sama seeria klassid
             await prisma.classSchedule.deleteMany({
-                where: {
-                    seriesId: existingClass.seriesId,
-                    time: { gte: existingClass.time }
-                }
+                where: { seriesId: existingClass.seriesId },
             });
         } else {
+            // Kustuta seotud ClassAttendee kirjed
+            await prisma.classAttendee.deleteMany({
+                where: { classId: classId },
+            });
+
+            // Kustuta ainult see klass
             await prisma.classSchedule.delete({
-                where: { id: classId }
+                where: { id: classId },
             });
         }
 
@@ -1610,14 +1624,14 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async 
 
 
 // API endpoint to get all plans
-app.get('/api/plans', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
-    const ownerId = req.session.userId;
+app.get('/api/plans', ensureAuthenticated, async (req, res) => {
+    const ownerId = req.query.ownerId ? parseInt(req.query.ownerId, 10) : null;
 
+    // Ehita "where" objekt. Kui ownerId puudub, võime selle tühjaks jätta.
+    const whereClause = ownerId ? { ownerId } : {};
     try {
         const plans = await prisma.plan.findMany({
-            where: {
-                ownerId
-            },
+            where: whereClause,
             orderBy: { id: 'asc' }
         });
         res.json(plans);
@@ -1809,6 +1823,197 @@ app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req
     } catch (error) {
         console.error('Error saving affiliate info:', error);
         res.status(500).json({ error: 'Failed to save affiliate info.' });
+    }
+});
+
+app.post('/api/buy-plan', ensureAuthenticated, async (req, res) => {
+    try {
+        // Ootame body: { affiliateId, planId, planName, validityDays, price }
+        const { affiliateId, planId, planName, validityDays, price } = req.body;
+        const userId = req.session.userId; // kes ostab
+
+        // 1) Leia kasutaja, kontrolli krediiti
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        // Kas kasutajal on piisavalt krediiti?
+        if ((user.credit || 0) < price) {
+            return res.status(400).json({ error: 'Not enough credit.' });
+        }
+
+        // 2) Vähendame kasutaja krediiti
+        const newCredit = user.credit - price;
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                credit: newCredit
+            }
+        });
+
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + validityDays);
+
+        // 3) Salvesta uus UserPlan rida
+        await prisma.userPlan.create({
+            data: {
+                userId,
+                affiliateId,
+                planId,
+                planName,
+                validityDays,
+                price,
+                endDate
+            }
+        });
+
+        return res.json({ message: 'Plan purchased successfully!', newCredit });
+    } catch (error) {
+        console.error('Error buying plan:', error);
+        res.status(500).json({ error: 'Failed to buy plan.' });
+    }
+});
+
+// GET /members
+app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    try {
+        let affiliateIds = [];
+
+        if (req.session.currentRole === 'owner') {
+            // Leia affiliate, mis kuulub sisseloginud ownerile
+            const affiliate = await prisma.affiliate.findFirst({
+                where: { ownerId: req.session.userId },
+            });
+            if (!affiliate) {
+                return res.render('members', { title: 'Members', members: [] });
+            }
+            affiliateIds = [affiliate.id];
+        } else if (req.session.currentRole === 'trainer') {
+            // Leia affiliate'id, kus kasutaja on treener
+            const relations = await prisma.affiliateTrainer.findMany({
+                where: { trainerId: req.session.userId },
+            });
+            affiliateIds = relations.map(r => r.affiliateId);
+        }
+
+        // Otsi kõik UserPlan kirjed, kus affiliateId on ülaltoodud loetelus
+        // ja lae sealtkaudu ka user
+        const userPlans = await prisma.userPlan.findMany({
+            where: { affiliateId: { in: affiliateIds } },
+            include: { user: true }
+        });
+
+        // Selleks, et kuvada unikaalseid kasutajaid,
+        // grupeerime userId alusel
+        const membersMap = new Map();
+        for (let up of userPlans) {
+            const u = up.user;
+            if (!membersMap.has(u.id)) {
+                // Lisa esimest korda
+                membersMap.set(u.id, {
+                    user: u,
+                    plans: []
+                });
+            }
+            membersMap.get(u.id).plans.push(up);
+        }
+
+        // Lõpuks teeme sellest array
+        const members = Array.from(membersMap.values()).map(m => ({
+            user: m.user,
+            plans: m.plans
+        }));
+
+        res.render('members', { title: 'Members', members, layout: "owner" });
+    } catch (error) {
+        console.error('Error loading members:', error);
+        res.status(500).send('Error');
+    }
+});
+
+app.get('/api/member-info', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const userId = parseInt(req.query.userId, 10);
+    // Leia user + tema planid, mis kuuluvad affiliate’ile
+    // (Muidu teoreetiliselt võib ta omada ka teisi planisid)
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        // Leia userPlan seosed (affiliateId in [??], aga sul on currentRole, leiad again affiliateId)
+        // Siin võib teha lihtsustuse, et toome KÕIK useri plaanid:
+        const userPlans = await prisma.userPlan.findMany({
+            where: { userId },
+            orderBy: { id: 'asc' },
+        });
+
+        // Koosta vastus
+        const data = {
+            fullName: user.fullName || user.username,
+            credit: user.credit || 0,
+            plans: userPlans.map(up => ({
+                planName: up.planName,
+                endDate: up.endDate,        // see on DateTime
+                userPlanId: up.id
+            }))
+        };
+        res.json(data);
+    } catch (err) {
+        console.error('Error in /api/member-info:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/api/add-credit', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const { userId, amount } = req.body;
+    const userIdNum = parseInt(userId, 10);
+    if (!userId || !amount) {
+        return res.status(400).json({ error: 'Missing fields' });
+    }
+    try {
+        // Lae kasutaja
+        const user = await prisma.user.findUnique({ where: { id: userIdNum } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Lisa credit
+        const newCredit = (user.credit || 0) + amount;
+        await prisma.user.update({
+            where: { id: userIdNum },
+            data: { credit: newCredit }
+        });
+
+        res.json({ message: 'Credit updated', newCredit });
+    } catch (err) {
+        console.error('Error adding credit:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.patch('/api/userplan-enddate', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const { userPlanId, endDate } = req.body;
+    const userPlanIdNum = parseInt(userPlanId, 10);
+
+    if (!userPlanId || !endDate) {
+        return res.status(400).json({ error: 'Missing fields' });
+    }
+
+    try {
+        // Uuenda userPlan
+        const updated = await prisma.userPlan.update({
+            where: { id: userPlanIdNum },
+            data: {
+                endDate: new Date(endDate)
+            }
+        });
+        res.json({ message: 'Plan endDate updated' });
+    } catch (err) {
+        console.error('Error updating endDate:', err);
+        res.status(500).json({ error: 'Server error' });
     }
 });
 

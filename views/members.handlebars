@@ -1,0 +1,156 @@
+{{! views/members.handlebars }}
+{{! Kasutab defaultLayout='owner' vms, või eraldi layouti }}
+
+<div class="container mt-4">
+    <h1>Members</h1>
+    <div class="d-flex flex-wrap" id="membersContainer">
+        {{#each members}}
+            <div class="member-card border border-secondary rounded m-2 p-2 text-center"
+                 style="width:100px; height:100px; cursor:pointer;"
+                 data-user-id="{{this.user.id}}">
+                <div class="small">{{this.user.fullName}}</div>
+            </div>
+        {{/each}}
+    </div>
+</div>
+
+<!-- Modal for user details -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="memberModalLabel" class="modal-title">Member Info</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Full Name:</strong> <span id="modalFullName"></span></p>
+                <p><strong>Credit:</strong> $<span id="modalCredit"></span></p>
+                <h5>Purchased Plans:</h5>
+                <ul id="modalPlansList" class="list-group"></ul>
+            </div>
+            <div class="modal-footer">
+                <button id="addCreditBtn" type="button" class="btn btn-warning">Add credit</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding credit -->
+<div class="modal fade" id="creditModal" tabindex="-1" aria-labelledby="creditModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="creditModalLabel" class="modal-title">Add Credit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="creditAmount" class="form-label">Amount to add:</label>
+                <input type="number" id="creditAmount" class="form-control" placeholder="Enter amount" />
+            </div>
+            <div class="modal-footer">
+                <button id="confirmAddCreditBtn" type="button" class="btn btn-success">Add</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const memberModal = new bootstrap.Modal(document.getElementById('memberModal'));
+        const modalFullName = document.getElementById('modalFullName');
+        const modalCredit = document.getElementById('modalCredit');
+        const modalPlansList = document.getElementById('modalPlansList');
+        const addCreditBtn = document.getElementById('addCreditBtn');
+
+        const creditModal = new bootstrap.Modal(document.getElementById('creditModal'));
+        const creditAmountInput = document.getElementById('creditAmount');
+        const confirmAddCreditBtn = document.getElementById('confirmAddCreditBtn');
+
+        let currentUserId = null; // hoiab meeles, kelle modali avasime
+
+        // 1. Lisa klikk igale .member-card elemendile
+        document.querySelectorAll('.member-card').forEach(card => {
+            card.addEventListener('click', async () => {
+                const userId = card.dataset.userId;
+                currentUserId = userId;
+                await loadMemberInfo(userId);
+                memberModal.show();
+            });
+        });
+
+        async function loadMemberInfo(userId) {
+            try {
+                const response = await fetch(`/api/member-info?userId=${userId}`);
+                const data = await response.json();
+
+                modalFullName.textContent = data.fullName;
+                modalCredit.textContent = data.credit.toFixed(2);
+                modalPlansList.innerHTML = '';
+
+                data.plans.forEach(p => {
+                    // p: { planName, endDate, userPlanId, ...}
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+
+                    li.innerHTML = `
+          <div>
+            <strong>${p.planName}</strong><br/>
+            Valid until: <span class="text-info">${new Date(p.endDate).toLocaleDateString()}</span>
+          </div>
+          <button class="btn btn-sm btn-link edit-enddate" data-up-id="${p.userPlanId}">Edit</button>
+        `;
+                    modalPlansList.appendChild(li);
+                });
+
+                // Lisa eventListener plaanide “Edit” nuppudele
+                document.querySelectorAll('.edit-enddate').forEach(btn => {
+                    btn.addEventListener('click', async (ev) => {
+                        const userPlanId = btn.dataset.upId;
+                        const newDate = prompt('Enter new end date (YYYY-MM-DD):');
+                        if (!newDate) return;
+                        // Saada PATCH vms
+                        await fetch('/api/userplan-enddate', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json'},
+                            body: JSON.stringify({ userPlanId, endDate: newDate })
+                        });
+                        // Reload member info
+                        await loadMemberInfo(userId);
+                    });
+                });
+
+            } catch (err) {
+                console.error('Error fetching member info:', err);
+            }
+        }
+
+        // 2. Add credit
+        addCreditBtn.addEventListener('click', () => {
+            creditAmountInput.value = '';
+            creditModal.show();
+        });
+
+        confirmAddCreditBtn.addEventListener('click', async () => {
+            const amount = parseFloat(creditAmountInput.value);
+            if (!amount) return;
+            try {
+                const resp = await fetch('/api/add-credit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json'},
+                    body: JSON.stringify({ userId: currentUserId, amount })
+                });
+                if (resp.ok) {
+                    creditModal.hide();
+                    // uuenda modali info
+                    await loadMemberInfo(currentUserId);
+                } else {
+                    console.error('Error adding credit:', resp.status);
+                }
+            } catch (err) {
+                console.error('Error adding credit:', err);
+            }
+        });
+    });
+</script>

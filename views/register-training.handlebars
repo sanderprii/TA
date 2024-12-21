@@ -23,6 +23,7 @@
         <ul id="affTrainers"></ul>
 
         <button id="viewScheduleBtn" class="btn btn-secondary mt-3">View Schedule</button>
+        <button id="viewPlansBtn" class="btn btn-info mt-3">View Plans</button>
     </div>
 
     <div id="scheduleContainer" style="display:none;" class="mt-4">
@@ -42,7 +43,12 @@
         </div>
         <div id="schedule"></div>
     </div>
-
+    <!-- PLAANIDE konteiner -->
+    <div id="plansContainer" style="display:none;" class="mt-4">
+        <h2>Affiliate Plans</h2>
+        <!-- siia renderdame plaanide nupud -->
+        <div id="plansList" class="d-flex flex-wrap"></div>
+    </div>
 </div>
 
 <!-- Modal for class details and registration -->
@@ -70,6 +76,29 @@
     </div>
 </div>
 
+<!-- Modal for plan info (read-only) -->
+<div class="modal fade" id="planInfoModal" tabindex="-1" aria-labelledby="planInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="planInfoModalLabel" class="modal-title">Plan Info</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Plan Name:</strong> <span id="modalPlanName"></span></p>
+                <p><strong>Validity (Days):</strong> <span id="modalPlanDays"></span></p>
+                <p><strong>Price:</strong> $<span id="modalPlanPrice"></span></p>
+                <p><strong>Additional Info:</strong></p>
+                <p id="modalPlanData"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="buyPlanBtn" type="button" class="btn btn-success">Buy plan</button>
+                <!-- Ainult sulgemise nupp -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <script>
@@ -99,6 +128,19 @@
         const modalTrainer = document.getElementById('modalTrainer');
         const modalLocation = document.getElementById('modalLocation');
         const modalClassId = document.getElementById('modalClassId');
+
+        // Plaanide konteiner ja modal
+        const plansContainer = document.getElementById('plansContainer');
+        const plansList = document.getElementById('plansList');
+        const planInfoModal = new bootstrap.Modal(document.getElementById('planInfoModal'));
+        const modalPlanName = document.getElementById('modalPlanName');
+        const modalPlanDays = document.getElementById('modalPlanDays');
+        const modalPlanPrice = document.getElementById('modalPlanPrice');
+        const modalPlanData = document.getElementById('modalPlanData');
+
+        const buyPlanBtn = document.getElementById('buyPlanBtn');
+
+        let currentPlan = null;
 
         let selectedAffiliateId = null;
         let currentDate = new Date();
@@ -193,6 +235,106 @@
 
             loadSchedule();
         });
+
+        viewPlansBtn.addEventListener('click', function() {
+            if (!selectedAffiliateId) return;
+            // Näita plaane, peida affiliate info ja schedule
+            plansContainer.style.display = 'block';
+            scheduleContainer.style.display = 'none';
+            affiliateInfo.style.display = 'none';
+
+            loadAffiliatePlans(selectedAffiliateId);
+        });
+
+        // Plaanide laadimine
+        // ==========================
+        async function loadAffiliatePlans(ownerId) {
+            try {
+                // Eeldame, et serveripoolsel /api/plans endpointil on toetatud ?ownerId=...
+                const response = await fetch(`/api/plans?ownerId=${ownerId}`);
+                const data = await response.json();
+
+                renderPlans(data);
+            } catch (err) {
+                console.error('Error loading affiliate plans:', err);
+            }
+        }
+
+        function renderPlans(plans) {
+            plansList.innerHTML = '';
+            if (!Array.isArray(plans) || plans.length === 0) {
+                plansList.innerHTML = '<p class="text-muted">No plans found for this affiliate.</p>';
+                return;
+            }
+
+            plans.forEach(plan => {
+                const planButton = document.createElement('button');
+                planButton.classList.add('btn', 'btn-outline-primary', 'm-2', 'plan-button');
+                planButton.style.width = '200px';
+                planButton.style.height = '200px';
+                planButton.innerHTML = `
+                    <h4>${plan.name}</h4>
+                    <p>$${Number(plan.price).toFixed(2)}</p>
+                `;
+                planButton.addEventListener('click', () => {
+                    openPlanModal(plan);
+                });
+                plansList.appendChild(planButton);
+            });
+        }
+
+        function openPlanModal(plan) {
+            // Täidame modali read-only andmetega
+            modalPlanName.textContent = plan.name;
+            modalPlanDays.textContent = plan.validityDays;
+            modalPlanPrice.textContent = Number(plan.price).toFixed(2);
+            modalPlanData.textContent = plan.additionalData || '-';
+            currentPlan = plan;
+            planInfoModal.show();
+        }
+
+        // "Buy plan" nupu event
+        buyPlanBtn.addEventListener('click', async () => {
+            if (!currentPlan) return;
+
+            // Küsi maksemeetodit - lihtne variant:
+            const method = prompt("Select payment method: 'on app' or 'by card'", "on app");
+            if (!method) return; // Kui tühistatakse, ei tee midagi
+
+            if (method.toLowerCase() === 'on app') {
+                // Tee päring serverisse
+                try {
+                    const body = {
+                        affiliateId: selectedAffiliateId,        // affiliate.ownerId
+                        planId: currentPlan.id,
+                        planName: currentPlan.name,
+                        validityDays: currentPlan.validityDays,
+                        price: currentPlan.price
+                    };
+
+                    const response = await fetch('/api/buy-plan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json'},
+                        body: JSON.stringify(body)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(`Plan purchased successfully! New credit: ${data.newCredit}`);
+                        planInfoModal.hide(); // sulgeme modali
+                    } else {
+                        const errData = await response.json();
+                        alert('Error: ' + errData.error);
+                    }
+                } catch (err) {
+                    console.error('Error buying plan:', err);
+                    alert('Error: Could not buy plan');
+                }
+            } else if (method.toLowerCase() === 'by card') {
+                alert('By card payment is not implemented yet.');
+            }
+        });
+
 
         document.getElementById('prev-week').addEventListener('click', () => {
             currentDate.setDate(currentDate.getDate() - 7);

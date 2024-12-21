@@ -30,6 +30,8 @@ model User {
   Affiliate        Affiliate[]
   AffiliateTrainer AffiliateTrainer[]
   classAttendances ClassAttendee[]
+  credit           Float?             @default(0.0)
+  UserPlan         UserPlan[]
 }
 
 model Training {
@@ -94,6 +96,20 @@ model Plan {
   additionalData String?
   ownerId        Int
   owner          User    @relation(fields: [ownerId], references: [id])
+}
+
+model UserPlan {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  affiliateId  Int
+  planId       Int // kui tahad viidata Plan.id-le
+  planName     String
+  validityDays Int
+  price        Float
+  purchasedAt  DateTime @default(now())
+  endDate      DateTime
 }
 
 model Affiliate {
