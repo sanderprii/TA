@@ -1,6 +1,6 @@
 // public/gym.js
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const scheduleElement = document.getElementById('schedule');
     const currentWeekElement = document.getElementById('current-week');
     const addTrainingBtn = document.getElementById('add-training-btn');
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
         openTrainingModal();
     });
 
-    trainingForm.addEventListener('submit', async function(e) {
+    trainingForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         const trainingId = document.getElementById('trainingId').value;
         const repeatWeeklyValue = document.querySelector('input[name="repeatWeekly"]:checked').value;
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update existing training
                 await fetch(`/api/classes/${trainingId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(trainingData)
                 });
             } else {
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Create new training
                 await fetch('/api/classes', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(trainingData)
                 });
             }
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    deleteTrainingBtn.addEventListener('click', async function() {
+    deleteTrainingBtn.addEventListener('click', async function () {
         const trainingId = document.getElementById('trainingId').value;
         if (trainingId) {
             if (confirm('Are you sure you want to delete this training?')) {
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const startOfWeek = getStartOfWeek(currentDate);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(endOfWeek.getDate() + 6);
-        endOfWeek.setHours(23,59,59,999);
+        endOfWeek.setHours(23, 59, 59, 999);
         currentWeekElement.textContent = `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
 
         try {
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Konteiner päevade jaoks
         const scheduleContainer = document.createElement('div');
-        scheduleContainer.classList.add('schedule-container');
+        scheduleContainer.classList.add('schedule-container','d-flex', 'w-100');
 
         if (isSmallScreen) {
             renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
@@ -145,13 +145,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Päeva tulp
             const dayColumn = document.createElement('div');
-            dayColumn.classList.add('day-column');
+            dayColumn.classList.add('day-column', 'flex-grow-1');
 
             // Päeva pealkiri
             const dayHeader = document.createElement('div');
-            dayHeader.textContent = `${days[i]} (${dayDate.toLocaleDateString()})`;
+            dayHeader.textContent = `${days[i]}`;
             dayHeader.classList.add('day-header');
             dayColumn.appendChild(dayHeader);
+
+            // päeva kuupäev
+            const dayNumber = document.createElement('div');
+            dayNumber.textContent = `(${dayDate.toLocaleDateString()})`;
+            dayNumber.classList.add('day-number');
+            dayColumn.appendChild(dayNumber);
 
             // Filtreerime treeningud selle päeva jaoks ja sorteerime aja järgi
             const classesForDay = classesData
@@ -196,9 +202,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 
-
-
-
     // Funktsioon päevade nuppude loomiseks
     function renderDayButtons(startOfWeek) {
         dayButtonsContainer.innerHTML = '';
@@ -206,15 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for (let i = 0; i < 7; i++) {
             const btn = document.createElement('button');
-            btn.classList.add('btn', 'btn-outline-primary', 'btn-sm', 'day-btn');
-            const dayDate = new Date(startOfWeek);
-            dayDate.setDate(dayDate.getDate() + i);
-            const dayNumber = dayDate.getDate();
-            btn.textContent = `${dayNamesShort[i]} ${dayNumber}`;
+            btn.classList.add('rounded-pill', 'text-white', 'bg-dark', 'day-btn');
+
+            btn.textContent = `${dayNamesShort[i]}`;
 
             if (i === selectedDayIndex) {
                 btn.classList.add('btn-primary');
-                btn.classList.remove('btn-outline-primary');
+                btn.classList.remove('btn-outline-primary', 'bg-dark');
             }
 
             btn.addEventListener('click', () => {
@@ -249,11 +250,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 
-
     function createClassDiv(classData) {
         const classDiv = document.createElement('div');
         classDiv.textContent = classData.trainingName;
-        classDiv.classList.add('class-entry');
+        classDiv.classList.add('m-1', 'bg-dark', 'rounded', 'text-center', 'py-5', 'px-3', 'text-white', 'class-entry');
         classDiv.style.cursor = 'pointer';
 
         // Lisa sündmuse kuulaja, mis avab modaalakna klassi detailidega
@@ -263,9 +263,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return classDiv;
     }
-
-
-
 
 
     function openTrainingModal(training = null) {
@@ -304,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const day = d.getDay(); // 0 (Sunday) - 6 (Saturday)
         const diff = (day === 0 ? -6 : 1) - day;
         d.setDate(d.getDate() + diff);
-        d.setHours(0,0,0,0);
+        d.setHours(0, 0, 0, 0);
         return d;
     }
 

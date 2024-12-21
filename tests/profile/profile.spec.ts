@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 test('Edit profile and verify updated information', async ({ page }) => {
 
     await page.goto('http://localhost:3000/login');
-    await page.fill('#username', 'testuser');
-    await page.fill('#password', 'testuser');
+    await page.fill('#login_username', 'testuser');
+    await page.fill('#login_password', 'testuser');
     await page.click('button[type="submit"]');
 
     await page.waitForTimeout(1000);

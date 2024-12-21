@@ -4,9 +4,9 @@ test.describe('Trainer role functionality', () => {
     test('Trainer can select role, see Classes menu, and add a non-hourly training', async ({ page }) => {
         // 1. Log in as a trainer user
         await page.goto('http://localhost:3000/login');
-        await page.fill('#username', 'testuser'); // Kasutajanimi, mis on treener
-        await page.fill('#password', 'testuser'); // Selle kasutaja parool
-        await page.click('#submit-btn');
+        await page.fill('#login_username', 'testuser'); // Kasutajanimi, mis on treener
+        await page.fill('#login_password', 'testuser'); // Selle kasutaja parool
+        await page.click('button[type="submit"]');
 
         // 2. Oota, et login õnnestuks
         // Kontrolli, kas tuli teade või suunamine
@@ -44,7 +44,7 @@ test.describe('Trainer role functionality', () => {
 
         const today = new Date();
         const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        const todayName = daysOfWeek[today.getDay() - 1]; // Mon=0, Sun=6
+        const todayName = daysOfWeek[(today.getDay() + 6) % 7];
 
         // Leia tänase päeva sektsioon ja loe klasside arv
         const todayColumn = page.locator(`.day-column:has(.day-header:has-text("${todayName}"))`);

@@ -1,15 +1,62 @@
-<div class="container">
-    <form id="login-form">
-    <h2>Sign In</h2>
+<div class="container-default">
+    <input id="signup_toggle" type="checkbox">
+    <form id="login-form" class="form-def">
+        <div class="form_front">
+            <div class="form_details">Login</div>
+            <input type="text" id="login_username" class="inputlogin" placeholder="Username">
+            <input type="password" id="login_password" class="inputlogin" placeholder="Password">
+            <button type="submit" class="btnlogin">Login</button>
+            <span class="switch">Don't have an account?
+                <label for="signup_toggle" class="signup_tog">
+                    Sign Up
+                </label>
+            </span>
+        </div>
 
-        <input type="text" id="username" placeholder="Username" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button type="submit" id="submit-btn">Sign In</button>
-        <p>Don't have an account? <a href="/register">Register here</a></p>
+
+
+        <div class="form_back">
+            <div class="form_details">SignUp</div>
+            <input type="text" class="inputlogin" placeholder="Full Name">
+            <input type="text" class="inputlogin" id="register_username" placeholder="Username">
+            <input type="password" class="inputlogin" id="confirm_password" placeholder="Password">
+            <input type="password" class="inputlogin" id="register_password" placeholder="Confirm Password">
+            <input type="email" class="inputlogin" id="email" placeholder="Email" name="email">
+
+            <div class="mb-3">
+                <label class="form-label d-block">Affiliate Owner (optional):</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="affiliate-owner-yes" name="isAffiliateOwner" value="true">
+                    <label class="form-check-label" for="affiliate-owner-yes">Yes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="affiliate-owner-no" name="isAffiliateOwner" value="false" checked>
+                    <label class="form-check-label" for="affiliate-owner-no">No</label>
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label" for="sex">Sex (optional):</label>
+                <select id="sex" name="sex">
+                    <option value="">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <!-- Add other options if needed -->
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="dateOfBirth">Date of Birth (optional):</label>
+                <input type="date" id="dateOfBirth" name="dateOfBirth">
+            </div>
+
+            <button class="btnlogin">Signup</button>
+            <span class="switch">Already have an account?
+                <label for="signup_toggle" class="signup_tog">
+                    Sign In
+                </label>
+            </span>
+
+
+        </div>
     </form>
-
-
-
-
 </div>
-
