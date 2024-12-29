@@ -4,8 +4,8 @@ test.describe('My Affiliate page functionality', () => {
     test('should allow creating and updating affiliate details', async ({ page }) => {
         // Logi sisse
         await page.goto('http://localhost:3000/login');
-        await page.fill('#username', 'testadmin');
-        await page.fill('#password', 'testadmin');
+        await page.fill('#login_username', 'testadmin');
+        await page.fill('#login_password', 'testadmin');
         await page.click('button[type="submit"]');
 
         // Oota, kuni kasutaja suunatakse My Affiliate lehele

@@ -1,80 +1,101 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Register Form Submission
 
+    if (window.location.pathname === '/login') {
+        const params = new URLSearchParams(window.location.search);
+        const formType = params.get('form'); // Kas 'login' või 'signup'
+
+        // Kui vormi tüüp on 'signup', märgi checkbox
+        if (formType === 'signup') {
+            document.getElementById('signup_toggle').checked = true;
+        } else {
+            document.getElementById('signup_toggle').checked = false;
+        }
+    }
 
 
-    const registerForm = document.getElementById('register-form');
+    const registerForm = document.getElementById('login-form');
     if (registerForm) {
         registerForm.addEventListener('submit', async function (event) {
             event.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const email = document.getElementById('email').value.trim() || null;
-            const isAffiliateOwnerValue = document.querySelector('input[name="isAffiliateOwner"]:checked').value;
-            const isAffiliateOwner = isAffiliateOwnerValue === 'true' ? true : false;
-            const sex = document.getElementById('sex').value || null;
-            const dateOfBirthValue = document.getElementById('dateOfBirth').value;
-            const dateOfBirth = dateOfBirthValue ? new Date(dateOfBirthValue) : null;
 
-            try {
-                const response = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username,
-                        password,
-                        email,
-                        isAffiliateOwner,
-                        sex,
-                        dateOfBirth,
-                    }),
-                });
+            const isSignUp = document.getElementById('signup_toggle').checked;
 
-                const result = await response.json();
-                if (response.ok) {
-                    alert(result.message);
-                    window.location.href = '/login';
-                } else {
-                    alert(result.error);
+            if (isSignUp) {
+
+
+
+                const username = document.getElementById('register_username').value.trim();
+                const password = document.getElementById('register_password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+                const email = document.getElementById('email').value.trim() || null;
+                const isAffiliateOwnerValue = document.querySelector('input[name="isAffiliateOwner"]:checked').value;
+                const isAffiliateOwner = isAffiliateOwnerValue === 'true' ? true : false;
+                const sex = document.getElementById('sex').value || null;
+                const dateOfBirthValue = document.getElementById('dateOfBirth').value;
+                const dateOfBirth = dateOfBirthValue ? new Date(dateOfBirthValue) : null;
+
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match!');
+                    return;
                 }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        });
-    }
 
+                try {
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            username,
+                            password,
+                            email,
+                            isAffiliateOwner,
+                            sex,
+                            dateOfBirth,
+                        }),
+                    });
 
-    // Login Form Submission
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function (event) {
-            event.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password }),
-                });
-
-                const result = await response.json();
-                if (response.ok) {
-                    alert(result.message);
-                    if (result.isAffiliateOwner || result.isTrainer) {
-                        window.location.href = '/choose-role';
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(result.message);
+                        window.location.href = '/login';
                     } else {
-                        window.location.href = '/';
+                        alert(result.error);
                     }
-                } else {
-                    alert(result.error);
+                } catch (error) {
+                    alert('Error: ' + error.message);
                 }
-            } catch (error) {
-                alert('Error: ' + error.message);
+            } else {
+                const username = document.getElementById('login_username').value.trim();
+                const password = document.getElementById('login_password').value;
+
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password }),
+                    });
+
+                    const result = await response.json();
+                    if (response.ok) {
+
+                        if (result.isAffiliateOwner || result.isTrainer) {
+                            window.location.href = '/choose-role';
+                        } else {
+                            window.location.href = '/';
+                        }
+                    } else {
+                        alert(result.error);
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
             }
         });
     }
+
+
+
+
 
     // Logout Button Click
     const logoutButton = document.getElementById('logout-btn');
@@ -83,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch('/api/logout', { method: 'POST' });
                 if (response.ok) {
-                    alert('Logged out successfully');
+
                     window.location.href = '/info'; // Redirect to login page
                 } else {
                     alert('Logout failed');
@@ -231,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify(recordData),
                     });
                     if (response.ok) {
-                        alert('Record added successfully!');
+
                     } else {
                         const result = await response.json();
                         alert('Error: ' + result.error);
@@ -725,8 +746,10 @@ document.addEventListener('DOMContentLoaded', () => {
             recordsContainer.innerHTML = ''; // Clear existing records
 
             records.forEach((record) => {
-                const recordItem = document.createElement('div');
-                recordItem.className = 'record-item';
+                const recordItem = document.createElement('button');
+                recordItem.className = ('btn btn-outline-primary m-2 plan-button');
+                recordItem.style.width = '150px';
+                recordItem.style.height = '150px';
                 recordItem.style.cursor = 'pointer';
 
                 let recordContent = '';
@@ -1201,7 +1224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify(recordData),
                     });
                     if (response.ok) {
-                        alert('Record saved successfully!');
+
                         loadRecords();
                         const bootstrapModal = bootstrap.Modal.getInstance(modal);
                         bootstrapModal.hide();
@@ -1381,8 +1404,10 @@ document.addEventListener('DOMContentLoaded', () => {
             recordsContainer.innerHTML = ''; // Clear existing records
 
             records.forEach((record) => {
-                const recordItem = document.createElement('div');
-                recordItem.className = 'record-item';
+                const recordItem = document.createElement('button');
+                recordItem.className = ('btn btn-outline-primary m-2 plan-button');
+                recordItem.style.width = '150px';
+                recordItem.style.height = '150px';
                 recordItem.style.cursor = 'pointer';
 
                 let recordContent = '';

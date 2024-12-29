@@ -4,8 +4,8 @@ test.describe('Plan and Class Management Tests', () => {
     test.beforeEach(async ({ page }) => {
         // Logi sisse enne iga testi
         await page.goto('http://localhost:3000/login');
-        await page.fill('#username', 'testadmin');
-        await page.fill('#password', 'testadmin');
+        await page.fill('#login_username', 'testadmin');
+        await page.fill('#login_password', 'testadmin');
         await page.click('button[type="submit"]');
 
         // Kontrolli, kas suunati õigesse kohta
@@ -66,11 +66,14 @@ test.describe('Plan and Class Management Tests', () => {
 
         const today = new Date();
         const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        const todayName = daysOfWeek[today.getDay() - 1]; // Mon=0, Sun=6
+        const todayName = daysOfWeek[(today.getDay() + 6) % 7];
+
+
 
         // Leia tänase päeva sektsioon ja loe klasside arv
         const todayColumn = page.locator(`.day-column:has(.day-header:has-text("${todayName}"))`);
-        await expect(todayColumn).toBeVisible();
+        await expect(todayColumn).toBeVisible({ timeout: 10000 });
+
 
         const initialClassCount = await todayColumn.locator('.class-entry').count();
 

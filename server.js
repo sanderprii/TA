@@ -16,6 +16,8 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // For form data
+app.use('/img', express.static('views/img'));
+app.use('/lib', express.static('lib'));
 
 // Set up Handlebars view engine
 app.engine('handlebars', engine({
@@ -96,10 +98,7 @@ app.get('/info', (req, res) => {
     res.render('info', { title: 'info' });
 });
 
-// Register view
-app.get('/register', (req, res) => {
-    res.render('register', { title: 'Register' });
-});
+
 
 // Login view
 app.get('/login', (req, res) => {
@@ -135,9 +134,9 @@ app.get('/choose-role', ensureAuthenticated, (req, res) => {
     if (isOwner) roles.push({ url: '/gym?role=owner', label: 'Affiliate Owner', id: 'choose-owner' });
     if (isTrainer) roles.push({ url: '/gym?role=trainer', label: 'Trainer' });
     // Regular user alati kättesaadav
-    roles.push({ url: '/', label: 'Regular User' });
+    roles.push({ url: '/', label: 'Regular User'});
 
-    res.render('choose-role', { title: 'Choose Role', roles, isOwner,
+    res.render('choose-role', { title: 'Choose Role', layout: 'owner', roles, isOwner,
         isTrainer });
 });
 
@@ -370,7 +369,7 @@ app.post('/api/login', async (req, res) => {
                 req.session.trainerAffiliateIds = trainerAffiliates.map(a => a.affiliateId);
 
                 res.status(200).json({
-                    message: 'Login successful!',
+
                     isAffiliateOwner: req.session.isAffiliateOwner,
                     isTrainer: req.session.isTrainer
                 });
@@ -1630,11 +1629,25 @@ app.get('/api/plans', ensureAuthenticated, async (req, res) => {
     // Ehita "where" objekt. Kui ownerId puudub, võime selle tühjaks jätta.
     const whereClause = ownerId ? { ownerId } : {};
     try {
-        const plans = await prisma.plan.findMany({
-            where: whereClause,
-            orderBy: { id: 'asc' }
-        });
-        res.json(plans);
+
+        // Kui currentRole on 'owner', kuva ainult Sinu plaane
+        if (req.session.currentRole === 'owner') {
+            const plans = await prisma.plan.findMany({
+                where: {
+                    ownerId: req.session.userId
+                },
+                orderBy: { id: 'asc' }
+            });
+            return res.json(plans);
+
+        } else {
+
+            const plans = await prisma.plan.findMany({
+                where: whereClause,
+                orderBy: {id: 'asc'}
+            });
+            res.json(plans);
+        }
     } catch (error) {
         console.error('Error fetching plans:', error);
         res.status(500).json({ error: 'Failed to fetch plans.' });
@@ -1888,10 +1901,15 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
             const affiliate = await prisma.affiliate.findFirst({
                 where: { ownerId: req.session.userId },
             });
+
+
+
             if (!affiliate) {
                 return res.render('members', { title: 'Members', members: [] });
             }
             affiliateIds = [affiliate.id];
+
+
         } else if (req.session.currentRole === 'trainer') {
             // Leia affiliate'id, kus kasutaja on treener
             const relations = await prisma.affiliateTrainer.findMany({
@@ -1903,9 +1921,10 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
         // Otsi kõik UserPlan kirjed, kus affiliateId on ülaltoodud loetelus
         // ja lae sealtkaudu ka user
         const userPlans = await prisma.userPlan.findMany({
-            where: { affiliateId: { in: affiliateIds } },
+            where: { affiliateId: { in: affiliateIds }},
             include: { user: true }
         });
+
 
         // Selleks, et kuvada unikaalseid kasutajaid,
         // grupeerime userId alusel
@@ -1937,16 +1956,24 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
 
 app.get('/api/member-info', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
     const userId = parseInt(req.query.userId, 10);
+    let affiliateIds = null;
     // Leia user + tema planid, mis kuuluvad affiliate’ile
     // (Muidu teoreetiliselt võib ta omada ka teisi planisid)
     try {
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return res.status(404).json({ error: 'User not found.' });
 
+        const affiliate = await prisma.affiliate.findFirst({
+            where: { ownerId: req.session.userId },
+        });
+
+        affiliateIds = parseInt(affiliate.id, 10);
+console.log("affiliateIds", affiliateIds)
         // Leia userPlan seosed (affiliateId in [??], aga sul on currentRole, leiad again affiliateId)
         // Siin võib teha lihtsustuse, et toome KÕIK useri plaanid:
         const userPlans = await prisma.userPlan.findMany({
-            where: { userId },
+            where: {userId: userId,
+                affiliateId: affiliateIds},
             orderBy: { id: 'asc' },
         });
 

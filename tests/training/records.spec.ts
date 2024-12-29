@@ -6,8 +6,8 @@ test.describe.serial('Records Page Tests', () => {
     test('Add WOD record', async ({ page }) => {
 
         await page.goto('http://localhost:3000/login');
-        await page.fill('#username', 'testregular');
-        await page.fill('#password', 'testregular');
+        await page.fill('#login_username', 'testregular');
+        await page.fill('#login_password', 'testregular');
         await page.click('button[type="submit"]');
 
         await page.waitForLoadState('networkidle');
@@ -44,8 +44,8 @@ test.describe.serial('Records Page Tests', () => {
     test('Add Weightlifting record', async ({ page }) => {
 
         await page.goto('http://localhost:3000/login');
-        await page.fill('#username', 'testregular');
-        await page.fill('#password', 'testregular');
+        await page.fill('#login_username', 'testregular');
+        await page.fill('#login_password', 'testregular');
         await page.click('button[type="submit"]');
 
         await page.waitForLoadState('networkidle');
@@ -81,8 +81,8 @@ test.describe.serial('Records Page Tests', () => {
     test('Add Cardio record', async ({ page }) => {
 
         await page.goto('http://localhost:3000/login');
-        await page.fill('#username', 'testregular');
-        await page.fill('#password', 'testregular');
+        await page.fill('#login_username', 'testregular');
+        await page.fill('#login_password', 'testregular');
         await page.click('button[type="submit"]');
 
         await page.waitForLoadState('networkidle');

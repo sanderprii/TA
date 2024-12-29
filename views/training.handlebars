@@ -1,99 +1,111 @@
-<div class="container mt-5">
-    <h2 class="text-center mb-4">Add Training</h2>
-    <form id="training-form">
-        <div class="form-group">
-            <label for="training-type">Training Type:</label>
+<div class=" container-training">
+
+    <form id="training-form" class="form-def">
+        <div class="form_front form-training">
+            <label class="form-label" for="training-type">Training Type:</label>
             <select id="training-type" name="training-type" class="form-control">
                 <option value="">-- Select Training Type --</option>
                 <option value="WOD">WOD</option>
                 <option value="Weightlifting">Weightlifting</option>
                 <option value="Cardio">Cardio</option>
             </select>
-        </div>
 
-        <div class="form-group" id="training-date-div" style="display: none;">
-            <label for="training-date">Date</label>
-            <input type="date" id="training-date" class="form-control" required>
-        </div>
-        <!-- Training type options -->
-        <div id="training-options" style="display: none;">
-            <!-- WOD -->
-            <div id="wod-options" class="training-options" style="display: none;">
-                <div class="form-group" style="position: relative; width: 100%;">
-                    <label for="wod-search">Search Default WODs:</label>
-                    <input type="search" id="wod-search" name="wod-search" class="form-control" placeholder="Search for WODs...">
-                    <ul id="wod-search-results" class="list-group" style="display: none; position: absolute; z-index: 1000;"></ul>
-                </div>
-                <div class="form-group">
-                    <label for="wod-name">WOD Name:</label>
-                    <input type="text" id="wod-name" name="wod-name" class="form-control" placeholder="Enter WOD name">
-                </div>
-                <div class="form-group">
-                    <label>WOD Type</label>
-                    <div>
-                        <label><input type="radio" name="wod-type" value="For Time"> For Time</label>
-                        <label><input type="radio" name="wod-type" value="EMOM"> EMOM</label>
-                        <label><input type="radio" name="wod-type" value="Tabata"> Tabata</label>
-                        <label><input type="radio" name="wod-type" value="AMRAP"> AMRAP</label>
+
+            <div class="form-group" id="training-date-div" style="display: none;">
+                <label for="training-date" class="form-label">Date</label>
+                <input type="date" id="training-date" class="form-control" required>
+            </div>
+            <!-- Training type options -->
+            <div id="training-options" style="display: none;">
+                <!-- WOD -->
+                <div id="wod-options" class="training-options" style="display: none;">
+                    <div class="form-group" style="position: relative; width: 100%;">
+                        <label class="form-label" for="wod-search">Search Default WODs:</label>
+                        <input type="search" id="wod-search" name="wod-search" class="form-control"
+                               placeholder="Search for WODs...">
+                        <ul id="wod-search-results" class="list-group"
+                            style="display: none; position: absolute; z-index: 1000;"></ul>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label" for="wod-name">WOD Name:</label>
+                        <input type="text" id="wod-name" name="wod-name" class="form-control"
+                               placeholder="Enter WOD name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">WOD Type</label>
+                        <div>
+                            <label class="form-label"><input  type="radio" name="wod-type" value="For Time"> For Time</label>
+                            <label class="form-label"><input type="radio" name="wod-type" value="EMOM"> EMOM</label>
+                            <label class="form-label"><input type="radio" name="wod-type" value="Tabata"> Tabata</label>
+                            <label class="form-label"><input type="radio" name="wod-type" value="AMRAP"> AMRAP</label>
+                        </div>
+                    </div>
+
+                    <div id="exercise-lines">
+                        <div class="exercise-line">
+                            <div class="form-row align-items-center">
+                                <div class="col">
+                                    <textarea id="wod-description" type="text" name="exercise-name" class="form-control"
+                                              rows="5" placeholder="WOD description"></textarea>
+                                </div>
+
+                                <div>
+                                    <label class="form-label" for="score">Score:</label>
+                                    <input type="text" id="wod-score" name="score" placeholder="Enter Score">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
                 </div>
 
-                <div id="exercise-lines">
-                    <div class="exercise-line">
-                        <div class="form-row align-items-center">
+                <!-- Weightlifting -->
+                <div id="weightlifting-options" class="training-options" style="display: none;">
+                    <div class="form-row align-items-center">
+                        <div id="weightlifting-exercise-lines">
                             <div class="col">
-                                <textarea id="wod-description" type="text" name="exercise-name" class="form-control" rows="5" placeholder="WOD description"></textarea>
-                            </div>
-
-                            <div>
-                                <label for="score">Score:</label>
-                                <input type="text" id="wod-score" name="score" placeholder="Enter Score">
+                                <textarea type="text" name="exercise-name" class="form-control" rows="5"
+                                          placeholder="Exercise Name"></textarea>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-
-            </div>
-
-            <!-- Weightlifting -->
-            <div id="weightlifting-options" class="training-options" style="display: none;">
-                <div class="form-row align-items-center">
-                    <div id="weightlifting-exercise-lines">
-                        <div class="col">
-                            <textarea type="text" name="exercise-name" class="form-control" rows="5" placeholder="Exercise Name"></textarea>
-                        </div>
                     </div>
 
                 </div>
 
-            </div>
+                <!-- Cardio -->
+                <div id="cardio-options" class="training-options" style="display: none;">
+                    <div class="form-row align-items-center">
+                        <div id="cardio-exercise-lines">
+                            <div class="form-row align-items-center mt-2">
+                                <div class="col">
+                                    <textarea type="text" rows="5" name="exercise-name" rows="5" class="form-control"
+                                              placeholder="Exercise Name"></textarea>
+                                </div>
 
-            <!-- Cardio -->
-            <div id="cardio-options" class="training-options" style="display: none;">
-                <div class="form-row align-items-center">
-                    <div id="cardio-exercise-lines">
-                        <div class="form-row align-items-center mt-2">
-                            <div class="col">
-                                <textarea type="text" rows="5" name="exercise-name" rows="5" class="form-control" placeholder="Exercise Name"></textarea>
                             </div>
-
                         </div>
+
                     </div>
 
                 </div>
 
+                <button type="submit" id="submit-training" class="btn btn-primary mt-3">Save Training</button>
             </div>
-
-            <button type="submit" id="submit-training" class="btn btn-primary mt-3">Save Training</button>
         </div>
     </form>
 
+
+</div>
+<div>
     <h3 class="mt-5">Training List</h3>
     <ul id="training-list" class="list-group"></ul>
 </div>
+
 <!-- Modal -->
-<div class="modal fade" id="training-modal" tabindex="-1" role="dialog" aria-labelledby="trainingModalLabel" aria-hidden="true">
+<div class="modal fade" id="training-modal" tabindex="-1" role="dialog" aria-labelledby="trainingModalLabel"
+     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -109,7 +121,8 @@
             <div class="modal-footer">
 
                 <button type="button" id="edit-training-btn" class="btn btn-primary">Edit</button>
-                <button type="button" id="save-training-btn" class="btn btn-success" style="display: none;">Save</button>
+                <button type="button" id="save-training-btn" class="btn btn-success" style="display: none;">Save
+                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 
             </div>

@@ -1,8 +1,6 @@
 <!-- register-training.handlebars -->
 
 
-
-
 <div class="container mt-4">
     <h1>Register for Training</h1>
 
@@ -11,7 +9,6 @@
         <input type="text" class="form-control" id="affiliateSearch" placeholder="Type affiliate name...">
         <div id="affiliateSuggestions" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
     </div>
-
 
 
     <div id="affiliateInfo" style="display:none;">
@@ -27,21 +24,28 @@
     </div>
 
     <div id="scheduleContainer" style="display:none;" class="mt-4">
-        <h2>Schedule</h2>
-        <div class="justify-content-between align-items-center mb-3">
-            <div class="d-flex justify-content-between">
-                <button id="prev-week" class="btn btn-secondary btn-sm">Previous Week</button>
-                <button id="next-week" class="btn btn-secondary btn-sm">Next Week</button>
+        <div class="container-fluid p-5 text-center">
+            <h2>Schedule</h2>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <!-- Vasakul Previous Week nupp -->
+                <button id="prev-week" class="btn btn-secondary">Previous Week</button>
+
+                <!-- Keskel Current Week -->
+
+
+                <!-- Paremal Next Week ja Add Training nupud -->
+                <div class="d-flex align-items-center">
+                    <button id="next-week" class="btn btn-secondary me-2">Next Week</button>
+
+                </div>
             </div>
-            <div>
-                <span id="current-week" class="h5"></span>
+            <span id="current-week" class="h5 text-center"></span>
+            <!-- Päevade nupud väikese ekraani jaoks -->
+            <div id="day-buttons" class="d-flex justify-content-between bg-dark rounded-pill" style="display:none;">
+                <!-- Siia lisame dünaamiliselt 7 päeva nupud -->
             </div>
+            <div id="schedule"></div>
         </div>
-        <!-- Päevade nupud väikese ekraani jaoks -->
-        <div id="day-buttons" class="mb-3 d-flex justify-content-between" style="display:none;">
-            <!-- Siia lisame dünaamiliselt 7 päeva nupud -->
-        </div>
-        <div id="schedule"></div>
     </div>
     <!-- PLAANIDE konteiner -->
     <div id="plansContainer" style="display:none;" class="mt-4">
@@ -60,7 +64,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="classCapacityInfo"><strong>Free spots:</strong> <span id="freeSpots"></span> / <strong>Class capacity:</strong> <span id="classCapacity"></span></p>
+                <p id="classCapacityInfo"><strong>Free spots:</strong> <span id="freeSpots"></span> / <strong>Class
+                    capacity:</strong> <span id="classCapacity"></span></p>
                 <p><strong>Training Name:</strong> <span id="modalTrainingName"></span></p>
                 <p><strong>Time:</strong> <span id="modalTime"></span></p>
                 <p><strong>Trainer:</strong> <span id="modalTrainer"></span></p>
@@ -69,7 +74,8 @@
             </div>
             <div class="modal-footer">
                 <button id="registerForClassBtn" type="button" class="btn btn-primary">Register for Class</button>
-                <button id="cancelClassBtn" type="button" class="btn btn-danger" style="display:none;">Cancel Training</button>
+                <button id="cancelClassBtn" type="button" class="btn btn-danger" style="display:none;">Cancel Training
+                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -100,11 +106,27 @@
     </div>
 </div>
 
+<!-- Payment Method Modal (NEW) -->
+<div class="modal fade" id="paymentMethodModal" tabindex="-1" aria-labelledby="paymentMethodModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="paymentMethodModalLabel" class="modal-title">Choose Payment Method</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex justify-content-around">
+                <button id="onAppBtn" class="btn btn-success">On App</button>
+                <button id="byCardBtn" class="btn btn-primary">By Card</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     // public/register-training.js
 
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', async function () {
         const affiliateSearch = document.getElementById('affiliateSearch');
         const affiliateSuggestions = document.getElementById('affiliateSuggestions');
         const affiliateInfo = document.getElementById('affiliateInfo');
@@ -139,12 +161,19 @@
         const modalPlanData = document.getElementById('modalPlanData');
 
         const buyPlanBtn = document.getElementById('buyPlanBtn');
+        const onAppBtn = document.getElementById('onAppBtn');
+        const byCardBtn = document.getElementById('byCardBtn');
+
+        const paymentMethodModalEl = document.getElementById('paymentMethodModal');
+        const paymentMethodModal = new bootstrap.Modal(paymentMethodModalEl);
 
         let currentPlan = null;
 
         let selectedAffiliateId = null;
         let currentDate = new Date();
         let classesData = [];
+
+        affiliateIds = null;
 
         let isSmallScreen = window.innerWidth < 1143; // kontrolli ekraani laiust
         let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
@@ -164,7 +193,7 @@
         }
 
         // Otsingukasti eventid
-        affiliateSearch.addEventListener('input', async function() {
+        affiliateSearch.addEventListener('input', async function () {
             const query = affiliateSearch.value.trim();
             affiliateSuggestions.innerHTML = '';
             if (query.length > 0) {
@@ -203,6 +232,7 @@
                 if (data && data.affiliate) {
                     selectedAffiliateId = data.affiliate.ownerId;
                     affName.textContent = data.affiliate.name;
+                    affiliateIds = data.affiliate.id;
                     affAddress.textContent = data.affiliate.address;
                     affTrainingType.textContent = data.affiliate.trainingType;
                     affTrainers.innerHTML = '';
@@ -220,7 +250,7 @@
             }
         }
 
-        viewScheduleBtn.addEventListener('click', async function() {
+        viewScheduleBtn.addEventListener('click', async function () {
             if (!selectedAffiliateId) return;
             scheduleContainer.style.display = 'block';
 
@@ -236,7 +266,7 @@
             loadSchedule();
         });
 
-        viewPlansBtn.addEventListener('click', function() {
+        viewPlansBtn.addEventListener('click', function () {
             if (!selectedAffiliateId) return;
             // Näita plaane, peida affiliate info ja schedule
             plansContainer.style.display = 'block';
@@ -293,46 +323,52 @@
             planInfoModal.show();
         }
 
-        // "Buy plan" nupu event
-        buyPlanBtn.addEventListener('click', async () => {
+        // 1. "Buy plan" klikk modali sees
+        buyPlanBtn.addEventListener('click', () => {
+            // Sulgeme planInfoModal
+            planInfoModal.hide();
+            // Avame paymentMethodModal
+            paymentMethodModal.show();
+        });
+
+        // 2. "On App" nupp
+        onAppBtn.addEventListener('click', async () => {
             if (!currentPlan) return;
 
-            // Küsi maksemeetodit - lihtne variant:
-            const method = prompt("Select payment method: 'on app' or 'by card'", "on app");
-            if (!method) return; // Kui tühistatakse, ei tee midagi
-
-            if (method.toLowerCase() === 'on app') {
-                // Tee päring serverisse
-                try {
-                    const body = {
-                        affiliateId: selectedAffiliateId,        // affiliate.ownerId
-                        planId: currentPlan.id,
-                        planName: currentPlan.name,
-                        validityDays: currentPlan.validityDays,
-                        price: currentPlan.price
-                    };
-
-                    const response = await fetch('/api/buy-plan', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json'},
-                        body: JSON.stringify(body)
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        alert(`Plan purchased successfully! New credit: ${data.newCredit}`);
-                        planInfoModal.hide(); // sulgeme modali
-                    } else {
-                        const errData = await response.json();
-                        alert('Error: ' + errData.error);
-                    }
-                } catch (err) {
-                    console.error('Error buying plan:', err);
-                    alert('Error: Could not buy plan');
+            // Kutsu serveri API /api/buy-plan
+            try {
+                const body = {
+                    affiliateId: affiliateIds,
+                    planId: currentPlan.id,
+                    planName: currentPlan.name,
+                    validityDays: currentPlan.validityDays,
+                    price: currentPlan.price
+                };
+                const response = await fetch('/api/buy-plan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`Plan purchased successfully! New credit: ${data.newCredit}`);
+                } else {
+                    const errData = await response.json();
+                    alert('Error buying plan: ' + errData.error);
                 }
-            } else if (method.toLowerCase() === 'by card') {
-                alert('By card payment is not implemented yet.');
+            } catch (error) {
+                console.error('Error buying plan:', error);
+            } finally {
+                // Sulgeme paymentMethodModal
+                paymentMethodModal.hide();
             }
+        });
+
+        // 3. "By Card" nupp
+        byCardBtn.addEventListener('click', () => {
+            alert('By card payment is not implemented yet.');
+            // Sulgeme paymentMethodModal
+            paymentMethodModal.hide();
         });
 
 
@@ -377,7 +413,7 @@
             const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
             const scheduleContainer = document.createElement('div');
-            scheduleContainer.classList.add('schedule-container');
+            scheduleContainer.classList.add('schedule-container','d-flex', 'w-100');
 
             if (isSmallScreen) {
                 renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
@@ -392,7 +428,7 @@
                 }
 
                 const dayColumn = document.createElement('div');
-                dayColumn.classList.add('day-column');
+                dayColumn.classList.add('day-column', 'flex-grow-1');
 
                 const dayHeader = document.createElement('div');
                 dayHeader.textContent = `${days[i]} (${dayDate.toLocaleDateString()})`;
@@ -429,21 +465,19 @@
         }
 
 
-
-
         function renderDayButtons(startOfWeek) {
             dayButtonsContainer.innerHTML = '';
             const dayNamesShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             for (let i = 0; i < 7; i++) {
                 const btn = document.createElement('button');
-                btn.classList.add('btn', 'btn-outline-primary', 'btn-sm', 'day-btn');
+                btn.classList.add('rounded-pill', 'text-white', 'bg-dark', 'day-btn');
                 const dayDate = new Date(startOfWeek);
                 dayDate.setDate(dayDate.getDate() + i);
                 const dayNumber = dayDate.getDate();
-                btn.textContent = `${dayNamesShort[i]} ${dayNumber}`;
+                btn.textContent = `${dayNamesShort[i]}`;
                 if (i === selectedDayIndex) {
                     btn.classList.add('btn-primary');
-                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.remove('btn-outline-primary', 'bg-dark');
                 }
                 btn.addEventListener('click', () => {
                     selectedDayIndex = i;
@@ -463,7 +497,7 @@
         }
 
         // Abifunktsioon, et leida antud kuupäevaga klassen
-        Array.prototype.filterMatches = function(cellDate) {
+        Array.prototype.filterMatches = function (cellDate) {
             return this.filter(c => {
                 const classDate = new Date(c.time);
                 return classDate.getFullYear() === cellDate.getFullYear() &&
@@ -477,7 +511,7 @@
         function createClassDiv(c) {
             const classDiv = document.createElement('div');
 
-            classDiv.classList.add('class-entry');
+            classDiv.classList.add('m-1', 'bg-light', 'rounded', 'text-center', 'py-5', 'px-3', 'class-entry');
             classDiv.style.cursor = 'pointer';
 
             // Treeningu nimi
@@ -487,7 +521,7 @@
 
             // Treeningu aeg
             const classTime = new Date(c.time);
-            const timeString = classTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeString = classTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
             const time = document.createElement('div');
             time.textContent = timeString;
             time.classList.add('text-muted');
@@ -549,12 +583,6 @@
         }
 
 
-
-
-
-
-
-
         async function checkEnrollment(classId) {
             try {
                 const response = await fetch(`/api/is-enrolled?classId=${classId}`);
@@ -574,14 +602,14 @@
         }
 
         // "Register for class" klikk on juba olemas
-        registerForClassBtn.addEventListener('click', async function() {
+        registerForClassBtn.addEventListener('click', async function () {
             const classId = modalClassId.value;
             if (!classId) return;
             try {
                 const response = await fetch('/api/register-for-class', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ classId })
+                    body: JSON.stringify({classId})
                 });
                 if (response.ok) {
                     alert('Registered successfully!');
@@ -598,7 +626,7 @@
         });
 
         // "Cancel training" klikk
-        cancelClassBtn.addEventListener('click', async function() {
+        cancelClassBtn.addEventListener('click', async function () {
             const classId = modalClassId.value;
             if (!classId) return;
 
@@ -629,8 +657,6 @@
             d.setHours(0, 0, 0, 0); // Nullib kellaaja
             return d;
         }
-
-
 
 
         function formatDate(date) {

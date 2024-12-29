@@ -5,11 +5,11 @@
     <h1>Members</h1>
     <div class="d-flex flex-wrap" id="membersContainer">
         {{#each members}}
-            <div class="member-card border border-secondary rounded m-2 p-2 text-center"
+            <button class="btn btn-outline-primary m-2 plan-button member-card"
                  style="width:100px; height:100px; cursor:pointer;"
                  data-user-id="{{this.user.id}}">
                 <div class="small">{{this.user.fullName}}</div>
-            </div>
+            </button>
         {{/each}}
     </div>
 </div>
@@ -45,7 +45,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <label for="creditAmount" class="form-label">Amount to add:</label>
+                <label for="creditAmount" class="form-plan">Amount to add:</label>
                 <input type="number" id="creditAmount" class="form-control" placeholder="Enter amount" />
             </div>
             <div class="modal-footer">
