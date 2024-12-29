@@ -27,62 +27,63 @@
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet'/>
 
 </head>
-<body>
-<div class="container-fluid bg-dark px-0">
-    <div class="row gx-0">
-        <div class="col-lg-3 bg-dark d-none d-lg-block">
-            <a class="navbar-brand w-100 h-100 m-0 p-0 d-flex align-items-center justify-content-center"
-               href="{{#if username}}/{{else}}/info{{/if}}">
-                <h1 class="m-0 display-4 text-primary text-uppercase">IronTrack</h1>
-            </a>
-        </div>
-        <div class="col-lg-9">
-            <nav class="navbar navbar-expand-lg bg-dark navbar-dark p-3 p-lg-0 px-lg-5">
-                <a class="navbar-brand d-block d-lg-none"
+<header>
+    <div class="container-fluid bg-dark px-0">
+        <div class="row gx-0">
+            <div class="col-lg-3 bg-dark d-none d-lg-block">
+                <a class="navbar-brand w-100 h-100 m-0 p-0 d-flex align-items-center justify-content-center"
                    href="{{#if username}}/{{else}}/info{{/if}}">
                     <h1 class="m-0 display-4 text-primary text-uppercase">IronTrack</h1>
                 </a>
-                <!-- Navbar Toggler -->
-                <button type="button" class="navbar-toggler" data-bs-toggle="collapse"
-                        data-bs-target="#navbarCollapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+            </div>
+            <div class="col-lg-9">
+                <nav class="navbar navbar-expand-lg bg-dark navbar-dark p-3 p-lg-0 px-lg-5">
+                    <a class="navbar-brand d-block d-lg-none"
+                       href="{{#if username}}/{{else}}/info{{/if}}">
+                        <h1 class="m-0 display-4 text-primary text-uppercase">IronTrack</h1>
+                    </a>
+                    <!-- Navbar Toggler -->
+                    <button type="button" class="navbar-toggler" data-bs-toggle="collapse"
+                            data-bs-target="#navbarCollapse">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
 
-                <!-- Collapsible Navbar Content -->
-                <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
-                    <!-- Left Side Navbar Buttons -->
-                    <div class="navbar-nav">
-                        {{#if username}}
-                            <a href="/training" class="nav-item nav-link active">Add Training</a>
-                            <a href="/records" class="nav-item nav-link">Records</a>
-                            <a href="/find-users" class="nav-item nav-link">Find Users</a>
-                            <a href="/sessions" class="nav-item nav-link">Training Sessions</a>
-                            <a href="/stat" class="nav-item nav-link">Statistics and Analysis</a>
-                            <a href="/register-training" class="nav-item nav-link">Register for training</a>
-                        {{else}}
-                            <a href="/info" class="nav-item nav-link active">Home</a>
-                            <a href="about.html" class="nav-item nav-link">About</a>
-                        {{/if}}
-                    </div>
+                    <!-- Collapsible Navbar Content -->
+                    <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+                        <!-- Left Side Navbar Buttons -->
+                        <div class="navbar-nav">
+                            {{#if username}}
+                                <a href="/training" class="nav-item nav-link active">Add Training</a>
+                                <a href="/records" class="nav-item nav-link">Records</a>
+                                <a href="/find-users" class="nav-item nav-link">Find Users</a>
+                                <a href="/sessions" class="nav-item nav-link">Training Sessions</a>
+                                <a href="/stat" class="nav-item nav-link">Statistics and Analysis</a>
+                                <a href="/register-training" class="nav-item nav-link">Register for training</a>
+                            {{else}}
+                                <a href="/info" class="nav-item nav-link active">Home</a>
+                                <a href="about.html" class="nav-item nav-link">About</a>
+                            {{/if}}
+                        </div>
 
-                    <!-- Right Side Navbar -->
-                    <div class="navbar-nav ms-auto flex-column flex-lg-row">
-                        {{#if username}}
-                            <!-- Kui kasutajanimi on määratletud -->
-                            <a href="/profile" class="nav-item nav-link">My Profile</a>
-                            <button id="logout-btn" class="nav-item nav-link  btn btn-link p-0 logout">Log Out</button>
-                        {{else}}
-                            <!-- Kui kasutajanimi puudub -->
-                            <a href="/login?form=login" class="nav-item nav-link">Log In</a>
-                            <a href="/login?form=signup" class="nav-item nav-link">Join Us</a>
-                        {{/if}}
+                        <!-- Right Side Navbar -->
+                        <div class="navbar-nav ms-auto flex-column flex-lg-row">
+                            {{#if username}}
+                                <!-- Kui kasutajanimi on määratletud -->
+                                <a href="/profile" class="nav-item nav-link">My Profile</a>
+                                <button id="logout-btn" class="nav-item nav-link  btn btn-link p-0 logout">Log Out
+                                </button>
+                            {{else}}
+                                <!-- Kui kasutajanimi puudub -->
+                                <a href="/login?form=login" class="nav-item nav-link">Log In</a>
+                                <a href="/login?form=signup" class="nav-item nav-link">Join Us</a>
+                            {{/if}}
+                        </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            </div>
         </div>
     </div>
-</div>
-
+</header>
 
 
 
@@ -126,5 +127,5 @@
     });
 </script>
 
-</body>
+
 </html>

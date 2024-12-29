@@ -42,6 +42,11 @@
     color: #FB5B21 !important;
 }
 
+body {
+    display: flex;
+    flex-direction: column;
+}
+
 h1,
 h2,
 .font-weight-bold {
@@ -131,6 +136,7 @@ h6,
     font-weight: bold;
     transition: 0.35s;
 }
+
 .btn-home:hover {
     transform: scale(1.05);
     box-shadow: 6px 6px 10px rgba(0, 0, 0, 1),
@@ -146,6 +152,7 @@ h6,
     inset 2px 2px 10px rgba(0, 0, 0, 1),
     inset -1px -1px 5px rgba(255, 255, 255, 0.6);
 }
+
 .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
 
     background-color: #FB5B21;
@@ -184,23 +191,27 @@ h6,
 /* From Uiverse.io by Rohankumar620 */
 .container-default {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     background-image: url("/img/login.jpg");
     background-size: cover; /* Täidab ekraani */
     background-repeat: no-repeat; /* Väldib kordamist */
     background-position: center; /* Joondab pildi keskele */
-    height: 80vh;
+    height: 100%;
     width: 100%;
-
+    box-sizing: border-box;
 }
 
 .form-def {
     display: flex;
+    flex-direction: column;
+margin-top: 50px;
     justify-content: center;
     align-items: center;
     transform-style: preserve-3d;
     transition: all 1s ease;
+    width: 100%;
 }
 
 .form-def .form_front {
@@ -209,7 +220,8 @@ h6,
     justify-content: center;
     align-items: center;
     gap: 20px;
-    position: fixed;
+    position: relative;
+
 
     backface-visibility: hidden;
     padding: 65px 45px;
@@ -246,6 +258,7 @@ h6,
     color: #ffffff;
 
 }
+
 #exercise-lines .form-row .col {
     width: 100%; /* Veendu, et .col võtab kogu ruumi */
 }
@@ -496,22 +509,38 @@ h6,
 }
 
 .form-training {
-    width: 80%;
-    position: absolute;
-    top: 60px;
+    display: flex;
+    flex-direction: column;
 
+    justify-content: center;
+    align-items: center;
+    transform-style: preserve-3d;
+    transition: all 1s ease;
+    width: 100%;
+}
+
+.container1 .container-fluid1 {
+    padding-right: 0 !important;
+    padding-left: 0 !important;
 }
 
 .container-training {
+    display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-image: url("/img/login.jpg");
-    background-size: cover; /* Täidab ekraani */
-    background-repeat: no-repeat; /* Väldib kordamist */
-    background-position: center; /* Joondab pildi keskele */
-    height: 80vh;
+    height: 100%;
     width: 100%;
+    box-sizing: border-box;
+}
 
+.training {
+    display: flex;
+    flex-direction: column;
+}
+
+.training-list {
+    position: relative;
 }
 
 /* statistics page */
@@ -519,18 +548,22 @@ h6,
 .tabs {
     margin-bottom: 20px;
 }
+
 .tab-button {
     padding: 10px;
     margin-right: 5px;
     cursor: pointer;
 }
+
 .tab-button.active {
     background-color: #007bff;
     color: white;
 }
+
 .tab-content {
     display: none;
 }
+
 .tab-content.active {
     display: block;
 }
