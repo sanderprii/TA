@@ -747,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             records.forEach((record) => {
                 const recordItem = document.createElement('button');
-                recordItem.className = ('btn btn-outline-primary m-2 plan-button');
+                recordItem.className = ('btn btn-outline-primary m-2 plan-button border border-dark btn-home bg-light text-dark');
                 recordItem.style.width = '150px';
                 recordItem.style.height = '150px';
                 recordItem.style.cursor = 'pointer';
@@ -1405,7 +1405,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             records.forEach((record) => {
                 const recordItem = document.createElement('button');
-                recordItem.className = ('btn btn-outline-primary m-2 plan-button');
+                recordItem.className = ('btn btn-outline-primary m-2 plan-button border border-dark btn-home bg-light text-dark');
                 recordItem.style.width = '150px';
                 recordItem.style.height = '150px';
                 recordItem.style.cursor = 'pointer';

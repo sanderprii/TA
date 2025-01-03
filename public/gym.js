@@ -10,6 +10,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const deleteTrainingBtn = document.getElementById('delete-training-btn');
     const dayButtonsContainer = document.getElementById('day-buttons');
 
+    const wodSearchInput = document.getElementById('wod-search');
+    const wodSearchResults = document.getElementById('wod-search-results');
+    const trainingTypeSelected = document.getElementById('training-type');
+
+    const trainingModalSearch = new bootstrap.Modal(document.getElementById('training-modal'));
+    const trainingModalBody = document.getElementById('training-modal-body');
+
+    const editClassBtn = document.getElementById('edit-class-btn');
+
+    const classModalElement = document.getElementById('classModal');
+    const classModal = new bootstrap.Modal(classModalElement);
+    const classAttendance = document.getElementById('classAttendance');
+
+    const modalTrainingName = document.getElementById('modalTrainingName');
+    const modalTime = document.getElementById('modalTime');
+    const modalTrainer = document.getElementById('modalTrainer');
+    const modalLocation = document.getElementById('modalLocation');
+    const modalClassId = document.getElementById('modalClassId');
+    const wodName = document.getElementById('wodName');
+    const wodType = document.getElementById('wodType');
+    const modalDescription = document.getElementById('modalDescription');
+
+    const addTrainingBtnSave = document.getElementById('save-training-btn');
+    const editTrainingBtn = document.getElementById('edit-training-btn');
+
 
     let currentDate = new Date(); // Start with the current date
     let classesData = [];
@@ -32,10 +57,9 @@ document.addEventListener('DOMContentLoaded', function () {
         loadSchedule();
     });
 
-    // Kui on väike ekraan, vaikimisi tänane päev
-    if (isSmallScreen) {
-        selectedDayIndex = getTodayDayIndex(new Date());
-    }
+
+    selectedDayIndex = getTodayDayIndex(new Date());
+
 
     // Mon -> 0, Tue -> 1, jne. (Meie alguspunkt on esmaspäev, mitte pühapäev)
     function getTodayDayIndex(date) {
@@ -44,6 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     addTrainingBtn.addEventListener('click', () => {
+
         openTrainingModal();
     });
 
@@ -52,14 +77,20 @@ document.addEventListener('DOMContentLoaded', function () {
         const trainingId = document.getElementById('trainingId').value;
         const repeatWeeklyValue = document.querySelector('input[name="repeatWeekly"]:checked').value;
         const trainingData = {
-            trainingName: document.getElementById('trainingName').value,
-            date: document.getElementById('trainingDate').value,
-            time: document.getElementById('trainingTime').value,
-            trainer: document.getElementById('trainer').value,
-            memberCapacity: document.getElementById('memberCapacity').value,
-            location: document.getElementById('location').value,
-            repeatWeekly: (repeatWeeklyValue === 'true') // boolean parse
-        };
+                trainingName: document.getElementById('trainingName').value.toUpperCase(),
+                date: document.getElementById('trainingDate').value,
+                time: document.getElementById('trainingTime').value,
+                duration: document.getElementById('duration').value,
+                trainer: document.getElementById('trainer').value,
+                memberCapacity: document.getElementById('memberCapacity').value,
+                location: document.getElementById('location').value,
+                repeatWeekly: (repeatWeeklyValue === 'true'),
+                description: document.getElementById('trainingDescription').value,
+                wodName: document.getElementById('wod-name').value.toUpperCase(),
+                wodType: document.querySelector('input[name="wod-type"]:checked').value
+            }
+        ;
+
 
         try {
             if (trainingId) {
@@ -126,19 +157,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+
         // Konteiner päevade jaoks
         const scheduleContainer = document.createElement('div');
-        scheduleContainer.classList.add('schedule-container','d-flex', 'w-100');
+        scheduleContainer.classList.add('schedule-container', 'd-flex', 'w-100');
 
-        if (isSmallScreen) {
-            renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
-        }
+
+        renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
+
 
         for (let i = 0; i < 7; i++) {
             const dayDate = new Date(startOfWeek);
             dayDate.setDate(dayDate.getDate() + i);
 
-            if (isSmallScreen && selectedDayIndex !== i) {
+            if (selectedDayIndex !== i) {
                 // Väikese ekraani jaoks kuvame ainult valitud päeva
                 continue;
             }
@@ -251,14 +283,46 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function createClassDiv(classData) {
+
         const classDiv = document.createElement('div');
-        classDiv.textContent = classData.trainingName;
-        classDiv.classList.add('m-1', 'bg-dark', 'rounded', 'text-center', 'py-5', 'px-3', 'text-white', 'class-entry');
+        classDiv.classList.add('border', 'border-dark', 'row', 'm-1', 'bg-light', 'rounded', 'text-center', 'py-2', 'px-3', 'text-black', 'class-entry', 'align-items-start');
         classDiv.style.cursor = 'pointer';
+
+        const timeDiv = document.createElement('div');
+        timeDiv.classList.add('col-2', 'h-100', 'border-end', 'border-dark');
+
+
+        const dataDiv = document.createElement('div');
+        dataDiv.classList.add('col-9');
+
+
+        const classInfoTime = document.createElement('div');
+        const trainingDateTime = new Date(classData.time);
+        classInfoTime.textContent = formatTimeInput(trainingDateTime);
+        classInfoTime.classList.add('align-text-top', 'fw-bold');
+        timeDiv.appendChild(classInfoTime);
+
+        const trainingDuration = document.createElement('div');
+        trainingDuration.textContent = classData.duration + ' min';
+        trainingDuration.classList.add('text-muted', 'fst-italic', 'fs-6');
+        timeDiv.appendChild(trainingDuration);
+
+        const classInfoName = document.createElement('div');
+        classInfoName.textContent = classData.trainingName;
+        dataDiv.appendChild(classInfoName);
+        classInfoName.classList.add('fw-bold', 'text-start');
+
+        const classTrainer = document.createElement('div');
+        classTrainer.textContent = classData.trainer;
+        dataDiv.appendChild(classTrainer);
+        classTrainer.classList.add('text-start');
+
+        classDiv.appendChild(timeDiv);
+        classDiv.appendChild(dataDiv);
 
         // Lisa sündmuse kuulaja, mis avab modaalakna klassi detailidega
         classDiv.addEventListener('click', () => {
-            openTrainingModal(classData);
+            openClassModal(classData);
         });
 
         return classDiv;
@@ -274,6 +338,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.getElementById('trainingDate').value = formatDateInput(trainingDateTime);
             document.getElementById('trainingTime').value = formatTimeInput(trainingDateTime);
+            document.getElementById('duration').value = training.duration || '';
             document.getElementById('trainer').value = training.trainer || '';
             document.getElementById('memberCapacity').value = training.memberCapacity || '';
             document.getElementById('location').value = training.location || '';
@@ -281,6 +346,10 @@ document.addEventListener('DOMContentLoaded', function () {
             // Convert boolean to string to match the radio buttons value="true"/"false"
             const repeatValue = training.repeatWeekly ? 'true' : 'false';
             document.querySelector(`input[name="repeatWeekly"][value="${repeatValue}"]`).checked = true;
+            document.getElementById('wod-name').value = training.wodName || '';
+            document.querySelector(`input[name="wod-type"][value="${training.wodType}"]`).checked = true;
+            document.getElementById('trainingDescription').value = training.description || '';
+
 
             document.getElementById('trainingId').value = training.id;
             deleteTrainingBtn.style.display = 'inline-block';
@@ -293,6 +362,189 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('trainingDate').value = formatDateInput(currentDate);
         }
         trainingModal.show();
+
+    }
+
+    // Fetch Default WODs based on search query
+    async function searchWODs(query) {
+        try {
+            const response = await fetch(`/api/search-default-wods?q=${encodeURIComponent(query.toUpperCase())}`);
+            if (response.ok) {
+                return await response.json();
+            }
+        } catch (error) {
+            console.error('Error fetching WODs:', error);
+        }
+        return [];
+    }
+
+    // Handle WOD search input
+    wodSearchInput.addEventListener('input', async () => {
+        const query = wodSearchInput.value.trim();
+        if (query.length === 0) {
+            wodSearchResults.style.display = 'none';
+            wodSearchResults.innerHTML = '';
+            return;
+        }
+
+        const results = await searchWODs(query);
+        wodSearchResults.innerHTML = '';
+
+        if (results.length > 0) {
+            results.slice(0, 10).forEach(wod => {
+                const li = document.createElement('li');
+                li.textContent = wod.name;
+                li.className = 'list-group-item';
+                li.style.cursor = 'pointer';
+
+                // Click handler to show modal
+                li.addEventListener('click', () => {
+                    showWODModal(wod);
+                });
+
+                wodSearchResults.appendChild(li);
+            });
+            wodSearchResults.style.display = 'block';
+        } else {
+            wodSearchResults.style.display = 'none';
+        }
+    });
+
+    function showWODModal(wod) {
+        trainingModalElement.style.display = 'none';
+        classModalElement.style.display = 'none';
+        trainingModalBody.innerHTML = `
+            <h5>${wod.name}</h5>
+            <p>${wod.type}</p>
+            <p>${formatModalDescription(wod.description)}</p>
+        `;
+
+        addTrainingBtnSave.style.display = 'block';
+        addTrainingBtnSave.textContent = 'Add Training';
+
+        editTrainingBtn.style.display = 'none';
+
+        // Add click event to Add Training button
+        addTrainingBtnSave.onclick = () => {
+            document.getElementById('wod-name').value = wod.name;
+            document.querySelector(`input[name="wod-type"][value="${wod.type}"]`).checked = true;
+            document.getElementById('trainingDescription').value = formatDescription(wod.description);
+
+            wodSearchResults.style.display = 'none';
+            trainingModalElement.style.display = 'block';
+            classModalElement.style.display = 'block';
+            trainingModalSearch.hide();
+        };
+
+        trainingModalSearch.show();
+    }
+
+    // load class attandance
+    async function loadClassAttendance(classId) {
+        try {
+            const response = await fetch(`/api/class-attendees?classId=${classId}`);
+            const data = await response.json();
+            classAttendance.innerHTML = '';
+            if (data.length > 0) {
+                data.forEach(member => {
+                    const memberDiv = document.createElement('div');
+
+
+                    memberDiv.textContent = '👤 ' + member.user.fullName.toUpperCase();
+
+                    classAttendance.appendChild(memberDiv);
+                });
+            } else {
+                const noMembers = document.createElement('p');
+                noMembers.textContent = 'No members enrolled.';
+                noMembers.classList.add('text-muted', 'fst-italic');
+                classAttendance.appendChild(noMembers);
+            }
+        } catch (err) {
+            console.error('Error loading class attendance:', err);
+        }
+    }
+
+    async function openClassModal(cls) {
+
+
+        modalTrainingName.textContent = cls.trainingName;
+        const classTime = new Date(cls.time);
+        modalTime.textContent = classTime.toLocaleString();
+        modalTrainer.textContent = cls.trainer || 'N/A';
+        modalLocation.textContent = cls.location || 'N/A';
+        modalClassId.value = cls.id;
+
+        wodName.textContent = cls.wodName || 'N/A';
+        wodType.textContent = cls.wodType || 'N/A';
+        modalDescription.textContent = cls.description || 'N/A';
+        if(!cls.wodName || cls.wodName.trim() === ''){
+            wodInfo.style.display = 'none';
+        } else {
+            wodInfo.style.display = 'block';
+        }
+        await loadClassAttendance(cls.id);
+
+
+        // Uus samm: lae class info (capacity, enrolled count)
+        await loadClassInfo(cls.id);
+
+        // Kontrolli, kas kasutaja on registreeritud
+
+        const isEnrolled = await checkEnrollment(cls.id);
+
+        // kui vajutab edit nuppu, siis avaneb training modal
+        editClassBtn.addEventListener('click', () => {
+            trainingModal.show();
+            trainingModalBody.innerHTML = '';
+            openTrainingModal(cls);
+        })
+
+        classModal.show();
+    }
+
+    async function loadClassInfo(classId) {
+        try {
+            const response = await fetch(`/api/class-info?classId=${classId}`);
+
+            const data = await response.json();
+            if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
+                const freeSpots = data.memberCapacity - data.enrolledCount;
+                document.getElementById('freeSpots').textContent = freeSpots;
+                document.getElementById('classCapacity').textContent = data.memberCapacity;
+            } else {
+                // Kui andmete lugemine ebaõnnestus, pane mingid vaikimisi väärtused
+                document.getElementById('freeSpots').textContent = '?';
+                document.getElementById('classCapacity').textContent = '?';
+            }
+        } catch (err) {
+            console.error('Error loading class info:', err);
+            document.getElementById('freeSpots').textContent = '?';
+            document.getElementById('classCapacity').textContent = '?';
+        }
+    }
+
+    async function checkEnrollment(classId) {
+        try {
+            const response = await fetch(`/api/is-enrolled?classId=${classId}`);
+            const data = await response.json();
+
+        } catch (err) {
+            console.error('Error checking enrollment:', err);
+        }
+    }
+
+    // Format description to add new lines after ":" and ","
+    function formatModalDescription(description) {
+        return description
+            .replace(/:/g, ':<br>') // Add a line break after ":"
+            .replace(/,/g, '<br>'); // Add a line break after ","
+    }
+
+    function formatDescription(description) {
+        return description
+            .replace(/:/g, ':\n')  // Lisa rea vahetus pärast ":"
+            .replace(/,/g, '\n');  // Asenda "," rea vahetusega
     }
 
     // Helper functions
@@ -314,8 +566,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function formatTimeInput(date) {
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
     }
 });

@@ -71,6 +71,9 @@
                 <p><strong>Trainer:</strong> <span id="modalTrainer"></span></p>
                 <p><strong>Location:</strong> <span id="modalLocation"></span></p>
                 <input type="hidden" id="modalClassId">
+                <label id="plan-label">Choose plan for registation</label>
+                <div id="planSelect">
+                </div>
             </div>
             <div class="modal-footer">
                 <button id="registerForClassBtn" type="button" class="btn btn-primary">Register for Class</button>
@@ -151,6 +154,8 @@
         const modalLocation = document.getElementById('modalLocation');
         const modalClassId = document.getElementById('modalClassId');
 
+        const planSelect = document.getElementById('planSelect');
+
         // Plaanide konteiner ja modal
         const plansContainer = document.getElementById('plansContainer');
         const plansList = document.getElementById('plansList');
@@ -173,7 +178,8 @@
         let currentDate = new Date();
         let classesData = [];
 
-        affiliateIds = null;
+        let affiliateIds = null;
+
 
         let isSmallScreen = window.innerWidth < 1143; // kontrolli ekraani laiust
         let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
@@ -188,9 +194,9 @@
         }
 
         // Kui on väike ekraan, siis vaikimisi tänane päev
-        if (isSmallScreen) {
-            selectedDayIndex = getTodayDayIndex(new Date());
-        }
+
+        selectedDayIndex = getTodayDayIndex(new Date());
+
 
         // Otsingukasti eventid
         affiliateSearch.addEventListener('input', async function () {
@@ -209,12 +215,17 @@
                             item.addEventListener('click', async (e) => {
                                 e.preventDefault();
                                 affiliateSearch.value = a.name;
+                                affiliateSearch.value = '';
+                                plansContainer.style.display = 'none';
+                                scheduleContainer.style.display = 'none';
                                 affiliateSuggestions.innerHTML = '';
+
 
                                 // Laeme kohe affiliate info ilma nupuvajutuseta
                                 await loadAffiliateInfo(a.name);
                             });
                             affiliateSuggestions.appendChild(item);
+
                         });
                     } else {
                         console.error('Unexpected response format', affiliates);
@@ -242,6 +253,7 @@
                         affTrainers.appendChild(li);
                     });
                     affiliateInfo.style.display = 'block';
+                    console.log('affiliateIds is: ' + affiliateIds)
                 } else {
                     affiliateInfo.style.display = 'none';
                 }
@@ -256,13 +268,11 @@
 
             // Peida otsinguriba ja affiliate info
             const affiliateInfo = document.getElementById('affiliateInfo');
-            const affiliateSearchInput = document.getElementById('affiliateSearch');
-            const affiliateSuggestions = document.getElementById('affiliateSuggestions');
+
 
             if (affiliateInfo) affiliateInfo.style.display = 'none';
-            if (affiliateSearchInput) affiliateSearchInput.style.display = 'none';
-            if (affiliateSuggestions) affiliateSuggestions.style.display = 'none';
 
+            plansContainer.style.display = 'none';
             loadSchedule();
         });
 
@@ -280,6 +290,7 @@
         // ==========================
         async function loadAffiliatePlans(ownerId) {
             try {
+
                 // Eeldame, et serveripoolsel /api/plans endpointil on toetatud ?ownerId=...
                 const response = await fetch(`/api/plans?ownerId=${ownerId}`);
                 const data = await response.json();
@@ -290,24 +301,52 @@
             }
         }
 
-        function renderPlans(plans) {
+        async function renderPlans(plans) {
+
             plansList.innerHTML = '';
+
+            const userPlans = await fetchUserPlans(affiliateIds);
+
+
             if (!Array.isArray(plans) || plans.length === 0) {
                 plansList.innerHTML = '<p class="text-muted">No plans found for this affiliate.</p>';
                 return;
             }
 
             plans.forEach(plan => {
+
+                const isBought = userPlans.some(userPlan => userPlan.planId === plan.id);
+                let activePlan = false;
+                let plansEndDate = '';
+                if (isBought) {
+                    const userPlan = userPlans.filter(userPlan => userPlan.planId === plan.id);
+
+
+                    const currentDate = new Date();
+
+                    userPlan.forEach(userPlan => {
+                        const planEndDate = new Date(userPlan.endDate);
+                        if (currentDate < planEndDate) {
+                            activePlan = true;
+                            plansEndDate = planEndDate.toLocaleDateString();
+                        }
+                    });
+
+                }
+                ;
                 const planButton = document.createElement('button');
-                planButton.classList.add('btn', 'btn-outline-primary', 'm-2', 'plan-button');
+                planButton.classList.add('btn', 'btn-outline-primary', 'btn-home', 'text-dark', 'bg-light', 'm-2', 'plan-button', 'border', 'border-dark');
                 planButton.style.width = '200px';
                 planButton.style.height = '200px';
+
                 planButton.innerHTML = `
                     <h4>${plan.name}</h4>
-                    <p>$${Number(plan.price).toFixed(2)}</p>
+                    <p>${Number(plan.price).toFixed(2)}€</p>
+                ${activePlan ? `<p style="color: green;">valid until: ${plansEndDate}</p>` : ''}
                 `;
                 planButton.addEventListener('click', () => {
                     openPlanModal(plan);
+                    buyPlanBtn.style.display = activePlan ? 'none' : 'inline-block';
                 });
                 plansList.appendChild(planButton);
             });
@@ -342,7 +381,8 @@
                     planId: currentPlan.id,
                     planName: currentPlan.name,
                     validityDays: currentPlan.validityDays,
-                    price: currentPlan.price
+                    price: currentPlan.price,
+                    sessionsLeft: currentPlan.sessions
                 };
                 const response = await fetch('/api/buy-plan', {
                     method: 'POST',
@@ -352,6 +392,8 @@
                 if (response.ok) {
                     const data = await response.json();
                     alert(`Plan purchased successfully! New credit: ${data.newCredit}`);
+                    location.reload();
+
                 } else {
                     const errData = await response.json();
                     alert('Error buying plan: ' + errData.error);
@@ -413,17 +455,17 @@
             const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
             const scheduleContainer = document.createElement('div');
-            scheduleContainer.classList.add('schedule-container','d-flex', 'w-100');
+            scheduleContainer.classList.add('schedule-container', 'd-flex', 'w-100');
 
-            if (isSmallScreen) {
-                renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
-            }
+
+            renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
+
 
             for (let i = 0; i < 7; i++) {
                 const dayDate = new Date(startOfWeek);
                 dayDate.setDate(dayDate.getDate() + i);
 
-                if (isSmallScreen && selectedDayIndex !== i) {
+                if (selectedDayIndex !== i) {
                     continue; // Väikese ekraani puhul kuvame ainult valitud päeva
                 }
 
@@ -510,33 +552,48 @@
 
         function createClassDiv(c) {
             const classDiv = document.createElement('div');
-
-            classDiv.classList.add('m-1', 'bg-light', 'rounded', 'text-center', 'py-5', 'px-3', 'class-entry');
+            classDiv.classList.add('border', 'border-dark', 'row', 'm-1', 'bg-light', 'rounded', 'text-center', 'py-2', 'px-3', 'text-black', 'class-entry', 'align-items-start');
             classDiv.style.cursor = 'pointer';
 
-            // Treeningu nimi
-            const title = document.createElement('div');
-            title.textContent = c.trainingName;
-            title.classList.add('fw-bold');
+            const timeDiv = document.createElement('div');
+            timeDiv.classList.add('col-2', 'h-100', 'border-end', 'border-dark');
 
-            // Treeningu aeg
+
+            const dataDiv = document.createElement('div');
+            dataDiv.classList.add('col-9');
+
+
+            const classInfoTime = document.createElement('div');
+
             const classTime = new Date(c.time);
             const timeString = classTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-            const time = document.createElement('div');
-            time.textContent = timeString;
-            time.classList.add('text-muted');
+            classInfoTime.textContent = timeString;
+            classInfoTime.classList.add('align-text-top');
+            timeDiv.appendChild(classInfoTime);
 
-            // Lisa nimi ja aeg classDiv-i
-            classDiv.appendChild(title);
-            classDiv.appendChild(time);
+            const classInfoName = document.createElement('div');
+            classInfoName.textContent = c.trainingName;
+            dataDiv.appendChild(classInfoName);
+            classInfoName.classList.add('fw-bold', 'text-start');
 
+            const classTrainer = document.createElement('div');
+            classTrainer.textContent = c.trainer;
+            dataDiv.appendChild(classTrainer);
+            classTrainer.classList.add('text-start');
+
+            classDiv.appendChild(timeDiv);
+            classDiv.appendChild(dataDiv);
+
+            // Lisa sündmuse kuulaja, mis avab modaalakna klassi detailidega
             classDiv.addEventListener('click', () => {
                 openClassModal(c);
             });
+
             return classDiv;
         }
 
         async function openClassModal(cls) {
+
             modalTrainingName.textContent = cls.trainingName;
             const classTime = new Date(cls.time);
             modalTime.textContent = classTime.toLocaleString();
@@ -548,10 +605,55 @@
             await loadClassInfo(cls.id);
 
             // Kontrolli, kas kasutaja on registreeritud
-            await checkEnrollment(cls.id);
+
+            const isEnrolled = await checkEnrollment(cls.id);
+
+            if (!isEnrolled) {
+                // Kui kasutaja pole registreeritud, kuva select treeningplaanidega
+
+                const userPlans = await fetchUserPlans(affiliateIds);
+                populatePlansSelect(userPlans);
+            }
 
             classModal.show();
         }
+
+        async function fetchUserPlans(affiliateIds) {
+            try {
+
+                const response = await fetch(`/api/user-plans?affiliateId=${affiliateIds}`);
+                if (!response.ok) throw new Error('Failed to fetch user plans');
+                return await response.json();
+            } catch {
+                return [];
+            }
+        }
+
+        function populatePlansSelect(plans) {
+            const plansContainer = document.getElementById('planSelect');
+            plansContainer.innerHTML = ''; // Eemalda varasemad valikud
+
+            if (plans.length === 0) {
+                plansContainer.textContent = 'No training plans';
+
+
+                return;
+            }
+
+            const selectElement = document.createElement('select');
+            selectElement.id = 'user-plans-select';
+            selectElement.name = 'userPlan';
+
+            plans.forEach(plan => {
+                const option = document.createElement('option');
+                option.value = plan.id; // Eeldusel, et plaanil on `id`
+                option.textContent = plan.planName; // Eeldusel, et plaanil on `name`
+                selectElement.appendChild(option);
+            });
+
+            plansContainer.appendChild(selectElement);
+        }
+
 
         async function loadClassInfo(classId) {
             try {
@@ -572,14 +674,6 @@
                 document.getElementById('freeSpots').textContent = '?';
                 document.getElementById('classCapacity').textContent = '?';
             }
-        }
-
-        function adjustWeek(date, weeks) {
-            const adjustedDate = new Date(date);
-            adjustedDate.setDate(date.getDate() + weeks * 7); // Lisab või lahutab täpselt 7 päeva
-            adjustedDate.setHours(0, 0, 0, 0); // Nullib kellaaja
-            console.log(`Adjusting week: weeks=${weeks}, original=${date.toISOString()}, adjusted=${adjustedDate.toISOString()}`);
-            return adjustedDate;
         }
 
 
@@ -604,18 +698,36 @@
         // "Register for class" klikk on juba olemas
         registerForClassBtn.addEventListener('click', async function () {
             const classId = modalClassId.value;
+            const planSelectElement = document.getElementById('user-plans-select');
+
+            if (!planSelectElement) {
+                alert('Please select a plan or buy a new one.');
+                return;
+            }
+
+
+            const planId = planSelectElement.value;
+
+            if (planId === null) {
+                alert('Please select a plan or buy a new one.');
+                return;
+            }
+
             if (!classId) return;
             try {
                 const response = await fetch('/api/register-for-class', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({classId})
+                    body: JSON.stringify({classId, planId})
                 });
                 if (response.ok) {
                     alert('Registered successfully!');
+
+                    await loadClassInfo(classId);
                     // Näita nüüd "Cancel Training" nuppu
                     registerForClassBtn.style.display = 'none';
                     cancelClassBtn.style.display = 'inline-block';
+
                 } else {
                     const err = await response.json();
                     alert('Error registering: ' + err.error);
@@ -632,11 +744,13 @@
 
 
             try {
-                const response = await fetch(`/api/register-for-class?classId=${classId}`, {
-                    method: 'DELETE',
+                const response = await fetch(`/api/cancel-class?classId=${classId}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({classId})
                 });
                 if (response.ok) {
-
+                    await loadClassInfo(classId);
                     // Nüüd näita uuesti "Register for Class"
                     registerForClassBtn.style.display = 'inline-block';
                     cancelClassBtn.style.display = 'none';

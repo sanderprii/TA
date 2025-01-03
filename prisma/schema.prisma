@@ -76,6 +76,7 @@ model ClassSchedule {
   id             Int             @id @default(autoincrement())
   trainingName   String
   time           DateTime
+  duration       Int
   trainer        String?
   memberCapacity Int
   location       String?
@@ -85,6 +86,9 @@ model ClassSchedule {
   affiliateId    Int
   affiliate      Affiliate       @relation(fields: [affiliateId], references: [id])
   seriesId       Int?
+  wodName        String?
+  wodType        String?
+  description    String?
   attendees      ClassAttendee[]
 }
 
@@ -94,6 +98,7 @@ model Plan {
   validityDays   Int
   price          Float
   additionalData String?
+  sessions       Int
   ownerId        Int
   owner          User    @relation(fields: [ownerId], references: [id])
 }
@@ -110,6 +115,7 @@ model UserPlan {
   price        Float
   purchasedAt  DateTime @default(now())
   endDate      DateTime
+  sessionsLeft Int
 }
 
 model Affiliate {
@@ -140,6 +146,7 @@ model ClassAttendee {
   classSchedule ClassSchedule @relation(fields: [classId], references: [id])
   userId        Int
   user          User          @relation(fields: [userId], references: [id])
+  userPlanId    Int
   createdAt     DateTime      @default(now())
 
   @@unique([classId, userId]) // vältimaks duplikaatregistratsioone

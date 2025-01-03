@@ -7,5 +7,7 @@ export default defineConfig({
         baseURL: 'http://localhost:3000', // Põhi-URL
         browserName: 'chromium', // Võid kasutada ka 'firefox' või 'webkit'
         headless: false, // Näitab brauseriakent
+        locale: 'et-EE',      // <-- Lisa siia
+        timezoneId: 'Europe/Tallinn',
     },
 });

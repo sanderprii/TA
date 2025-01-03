@@ -64,8 +64,7 @@ app.use(express.static('public'));
 // Protect routes middleware
 function ensureAuthenticated(req, res, next) {
     if (req.session.userId) {
-        console.log('Authenticated user:', req.session.username);
-        console.log('isAffiliateOwner:', req.session.isAffiliateOwner);
+
         return next();
     }
 
@@ -95,7 +94,7 @@ app.get('/', ensureAuthenticated, (req, res) => {
 
 // info view
 app.get('/info', (req, res) => {
-    res.render('info', { title: 'info' });
+    res.render('info', { title: 'info', layout: 'main' });
 });
 
 
@@ -1040,6 +1039,8 @@ app.get('/api/get-affiliate-by-name', ensureAuthenticated, async (req, res) => {
             fullName: t.trainer.fullName
         }));
 
+
+
         res.json({ affiliate, trainers });
     } catch (error) {
         console.error('Error getting affiliate:', error);
@@ -1050,7 +1051,7 @@ app.get('/api/get-affiliate-by-name', ensureAuthenticated, async (req, res) => {
 // Classes view - read-only for a chosen affiliate
 app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
     const { affiliateId, start, end } = req.query;
-    console.log('Received /api/classes-view request with affiliateId:', affiliateId, 'start:', start, 'end:', end);
+
 
     if (!affiliateId || !start || !end) {
         console.log('Missing parameters.');
@@ -1084,7 +1085,7 @@ app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
 
 
 
-        console.log(`Found ${classes.length} classes for affiliateId ${affiliateId}`);
+
         res.json(classes);
     } catch (error) {
         console.error('Error fetching classes:', error);
@@ -1094,10 +1095,26 @@ app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
 
 // Register user for a class
 app.post('/api/register-for-class', ensureAuthenticated, async (req, res) => {
-    const { classId } = req.body;
+    const { classId, planId } = req.body;
+
+
     if (!classId) return res.status(400).json({ error: 'Class ID required.' });
 
     try {
+        const userPlan = await prisma.userPlan.findUnique({
+            where: {id: parseInt(planId)}
+        });
+
+        if (!userPlan || userPlan.sessionsLeft <= 0) {
+            return res.status(400).json({ error: 'Insufficient sessions left in plan.' });
+        }
+
+        // Decrement sessionsLeft
+        await prisma.userPlan.update({
+            where: { id: userPlan.id },
+            data: { sessionsLeft: userPlan.sessionsLeft - 1 }
+        });
+
         // Kontrolli, kas klass on olemas
         const cls = await prisma.classSchedule.findUnique({
             where: { id: parseInt(classId) }
@@ -1120,9 +1137,14 @@ app.post('/api/register-for-class', ensureAuthenticated, async (req, res) => {
         await prisma.classAttendee.create({
             data: {
                 classId: cls.id,
-                userId: req.session.userId
+                userId: req.session.userId,
+                userPlanId: parseInt(planId)
             }
         });
+
+
+
+
 
         res.json({ message: 'Registered successfully!' });
     } catch (error) {
@@ -1155,7 +1177,7 @@ app.get('/api/is-enrolled', ensureAuthenticated, async (req, res) => {
 });
 
 // Tühistab kasutaja registreeringu antud klassist
-app.delete('/api/register-for-class', ensureAuthenticated, async (req, res) => {
+app.post('/api/cancel-class', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
     if (!classId) return res.status(400).json({ error: 'Class ID required.' });
 
@@ -1180,6 +1202,11 @@ app.delete('/api/register-for-class', ensureAuthenticated, async (req, res) => {
                     userId: req.session.userId
                 }
             }
+        });
+
+        await prisma.userPlan.update({
+            where: { id: attendee.userPlanId },
+            data: { sessionsLeft: { increment: 1 } }
         });
 
         res.json({ message: 'Your enrollment has been canceled.' });
@@ -1254,7 +1281,7 @@ app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
             orderBy: { time: 'asc' }
         });
     }
-    console.log(classes)
+
     res.render('classes', { title: 'Classes', layout: 'owner', classes });
 });
 
@@ -1314,11 +1341,15 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
         trainingName,
         date,
         time,
+        duration,
         trainer,
         memberCapacity,
         location,
         repeatWeekly,
         affiliateId,
+        description,
+        wodName,
+        wodType
     } = req.body;
 
     try {
@@ -1362,17 +1393,21 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
             return res.status(403).json({ error: 'No permission.' });
         }
 
-        const classTime = new Date(`${date}T${time}`);
+        const classTime = new Date(`${date}T${time}Z`);
         const newClass = await prisma.classSchedule.create({
             data: {
                 trainingName,
                 time: classTime,
+                duration: parseInt(duration),
                 trainer: trainer || null,
                 memberCapacity: parseInt(memberCapacity) || 0,
                 location: location || null,
                 repeatWeekly: repeatWeeklyBool,
                 affiliateId: selectedAffiliateId,
-                ownerId: selectedOwnerId
+                ownerId: selectedOwnerId,
+                description: description,
+                wodName: wodName,
+                wodType: wodType
             }
         });
 
@@ -1393,6 +1428,7 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
                 repeats.push({
                     trainingName,
                     time: new Date(nextTime),
+                    duration: parseInt(duration),
                     trainer: trainer || null,
                     memberCapacity: newClass.memberCapacity,
                     location: newClass.location,
@@ -1422,10 +1458,15 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
         trainingName,
         date,
         time,
+        duration,
         trainer,
         memberCapacity,
         location,
-        repeatWeekly
+        repeatWeekly,
+        affiliateId,
+        description,
+        wodName,
+        wodType
     } = req.body;
 
     try {
@@ -1441,11 +1482,22 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
             return res.status(403).json({ error: 'Role not selected.' });
         }
 
+        let selectedAffiliateIds;
+
         // Kontrollime rolli, kas kasutajal on õigus seda klassi muuta
         let allowedOwnerIds = [];
         if (req.session.currentRole === 'owner') {
             allowedOwnerIds = [req.session.userId];
+
+            const affiliate = await prisma.affiliate.findFirst({
+                where: { ownerId: req.session.userId },
+                select: { id: true },
+            });
+
+            selectedAffiliateIds = affiliate.id;
         } else if (req.session.currentRole === 'trainer') {
+
+
 
             const trainerAffiliates = await prisma.affiliateTrainer.findMany({
                 where: { trainerId: req.session.userId },
@@ -1460,7 +1512,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
                 where: { id: { in: affiliateIds } },
                 select: { ownerId: true },
             });
-
+            selectedAffiliateIds = affiliateId || trainerAffiliates[0].affiliateId;
             allowedOwnerIds = affiliates.map((affiliate) => affiliate.ownerId);
         } else {
             return res.status(403).json({ error: 'No permission.' });
@@ -1470,7 +1522,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
             return res.status(403).json({ error: 'Not authorized to update this class.' });
         }
 
-        const classTime = new Date(`${date}T${time}`);
+        const classTime = new Date(`${date}T${time}Z`);
         const repeatWeeklyBool = (repeatWeekly === true || repeatWeekly === 'true');
 
         // Vana repeatWeekly väärtus
@@ -1482,10 +1534,15 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
             data: {
                 trainingName,
                 time: classTime,
+                duration: parseInt(duration),
                 trainer: trainer || null,
                 memberCapacity: parseInt(memberCapacity) || 0,
                 location: location || null,
-                repeatWeekly: repeatWeeklyBool
+                repeatWeekly: repeatWeeklyBool,
+                affiliateId: selectedAffiliateIds,
+                description: description,
+                wodName,
+                wodType
             }
         });
 
@@ -1517,12 +1574,14 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
                     repeats.push({
                         trainingName,
                         time: new Date(nextTime),
+                        duration: parseInt(duration),
                         trainer: trainer || null,
                         memberCapacity: updatedClass.memberCapacity,
                         location: updatedClass.location,
                         repeatWeekly: true,
                         ownerId: existingClass.ownerId,
-                        seriesId: updatedClass.seriesId
+                        seriesId: updatedClass.seriesId,
+                        affiliateId: selectedAffiliateIds
                     });
                 }
 
@@ -1621,6 +1680,33 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async 
     }
 });
 
+// get class attandees
+app.get('/api/class-attendees', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const classId = parseInt(req.query.classId);
+
+
+
+    if (!classId) {
+        return res.status(400).json({error: 'Class ID required".'});
+    }
+
+    try {
+        const classAttendees = await prisma.classAttendee.findMany({
+            where: { classId },
+            include: {
+                user: {
+                    select: { id: true, username: true, fullName: true }
+                }
+            }
+        });
+
+        res.json(classAttendees);
+    } catch (error) {
+        console.error('Error fetching class attendees:', error);
+        res.status(500).json({ error: 'Failed to fetch class attendees.' });
+    }
+
+});
 
 // API endpoint to get all plans
 app.get('/api/plans', ensureAuthenticated, async (req, res) => {
@@ -1661,7 +1747,8 @@ app.post('/api/plans', ensureAuthenticated, ensureAffiliateOwner, async (req, re
         name,
         validityDays,
         price,
-        additionalData
+        additionalData,
+        sessions
     } = req.body;
 
     try {
@@ -1670,6 +1757,7 @@ app.post('/api/plans', ensureAuthenticated, ensureAffiliateOwner, async (req, re
             validityDays: parseInt(validityDays),
             price: parseFloat(price),
             additionalData,
+            sessions: parseInt(sessions),
             ownerId
         };
 
@@ -1693,7 +1781,8 @@ app.put('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (req,
         name,
         validityDays,
         price,
-        additionalData
+        additionalData,
+        sessions
     } = req.body;
 
     try {
@@ -1710,7 +1799,8 @@ app.put('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (req,
             name,
             validityDays: parseInt(validityDays),
             price: parseFloat(price),
-            additionalData
+            additionalData,
+            sessions: parseInt(sessions)
         };
 
         // Update the plan
@@ -1839,10 +1929,49 @@ app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req
     }
 });
 
+// get userPLans by affiliate id and userId
+// Endpoint kasutaja plaanide pärimiseks
+app.get('/api/user-plans', async (req, res) => {
+    const { affiliateId } = req.query;
+    const userId = req.session.userId;
+
+    if (!affiliateId || !userId) {
+        return res.status(400).json({ error: 'AffiliateId ja UserId on nõutud.' });
+    }
+
+    try {
+        // Pärime kasutaja plaanid Prisma abil
+        const userPlans = await prisma.userPlan.findMany({
+            where: {
+                affiliateId: parseInt(affiliateId),
+                userId: parseInt(userId),
+            },
+            select: {
+                id: true,
+                planId: true,
+                planName: true,
+                validityDays: true,
+                price: true,
+                purchasedAt: true,
+                endDate: true,
+                sessionsLeft: true,
+            },
+        });
+
+
+
+        res.json(userPlans);
+    } catch (error) {
+        console.error('Viga kasutaja plaanide pärimisel:', error);
+        res.status(500).json({ error: 'Viga serveri töötlemisel.' });
+    }
+});
+
+
 app.post('/api/buy-plan', ensureAuthenticated, async (req, res) => {
     try {
         // Ootame body: { affiliateId, planId, planName, validityDays, price }
-        const { affiliateId, planId, planName, validityDays, price } = req.body;
+        const { affiliateId, planId, planName, validityDays, price, sessionsLeft } = req.body;
         const userId = req.session.userId; // kes ostab
 
         // 1) Leia kasutaja, kontrolli krediiti
@@ -1880,7 +2009,8 @@ app.post('/api/buy-plan', ensureAuthenticated, async (req, res) => {
                 planName,
                 validityDays,
                 price,
-                endDate
+                endDate,
+                sessionsLeft
             }
         });
 
@@ -1963,17 +2093,24 @@ app.get('/api/member-info', ensureAuthenticated, ensureOwnerOrTrainer, async (re
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return res.status(404).json({ error: 'User not found.' });
 
-        const affiliate = await prisma.affiliate.findFirst({
-            where: { ownerId: req.session.userId },
-        });
+        if (req.session.currentRole === 'owner') {
 
-        affiliateIds = parseInt(affiliate.id, 10);
-console.log("affiliateIds", affiliateIds)
+            const affiliate = await prisma.affiliate.findFirst({
+                where: {ownerId: req.session.userId},
+            });
+
+            affiliateIds = parseInt(affiliate.id, 10);
+        } else if (req.session.currentRole === 'trainer') {
+            const relations = await prisma.affiliateTrainer.findMany({
+                where: {trainerId: req.session.userId},
+            });
+            affiliateIds = relations.map(r => r.affiliateId);
+        }
         // Leia userPlan seosed (affiliateId in [??], aga sul on currentRole, leiad again affiliateId)
         // Siin võib teha lihtsustuse, et toome KÕIK useri plaanid:
         const userPlans = await prisma.userPlan.findMany({
             where: {userId: userId,
-                affiliateId: affiliateIds},
+                affiliateId: parseInt(affiliateIds)},
             orderBy: { id: 'asc' },
         });
 

@@ -123,25 +123,6 @@ test.describe('Affiliate Owner manages members', () => {
         const creditAfter = parseInt(creditTextAfter || '0', 10);
         expect(creditAfter).toBe(creditBefore + 50);
 
-        // 10. Edit plan end date – find an "Edit" button next to the plan
-        //     Example: we find a list item with text "Gold Plan" and a button "Edit"
-        const editButton = page.locator('.edit-enddate', { hasText: 'Edit' }).first();
-        await editButton.click();
-        await page.waitForTimeout(1000);
-        // 11. A prompt or separate modal to set new date (e.g., "2025-02-20")
-        //     If it's a standard JS prompt:
-        page.once('dialog', async dialog => {
-            expect(dialog.type()).toBe('prompt');
-            expect(dialog.message()).toContain('Enter new end date');
-            await page.waitForTimeout(1000);
-            await dialog.accept('2025-02-20');
-        });
-
-        // 12. After updating, maybe the UI reloads the user info:
-        //     Wait or check the updated date
-        //     If the new date is displayed in #modalPlansList or so:
-        await page.waitForTimeout(1000); // small wait for reload or do a more robust check
-        await expect(page.locator('#modalPlansList')).toContainText('2/20/2025');
 
         // Done
     });

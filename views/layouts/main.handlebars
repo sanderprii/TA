@@ -21,8 +21,7 @@
     <!-- Libraries Stylesheet -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet'/>
 
@@ -87,9 +86,12 @@
 
 
 
-
+<body>
 {{{body}}}
+</body>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
@@ -98,13 +100,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/layout.js"></script>
+
 <script src="/client.js"></script>
+<script src="/layout.js"></script>
+
 
 <script>
 
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOMContentLoaded fired!");
+    });
+
+    console.log("Bootstrap olemas?", typeof bootstrap);
+    console.log("Bootstrap.Tab olemas?", typeof bootstrap?.Tab);
+    console.log("See peaks kindlasti konsooli ilmuma!");
     document.addEventListener('DOMContentLoaded', function () {
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
@@ -125,6 +137,9 @@
             });
         }
     });
+
+
+
 </script>
 
 

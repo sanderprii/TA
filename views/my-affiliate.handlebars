@@ -188,9 +188,9 @@
 
             const data = {
                 affiliateId: affiliateIdInput ? affiliateIdInput.value : undefined,
-                name: nameInput.value,
+                name: nameInput.value.toUpperCase(),
                 address: addressInput.value,
-                trainingType: trainingTypeInput.value,
+                trainingType: trainingTypeInput.value.toUpperCase(),
                 trainers: trainerIds
             }
 

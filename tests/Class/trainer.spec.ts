@@ -65,8 +65,10 @@ test.describe('Trainer role functionality', () => {
         await page.fill('#trainingName', trainingName);
         await page.fill('#trainingDate', trainingDate);
         await page.fill('#trainingTime', trainingTime);
+        await page.fill('#duration', '60');
         await page.fill('#memberCapacity', '10');
-        await page.click('button:has-text("Save")');
+        await page.locator('#save-training').click();
+
 
         await expect(modal).toBeHidden();
 

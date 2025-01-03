@@ -43,9 +43,9 @@ test.describe('My Affiliate page functionality', () => {
             // Kontrolli, kas andmed kuvatakse pärast salvestamist
             const affiliateView = await page.locator('#affiliate-view');
             await expect(affiliateView).toBeVisible();
-            await expect(affiliateView).toContainText('cft');
+            await expect(affiliateView).toContainText('CFT');
             await expect(affiliateView).toContainText('Test Address');
-            await expect(affiliateView).toContainText('CrossFit');
+            await expect(affiliateView).toContainText('CROSSFIT');
             await expect(affiliateView).toContainText('testuser'); // Kontrolli valitud treeneri nime
         }
 
@@ -62,6 +62,6 @@ test.describe('My Affiliate page functionality', () => {
         // Kontrolli, kas uuendatud andmed kuvatakse
         const affiliateView = await page.locator('#affiliate-view');
         await expect(affiliateView).toBeVisible();
-        await expect(affiliateView).toContainText('cft');
+        await expect(affiliateView).toContainText('CFT');
     });
 });

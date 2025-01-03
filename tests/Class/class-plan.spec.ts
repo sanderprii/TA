@@ -16,8 +16,7 @@ test.describe('Plan and Class Management Tests', () => {
         const affiliateOwnerButtonText = 'Affiliate Owner';
         const buttonLocator = page.locator(`text=${affiliateOwnerButtonText}`);
 
-        // Silumislogid
-        console.log('Checking for Affiliate Owner button...');
+
 
         // Oota, kuni nupp eksisteerib DOM-is
         await buttonLocator.waitFor({ state: 'visible', timeout: 5000 });
@@ -47,6 +46,7 @@ test.describe('Plan and Class Management Tests', () => {
         await page.fill('#planName', 'test');
         await page.fill('#validityDays', '30');
         await page.fill('#planPrice', '100');
+        await page.fill('#sessions', '100');
         await page.click('button:has-text("Save")');
 
         await expect(modal).toBeHidden();
@@ -80,6 +80,8 @@ test.describe('Plan and Class Management Tests', () => {
         // Lisa uus treening
         await addTrainingButton.click();
 
+
+
         const modal = page.locator('#trainingModal');
         await expect(modal).toBeVisible();
 
@@ -90,8 +92,14 @@ test.describe('Plan and Class Management Tests', () => {
         await page.fill('#trainingName', trainingName);
         await page.fill('#trainingDate', trainingDate);
         await page.fill('#trainingTime', trainingTime);
+        await page.fill('#duration', '60');
         await page.fill('#memberCapacity', '10');
-        await page.click('button:has-text("Save")');
+
+
+
+        await page.waitForTimeout(1000);
+        await page.locator('#save-training').click();
+
 
         await expect(modal).toBeHidden();
 
