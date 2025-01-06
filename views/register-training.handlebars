@@ -71,6 +71,14 @@
                 <p><strong>Trainer:</strong> <span id="modalTrainer"></span></p>
                 <p><strong>Location:</strong> <span id="modalLocation"></span></p>
                 <input type="hidden" id="modalClassId">
+                <div class="bg-light" id="wodInfo">
+                    <p><strong>Wod Name:</strong> <span id="wodName"></span></p>
+                    <p><strong>Wod Type:</strong> <span id="wodType"></span></p>
+                    <p><strong>Description:</strong>
+                    <div id="modalDescription"></div>
+                    </p>
+                    <input type="hidden" id="modalClassId">
+                </div>
                 <label id="plan-label">Choose plan for registation</label>
                 <div id="planSelect">
                 </div>
@@ -600,6 +608,15 @@
             modalTrainer.textContent = cls.trainer || 'N/A';
             modalLocation.textContent = cls.location || 'N/A';
             modalClassId.value = cls.id;
+            wodName.textContent = cls.wodName || 'N/A';
+            wodType.textContent = cls.wodType || 'N/A';
+            modalDescription.textContent = cls.description || 'N/A';
+
+            if(!cls.wodName || cls.wodName.trim() === ''){
+                wodInfo.style.display = 'none';
+            } else {
+                wodInfo.style.display = 'block';
+            }
 
             // Uus samm: lae class info (capacity, enrolled count)
             await loadClassInfo(cls.id);
