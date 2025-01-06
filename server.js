@@ -407,6 +407,9 @@ app.get('/profile', ensureAuthenticated, async (req, res) => {
 
         const age = user.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
 
+
+
+
         res.render('profile', {
             title: 'My Profile',
             user,
@@ -440,6 +443,26 @@ app.post('/profile', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'An error occurred while updating your profile.' });
     }
 });
+
+app.get('/api/user', ensureAuthenticated, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {id: req.session.userId},
+            select: {
+                id: true,
+                username: true,
+                fullName: true,
+                email: true,
+                homeAffiliate: true,
+                credit: true,
+            }
+        });
+        res.json(user)
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ error: 'Failed to fetch user.' });
+    }
+})
 
 // Log out API
 app.post('/api/logout', (req, res) => {
@@ -2181,8 +2204,65 @@ app.patch('/api/userplan-enddate', ensureAuthenticated, ensureOwnerOrTrainer, as
     }
 });
 
+// add home affiliate
+app.post('/api/add-home-affiliate', ensureAuthenticated, async (req, res) => {
+
+    const { homeAffiliates } = req.body;
 
 
+    try {
+        await prisma.user.update({
+            where: { id: req.session.userId },
+            data: { homeAffiliate: parseInt(homeAffiliates) }
+        });
+
+        res.status(201).json({ message: 'Added for Home gym!' });
+    } catch (error) {
+        console.error('Error adding Home gym:', error);
+        res.status(500).json({ error: 'Failed to add home gym!.' });
+    }
+});
+
+// remove home affiliate
+app.post('/api/remove-home-affiliate', ensureAuthenticated, async (req, res) => {
+
+    try {
+        await prisma.user.update({
+            where: { id: req.session.userId },
+            data: { homeAffiliate: null }
+        });
+
+        res.status(201).json({ message: 'Affiliate removed successfully!' });
+    } catch (error) {
+        console.error('Error removing affiliate:', error);
+        res.status(500).json({ error: 'Failed to remove affiliate.' });
+    }
+});
+
+// get affiliate name by id
+
+app.get('/api/affiliate-name', ensureAuthenticated, async (req, res) => {
+    const affiliateId = parseInt(req.query.affiliateId);
+    if (!affiliateId) {
+        return res.status(400).json({ error: 'Affiliate ID required.' });
+    }
+
+    try {
+        const affiliate = await prisma.affiliate.findUnique({
+            where: { id: affiliateId },
+            select: { name: true }
+        });
+
+        if (!affiliate) {
+            return res.status(404).json({ error: 'Affiliate not found.' });
+        }
+
+        res.json(affiliate);
+    } catch (error) {
+        console.error('Error fetching affiliate name:', error);
+        res.status(500).json({ error: 'Failed to fetch affiliate name.' });
+    }
+});
 
 // Start server
 app.listen(PORT, () => {

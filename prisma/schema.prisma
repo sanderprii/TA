@@ -32,6 +32,7 @@ model User {
   classAttendances ClassAttendee[]
   credit           Float?             @default(0.0)
   UserPlan         UserPlan[]
+  homeAffiliate    Int?
 }
 
 model Training {
