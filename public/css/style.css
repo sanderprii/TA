@@ -636,3 +636,9 @@ margin-top: 50px;
     word-wrap: break-word;
 }
 
+.legend-color {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    margin-right: 5px;
+}

@@ -191,6 +191,10 @@ document.addEventListener('DOMContentLoaded', () => {
         detailsDiv.appendChild(exercisesDiv);
 
         if (training.score) {
+            scoreLabel = document.createElement('label');
+            scoreLabel.textContent = 'Score';
+            detailsDiv.appendChild(scoreLabel);
+            
             scoreInput = document.createElement('input');
             scoreInput.type = 'text';
             scoreInput.className = 'form-control mb-2';

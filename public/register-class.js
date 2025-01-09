@@ -1,4 +1,4 @@
-// public/register-training.js
+// public/register-class.js
 
 document.addEventListener('DOMContentLoaded', async function () {
     const affiliateSearch = document.getElementById('affiliateSearch');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const affTrainers = document.getElementById('affTrainers');
     const viewScheduleBtn = document.getElementById('viewScheduleBtn');
     const scheduleContainer = document.getElementById('scheduleContainer');
-const registerHomeTraining = document.getElementById('register-home-training');
+    const registerHomeTraining = document.getElementById('register-home-training');
     const currentWeekElement = document.getElementById('current-week');
     const scheduleElement = document.getElementById('schedule');
 
@@ -76,7 +76,6 @@ const registerHomeTraining = document.getElementById('register-home-training');
                 const dataAff = await responseAff.json();
 
                 affiliateName = dataAff.name;
-
 
 
             } else {
@@ -600,6 +599,7 @@ const registerHomeTraining = document.getElementById('register-home-training');
             wodInfo.style.display = 'block';
         }
 
+
         // Uus samm: lae class info (capacity, enrolled count)
         await loadClassInfo(cls.id);
 
@@ -612,6 +612,11 @@ const registerHomeTraining = document.getElementById('register-home-training');
 
             const userPlans = await fetchUserPlans(affiliateIds);
             populatePlansSelect(userPlans);
+        }
+        const currentDate = new Date();
+        if (classTime < currentDate) {
+            registerForClassBtn.style.display = 'none';
+            cancelClassBtn.style.display = 'none';
         }
 
         classModal.show();
@@ -775,7 +780,6 @@ const registerHomeTraining = document.getElementById('register-home-training');
     function formatDate(date) {
         return date.toLocaleDateString();
     }
-
 
 
 });
