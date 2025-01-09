@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const modalClassId = document.getElementById('modalClassId');
 
     const planSelect = document.getElementById('planSelect');
-
+    const planDivs = document.getElementById('planDiv');
     const addHomeAffiliate = document.getElementById('addHomeAffiliate');
     const removeHomeAffiliate = document.getElementById('removeHomeAffiliate');
 
@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     const paymentMethodModalEl = document.getElementById('paymentMethodModal');
     const paymentMethodModal = new bootstrap.Modal(paymentMethodModalEl);
 
+    const leaderboardBtn = document.getElementById('showLeaderboard');
+    const addScoreBtn = document.getElementById('addScore');
+    const scoreRadio = document.querySelector('input[name="score-type"]:checked');
+    const leaderboardModal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
+    const leaderboardBody = document.getElementById('leaderboardBody');
+
     let currentPlan = null;
 
     let selectedAffiliateId = null;
@@ -55,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     let affiliateName = ''
     let affiliateIds = null;
-
+    let currentClassId = null;
 
     let isSmallScreen = window.innerWidth < 1143; // kontrolli ekraani laiust
     let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
@@ -598,7 +604,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         } else {
             wodInfo.style.display = 'block';
         }
-
+        currentClassId = cls.id;
 
         // Uus samm: lae class info (capacity, enrolled count)
         await loadClassInfo(cls.id);
@@ -617,9 +623,200 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (classTime < currentDate) {
             registerForClassBtn.style.display = 'none';
             cancelClassBtn.style.display = 'none';
+            planDivs.style.display = 'none';
         }
 
+        checkScoreAdded(cls.id);
+
+        addScoreBtn.addEventListener('click', async () => {
+            const scoreRadio = document.querySelector('input[name="score-type"]:checked');
+            const score = document.getElementById('score').value;
+
+            try {
+                // Add score to leaderboard
+                const response = await fetch('/api/add-score', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        classId: cls.id,
+                        scoreType: scoreRadio?.value, // Use optional chaining to avoid errors if undefined
+                        scoreInput: score,
+                    }),
+                });
+
+                if (response.ok) {
+                    alert('Score added successfully');
+                } else {
+                    console.error('Failed to add score', await response.json());
+                }
+            } catch (err) {
+                console.error('Error adding score:', err);
+            }
+
+            try {
+                // Add training record
+                if (!classTime) throw new Error('classTime is not defined');
+                const addToTraining = await fetch('/api/training', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'WOD',
+                        date: classTime,
+                        score: score || 'N/A', // Provide a default value for score
+                        wodName: cls.wodName || 'Unknown',
+                        wodType: cls.wodType || 'Unknown',
+                        exercises: cls.description || 'N/A',
+                    }),
+                });
+
+                if (addToTraining.ok) {
+                    console.log('Training added successfully');
+                } else {
+                    console.error('Failed to add training', await addToTraining.json());
+                }
+            } catch (err) {
+                console.error('Error adding to training:', err);
+            }
+        });
+
         classModal.show();
+    }
+
+    // Example: "leaderboardBtn" is the button that opens the leaderboard
+    leaderboardBtn.addEventListener('click', async () => {
+
+        try {
+            // 1) Fetch leaderboard data from the server
+            const response = await fetch(`/api/leaderboard?classId=${currentClassId}`);
+            const data = await response.json();
+
+            // 2) Show the modal and clear any previous content
+            const leaderboardList = document.getElementById('leaderboardBody');
+            leaderboardList.innerHTML = '';
+            leaderboardModal.show();
+
+            // 3) Create buttons for Rx / Sc / Beg
+            const buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('my-3', 'd-flex', 'gap-2');
+            // "my-3" = margin-y:1rem, "gap-2" = spacing between items
+
+            const rxBtn = document.createElement('button');
+            rxBtn.textContent = 'Rx';
+            rxBtn.classList.add('btn', 'btn-primary');
+
+            const scBtn = document.createElement('button');
+            scBtn.textContent = 'Sc';
+            scBtn.classList.add('btn', 'btn-primary');
+
+            const begBtn = document.createElement('button');
+            begBtn.textContent = 'Beg';
+            begBtn.classList.add('btn', 'btn-primary');
+
+            // 4) Add click listeners that filter + re-render the table
+            rxBtn.addEventListener('click', () => {
+                const filtered = data.filter(item => item.scoreType === 'rx');
+                renderTable(filtered, leaderboardList);
+            });
+
+            scBtn.addEventListener('click', () => {
+                const filtered = data.filter(item => item.scoreType === 'sc');
+                renderTable(filtered, leaderboardList);
+            });
+
+            begBtn.addEventListener('click', () => {
+                const filtered = data.filter(item => item.scoreType === 'beg');
+                renderTable(filtered, leaderboardList);
+            });
+
+            // Add the buttons to the container, then add the container to the modal
+            buttonContainer.append(rxBtn, scBtn, begBtn);
+            leaderboardList.appendChild(buttonContainer);
+
+            // 5) Initially show all items (unfiltered)
+            renderTable(data, leaderboardList);
+
+        } catch (err) {
+            console.error('Error loading leaderboard:', err);
+        }
+    });
+
+// --------------------------------------------------
+// Helper function to render a table in "container"
+// --------------------------------------------------
+    async function renderTable(dataset, container) {
+
+        // Remove any old table (but keep the buttons, so do not clear container entirely)
+        const oldTable = container.querySelectorAll('table');
+        oldTable.forEach(tbl => tbl.remove());
+
+        // Create a new table with a header
+        const table = document.createElement('table');
+
+        table.classList.add('table', 'table-striped', 'table-hover');
+
+
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+    <tr>
+      <th>Place</th>
+      <th>Name</th>
+      <th>Score</th>
+      <th>Type</th>
+    </tr>
+  `;
+        table.appendChild(thead);
+
+        // Create <tbody> for the data rows
+        const tbody = document.createElement('tbody');
+
+        // Build rows from dataset
+        for (const [index, item] of dataset.entries()) {
+
+            const userResponse = await fetch(`/api/user-data?userId=${item.userId}`);
+            const userData = await userResponse.json();
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+      <td>${index + 1}.</td>
+      <td><strong>${userData.fullName || ''}</strong></td>
+      <td>${item.score}</td>
+      <td>${item.scoreType.toUpperCase()}</td>
+    `;
+            tbody.appendChild(row);
+        }
+        ;
+
+        table.appendChild(tbody);
+        container.appendChild(table);
+    }
+
+
+    // check if score is added
+    async function checkScoreAdded(classId) {
+        try {
+            const response = await fetch(`/api/leaderboard?classId=${classId}`);
+            const data = await response.json();
+
+            // logged in user id
+            const userResponse = await fetch('/api/user');
+            const userData = await userResponse.json();
+
+            data.forEach(item => {
+                if (item.userId === userData.id && item.classId === classId) {
+                    addScoreBtn.style.display = 'none';
+                } else {
+                    addScoreBtn.style.display = 'inline-block';
+                }
+            });
+
+
+        } catch (err) {
+            console.error('Error checking score:', err);
+        }
     }
 
     async function fetchUserPlans(affiliateIds) {
@@ -699,7 +896,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     }
 
-    // "Register for class" klikk on juba olemas
+// "Register for class" klikk on juba olemas
     registerForClassBtn.addEventListener('click', async function () {
         const classId = modalClassId.value;
         const planSelectElement = document.getElementById('user-plans-select');
@@ -741,7 +938,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
-    // "Cancel training" klikk
+// "Cancel training" klikk
     cancelClassBtn.addEventListener('click', async function () {
         const classId = modalClassId.value;
         if (!classId) return;
@@ -782,4 +979,5 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
 
-});
+})
+;

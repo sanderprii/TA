@@ -485,9 +485,10 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
         exercises,
     } = req.body;
 
+
     try {
         // Validate request data
-        if (!type || !date || !Array.isArray(exercises) || exercises.length === 0) {
+        if (!type || !date ) {
             return res.status(400).json({ error: 'Invalid training data.' });
         }
 
@@ -500,9 +501,8 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
             score: score || null,
             userId: req.session.userId,
             exercises: {
-                create: exercises.map((exercise) => ({
-                    exerciseData: exercise.exerciseData || '',
-                })),
+                create: [{ exerciseData: exercises || '' }],
+
             },
         };
 
@@ -1204,6 +1204,8 @@ app.post('/api/cancel-class', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
     if (!classId) return res.status(400).json({ error: 'Class ID required.' });
 
+
+
     try {
         const attendee = await prisma.classAttendee.findUnique({
             where: {
@@ -1545,7 +1547,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
             return res.status(403).json({ error: 'Not authorized to update this class.' });
         }
 
-        const classTime = new Date(`${date}T${time}Z`);
+        const classTime = new Date(`${date}T${time}`);
         const repeatWeeklyBool = (repeatWeekly === true || repeatWeekly === 'true');
 
         // Vana repeatWeekly väärtus
@@ -2261,6 +2263,109 @@ app.get('/api/affiliate-name', ensureAuthenticated, async (req, res) => {
     } catch (error) {
         console.error('Error fetching affiliate name:', error);
         res.status(500).json({ error: 'Failed to fetch affiliate name.' });
+    }
+});
+
+
+// Tühistab kasutaja registreeringu antud klassist
+app.post('/api/remove-user', ensureAuthenticated, async (req, res) => {
+    const classId = parseInt(req.query.classId);
+    const userId = parseInt(req.query.userId);
+    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+
+
+
+    try {
+        const attendee = await prisma.classAttendee.findUnique({
+            where: {
+                classId_userId: {
+                    classId: classId,
+                    userId: userId
+                }
+            }
+        });
+
+        if (!attendee) {
+            return res.status(404).json({ error: 'You are not enrolled in this class.' });
+        }
+
+        await prisma.classAttendee.delete({
+            where: {
+                classId_userId: {
+                    classId: classId,
+                    userId: userId
+                }
+            }
+        });
+
+        await prisma.userPlan.update({
+            where: { id: attendee.userPlanId },
+            data: { sessionsLeft: { increment: 1 } }
+        });
+
+        res.json({ message: 'Your enrollment has been canceled.' });
+    } catch (error) {
+        console.error('Error canceling enrollment:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// add score
+app.post('/api/add-score', ensureAuthenticated, async (req, res) => {
+    const { scoreType, classId, scoreInput } = req.body;
+
+    try {
+        const newScore = await prisma.classLeaderboard.create({
+            data: {
+                scoreType: scoreType,
+                userId: req.session.userId,
+                classId: classId,
+                score: scoreInput
+            }
+        });
+
+        res.status(201).json({ message: 'Score added successfully!', score: newScore });
+    } catch (error) {
+        console.error('Error adding score:', error);
+        res.status(500).json({ error: 'Failed to add score.' });
+    }
+});
+
+// get leaderboard
+app.get('/api/leaderboard', ensureAuthenticated, async (req, res) => {
+    const classId = parseInt(req.query.classId);
+
+    if (!classId) {
+        return res.status(400).json({ error: 'Class ID required' });
+    };
+    try {
+        const leaderboard = await prisma.classLeaderboard.findMany({
+            where: { classId },
+            include: { user: true },
+            orderBy: { score: 'desc' }
+        });
+
+        res.json(leaderboard);
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        res.status(500).json({ error: 'Failed to fetch leaderboard.' });
+    }
+
+});
+
+//get user data
+
+app.get('/api/user-data', ensureAuthenticated, async (req, res) => {
+    const userId = parseInt(req.query.userId);
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        res.status(500).json({error: 'Failed to fetch user data.'});
     }
 });
 

@@ -33,6 +33,7 @@ model User {
   credit           Float?             @default(0.0)
   UserPlan         UserPlan[]
   homeAffiliate    Int?
+  classLeaderboard ClassLeaderboard[]
 }
 
 model Training {
@@ -74,23 +75,24 @@ model defaultWOD {
 }
 
 model ClassSchedule {
-  id             Int             @id @default(autoincrement())
+  id             Int                @id @default(autoincrement())
   trainingName   String
   time           DateTime
   duration       Int
   trainer        String?
   memberCapacity Int
   location       String?
-  repeatWeekly   Boolean         @default(false)
+  repeatWeekly   Boolean            @default(false)
   ownerId        Int
-  owner          User            @relation(fields: [ownerId], references: [id])
+  owner          User               @relation(fields: [ownerId], references: [id])
   affiliateId    Int
-  affiliate      Affiliate       @relation(fields: [affiliateId], references: [id])
+  affiliate      Affiliate          @relation(fields: [affiliateId], references: [id])
   seriesId       Int?
   wodName        String?
   wodType        String?
   description    String?
   attendees      ClassAttendee[]
+  leaderboard    ClassLeaderboard[]
 }
 
 model Plan {
@@ -151,4 +153,15 @@ model ClassAttendee {
   createdAt     DateTime      @default(now())
 
   @@unique([classId, userId]) // vältimaks duplikaatregistratsioone
+}
+
+model ClassLeaderboard {
+  id            Int           @id @default(autoincrement())
+  classId       Int
+  classSchedule ClassSchedule @relation(fields: [classId], references: [id])
+  userId        Int
+  user          User          @relation(fields: [userId], references: [id])
+  scoreType     String
+  score         String
+  createdAt     DateTime      @default(now())
 }

@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const editTrainingBtn = document.getElementById('edit-training-btn');
 
 
+
     let currentDate = new Date(); // Start with the current date
     let classesData = [];
 
@@ -133,6 +134,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+
 
     // Functions
     async function loadSchedule() {
@@ -448,10 +451,42 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.length > 0) {
                 data.forEach(member => {
                     const memberDiv = document.createElement('div');
+                    memberDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'mb-2');
 
+                    const memberNameSpan = document.createElement('span');
+                    memberNameSpan.textContent = '👤 ' + member.user.fullName.toUpperCase();
 
-                    memberDiv.textContent = '👤 ' + member.user.fullName.toUpperCase();
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = 'X';
+                    removeBtn.style.color = 'white';
+                    removeBtn.style.backgroundColor = 'red';
+                    removeBtn.style.border = 'none';
+                    removeBtn.style.borderRadius = '4px';
+                    removeBtn.style.width = '24px';
+                    removeBtn.style.height = '24px';
+                    removeBtn.style.cursor = 'pointer';
 
+                    removeBtn.addEventListener('click', async () => {
+                        if (confirm(`Remove ${member.user.fullName.toUpperCase()} from class?`)) {
+                            try {
+                                // NB! Näidis-URL – kohanda oma API järgi
+                                await fetch(`/api/remove-user?classId=${classId}&userId=${member.user.id}`, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({classId, userId: member.user.id})
+                                });
+
+                                // Lae osalejate nimekiri uuesti või eemalda see DOM-ist
+                                loadClassAttendance(classId);
+                                // Või remove DOMist: memberDiv.remove();
+                            } catch (err) {
+                                console.error('Error removing user:', err);
+                            }
+                        }
+                    });
+
+                    memberDiv.appendChild(memberNameSpan);
+                    memberDiv.appendChild(removeBtn);
                     classAttendance.appendChild(memberDiv);
                 });
             } else {
@@ -478,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function () {
         wodName.textContent = cls.wodName || 'N/A';
         wodType.textContent = cls.wodType || 'N/A';
         modalDescription.textContent = cls.description || 'N/A';
-        if(!cls.wodName || cls.wodName.trim() === ''){
+        if (!cls.wodName || cls.wodName.trim() === '') {
             wodInfo.style.display = 'none';
         } else {
             wodInfo.style.display = 'block';
@@ -566,8 +601,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function formatTimeInput(date) {
-        const hours = String(date.getUTCHours()).padStart(2, '0');
-        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
     }
 });

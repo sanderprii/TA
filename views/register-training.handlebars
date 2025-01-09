@@ -2,7 +2,7 @@
 
 
 <div class="container1 mt-4">
-    <h1>Register for Training</h1>
+    <h1 id="register-home-training">Register for Training</h1>
 
     <div class="mb-3 position-relative">
 
@@ -80,12 +80,36 @@
                     <div id="modalDescription"></div>
                     </p>
                     <input type="hidden" id="modalClassId">
+
+                    <div id="addScoreDiv" class="bg-light border p-3">
+                        <div>
+                            <label for="score"><strong>Enter your score:</strong></label>
+                        </div>
+
+                        <div class="d-flex justify-content-around">
+
+                            <label for="rx">
+                                <input type="radio" class="" name="score-type" value="rx" id="rx">Rx</label>
+                            <label for="sc">
+                                <input type="radio" class="" name="score-type" value="sc" id="sc">Sc</label>
+                            <label for="beg">
+                                <input type="radio" class="" name="score-type" value="beg" id="beg">Beg</label>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control" id="score" placeholder="Enter your score">
+                        </div>
+                    </div>
                 </div>
-                <label id="plan-label">Choose plan for registation</label>
-                <div id="planSelect">
+
+                <div id="planDiv">
+                    <label id="plan-label">Choose plan for registation</label>
+                    <div id="planSelect">
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
+                <button id="addScore" type="button" class="btn btn-primary">Add Score</button>
+                <button id="showLeaderboard" type="button" class="btn btn-primary">Show Leaderboard</button>
                 <button id="registerForClassBtn" type="button" class="btn btn-primary">Register for Class</button>
                 <button id="cancelClassBtn" type="button" class="btn btn-danger" style="display:none;">Cancel Training
                 </button>
@@ -93,6 +117,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Modal for plan info (read-only) -->
@@ -136,8 +161,27 @@
     </div>
 </div>
 
-<script src="/register-class.js">
+<!-- Leaderboard Modal -->
+<div class="modal fade" id="leaderboardModal" tabindex="-1" aria-labelledby="leaderboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg"> <!-- use modal-lg if you want a larger dialog -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="leaderboardModalLabel" class="modal-title">Leaderboard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="leaderboardBody">
+                <!-- We'll dynamically fill this with data (e.g., a table or list) -->
+                <p>Loading leaderboard...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+
+<script src="/register-class.js">
 
 
 </script>
