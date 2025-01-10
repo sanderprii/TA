@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Error: ' + error.message);
                 }
             } else {
-                const username = document.getElementById('login_username').value.trim();
+                const username = document.getElementById('login_username').value.trim().toLowerCase();
                 const password = document.getElementById('login_password').value;
 
                 try {
@@ -686,42 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Profile Page Scripts
-    const editBtn = document.getElementById('edit-btn');
-    const profileView = document.getElementById('profile-view');
-    const profileEdit = document.getElementById('profile-edit');
 
-    if (editBtn && profileView && profileEdit) {
-        editBtn.addEventListener('click', () => {
-            profileView.style.display = 'none';
-            profileEdit.style.display = 'block';
-        });
-
-        profileEdit.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const fullName = document.getElementById('fullName').value;
-            const dateOfBirth = document.getElementById('dateOfBirth').value;
-            const sex = document.querySelector('input[name="sex"]:checked').value;
-
-            try {
-                const response = await fetch('/profile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullName, dateOfBirth, sex }),
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    const result = await response.json();
-                    alert('Error: ' + result.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        });
-    }
 
 
 // Records Page Scripts

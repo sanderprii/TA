@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const scoreRadio = document.querySelector('input[name="score-type"]:checked');
     const leaderboardModal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
     const leaderboardBody = document.getElementById('leaderboardBody');
+    const editScoreBtn = document.getElementById('editScore');
 
     let currentPlan = null;
 
@@ -91,7 +92,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (err) {
             console.error('Error fetching user home affiliates:', err);
         } finally {
+
             loadAffiliateInfo(affiliateName);
+
         }
     }
 
@@ -683,84 +686,136 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
 
-        classModal.show();
-    }
 
-    // Example: "leaderboardBtn" is the button that opens the leaderboard
-    leaderboardBtn.addEventListener('click', async () => {
+        editScoreBtn.addEventListener('click', async () => {
+           async function editScore() {
+                const scoreRadio = document.querySelector('input[name="score-type"]:checked');
+                const score = document.getElementById('score').value;
 
-        try {
-            // 1) Fetch leaderboard data from the server
-            const response = await fetch(`/api/leaderboard?classId=${currentClassId}`);
-            const data = await response.json();
+                // get leaderboardId
+               try {
 
-            // 2) Show the modal and clear any previous content
-            const leaderboardList = document.getElementById('leaderboardBody');
-            leaderboardList.innerHTML = '';
-            leaderboardModal.show();
 
-            // 3) Create buttons for Rx / Sc / Beg
-            const buttonContainer = document.createElement('div');
-            buttonContainer.classList.add('my-3', 'd-flex', 'gap-2');
-            // "my-3" = margin-y:1rem, "gap-2" = spacing between items
+                     let leaderboardId = data.id;
 
-            const rxBtn = document.createElement('button');
-            rxBtn.textContent = 'Rx';
-            rxBtn.classList.add('btn', 'btn-primary');
 
-            const scBtn = document.createElement('button');
-            scBtn.textContent = 'Sc';
-            scBtn.classList.add('btn', 'btn-primary');
+               } catch (err) {
+                     console.error('Error fetching leaderboard id:', err);
+               }
 
-            const begBtn = document.createElement('button');
-            begBtn.textContent = 'Beg';
-            begBtn.classList.add('btn', 'btn-primary');
+                try {
+                    // Add score to leaderboard
+                    const response1 = await fetch(`/api/leaderboard-id?classId=${cls.id}`);
+                    const data = await response1.json();
+                    const leaderboardId = data.id;
 
-            // 4) Add click listeners that filter + re-render the table
-            rxBtn.addEventListener('click', () => {
-                const filtered = data.filter(item => item.scoreType === 'rx');
-                renderTable(filtered, leaderboardList);
-            });
 
-            scBtn.addEventListener('click', () => {
-                const filtered = data.filter(item => item.scoreType === 'sc');
-                renderTable(filtered, leaderboardList);
-            });
 
-            begBtn.addEventListener('click', () => {
-                const filtered = data.filter(item => item.scoreType === 'beg');
-                renderTable(filtered, leaderboardList);
-            });
+                    const response = await fetch('/api/edit-score', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            leaderboardId: leaderboardId,
+                            scoreType: scoreRadio?.value, // Use optional chaining to avoid errors if undefined
+                            scoreInput: score
 
-            // Add the buttons to the container, then add the container to the modal
-            buttonContainer.append(rxBtn, scBtn, begBtn);
-            leaderboardList.appendChild(buttonContainer);
+                        }),
+                    });
 
-            // 5) Initially show all items (unfiltered)
-            renderTable(data, leaderboardList);
+                    if (response.ok) {
+                        alert('Score edited successfully');
+                    } else {
+                        console.error('Failed to edit score', await response.json());
+                    }
+                } catch (err) {
+                    console.error('Error editing score:', err);
+                }
+            }
+            editScore()
+        });
 
-        } catch (err) {
-            console.error('Error loading leaderboard:', err);
+            classModal.show();
         }
-    });
+
+        // Example: "leaderboardBtn" is the button that opens the leaderboard
+        leaderboardBtn.addEventListener('click', async () => {
+
+            try {
+                // 1) Fetch leaderboard data from the server
+                const response = await fetch(`/api/leaderboard?classId=${currentClassId}`);
+                const data = await response.json();
+
+
+
+                // 2) Show the modal and clear any previous content
+                const leaderboardList = document.getElementById('leaderboardBody');
+                leaderboardList.innerHTML = '';
+                leaderboardModal.show();
+
+                // 3) Create buttons for Rx / Sc / Beg
+                const buttonContainer = document.createElement('div');
+                buttonContainer.classList.add('my-3', 'd-flex', 'gap-2');
+                // "my-3" = margin-y:1rem, "gap-2" = spacing between items
+
+                const rxBtn = document.createElement('button');
+                rxBtn.textContent = 'Rx';
+                rxBtn.classList.add('btn', 'btn-primary');
+
+                const scBtn = document.createElement('button');
+                scBtn.textContent = 'Sc';
+                scBtn.classList.add('btn', 'btn-primary');
+
+                const begBtn = document.createElement('button');
+                begBtn.textContent = 'Beg';
+                begBtn.classList.add('btn', 'btn-primary');
+
+                // 4) Add click listeners that filter + re-render the table
+                rxBtn.addEventListener('click', () => {
+                    const filtered = data.filter(item => item.scoreType === 'rx');
+                    renderTable(filtered, leaderboardList);
+                });
+
+                scBtn.addEventListener('click', () => {
+                    const filtered = data.filter(item => item.scoreType === 'sc');
+                    renderTable(filtered, leaderboardList);
+                });
+
+                begBtn.addEventListener('click', () => {
+                    const filtered = data.filter(item => item.scoreType === 'beg');
+                    renderTable(filtered, leaderboardList);
+                });
+
+                // Add the buttons to the container, then add the container to the modal
+                buttonContainer.append(rxBtn, scBtn, begBtn);
+                leaderboardList.appendChild(buttonContainer);
+
+                // 5) Initially show all items (unfiltered)
+                renderTable(data, leaderboardList);
+
+            } catch (err) {
+                console.error('Error loading leaderboard:', err);
+            }
+        });
 
 // --------------------------------------------------
 // Helper function to render a table in "container"
 // --------------------------------------------------
-    async function renderTable(dataset, container) {
+        async function renderTable(dataset, container) {
 
-        // Remove any old table (but keep the buttons, so do not clear container entirely)
-        const oldTable = container.querySelectorAll('table');
-        oldTable.forEach(tbl => tbl.remove());
+            // Remove any old table (but keep the buttons, so do not clear container entirely)
+            const oldTable = container.querySelectorAll('table');
+            oldTable.forEach(tbl => tbl.remove());
 
-        // Create a new table with a header
-        const table = document.createElement('table');
+            // Create a new table with a header
+            const table = document.createElement('table');
 
-        table.classList.add('table', 'table-striped', 'table-hover');
+            table.classList.add('table', 'table-striped', 'table-hover');
 
 
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
     <tr>
       <th>Place</th>
       <th>Name</th>
@@ -768,216 +823,219 @@ document.addEventListener('DOMContentLoaded', async function () {
       <th>Type</th>
     </tr>
   `;
-        table.appendChild(thead);
+            table.appendChild(thead);
 
-        // Create <tbody> for the data rows
-        const tbody = document.createElement('tbody');
+            // Create <tbody> for the data rows
+            const tbody = document.createElement('tbody');
 
-        // Build rows from dataset
-        for (const [index, item] of dataset.entries()) {
+            // Build rows from dataset
+            for (const [index, item] of dataset.entries()) {
 
-            const userResponse = await fetch(`/api/user-data?userId=${item.userId}`);
-            const userData = await userResponse.json();
+                const userResponse = await fetch(`/api/user-data?userId=${item.userId}`);
+                const userData = await userResponse.json();
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
+                const row = document.createElement('tr');
+                row.innerHTML = `
       <td>${index + 1}.</td>
       <td><strong>${userData.fullName || ''}</strong></td>
       <td>${item.score}</td>
       <td>${item.scoreType.toUpperCase()}</td>
     `;
-            tbody.appendChild(row);
+                tbody.appendChild(row);
+            }
+            ;
+
+            table.appendChild(tbody);
+            container.appendChild(table);
         }
-        ;
-
-        table.appendChild(tbody);
-        container.appendChild(table);
-    }
 
 
-    // check if score is added
-    async function checkScoreAdded(classId) {
-        try {
-            const response = await fetch(`/api/leaderboard?classId=${classId}`);
-            const data = await response.json();
+        // check if score is added
+        async function checkScoreAdded(classId) {
+            try {
+                const response = await fetch(`/api/leaderboard?classId=${classId}`);
+                const data = await response.json();
 
-            // logged in user id
-            const userResponse = await fetch('/api/user');
-            const userData = await userResponse.json();
+                // logged in user id
+                const userResponse = await fetch('/api/user');
+                const userData = await userResponse.json();
 
-            data.forEach(item => {
-                if (item.userId === userData.id && item.classId === classId) {
-                    addScoreBtn.style.display = 'none';
-                } else {
-                    addScoreBtn.style.display = 'inline-block';
-                }
+                data.forEach(item => {
+                    if (item.userId === userData.id && item.classId === classId) {
+                        addScoreBtn.style.display = 'none';
+                        editScoreBtn.style.display = 'inline-block';
+                    } else {
+                        addScoreBtn.style.display = 'inline-block';
+                    }
+                });
+
+
+            } catch (err) {
+                console.error('Error checking score:', err);
+            }
+        }
+
+        async function fetchUserPlans(affiliateIds) {
+            try {
+
+                const response = await fetch(`/api/user-plans?affiliateId=${affiliateIds}`);
+                if (!response.ok) throw new Error('Failed to fetch user plans');
+                return await response.json();
+            } catch {
+                return [];
+            }
+        }
+
+        function populatePlansSelect(plans) {
+            const plansContainer = document.getElementById('planSelect');
+            plansContainer.innerHTML = ''; // Eemalda varasemad valikud
+
+            if (plans.length === 0) {
+                plansContainer.textContent = 'No training plans';
+
+
+                return;
+            }
+
+            const selectElement = document.createElement('select');
+            selectElement.id = 'user-plans-select';
+            selectElement.name = 'userPlan';
+
+            plans.forEach(plan => {
+                const option = document.createElement('option');
+                option.value = plan.id; // Eeldusel, et plaanil on `id`
+                option.textContent = plan.planName; // Eeldusel, et plaanil on `name`
+                selectElement.appendChild(option);
             });
 
-
-        } catch (err) {
-            console.error('Error checking score:', err);
-        }
-    }
-
-    async function fetchUserPlans(affiliateIds) {
-        try {
-
-            const response = await fetch(`/api/user-plans?affiliateId=${affiliateIds}`);
-            if (!response.ok) throw new Error('Failed to fetch user plans');
-            return await response.json();
-        } catch {
-            return [];
-        }
-    }
-
-    function populatePlansSelect(plans) {
-        const plansContainer = document.getElementById('planSelect');
-        plansContainer.innerHTML = ''; // Eemalda varasemad valikud
-
-        if (plans.length === 0) {
-            plansContainer.textContent = 'No training plans';
-
-
-            return;
+            plansContainer.appendChild(selectElement);
         }
 
-        const selectElement = document.createElement('select');
-        selectElement.id = 'user-plans-select';
-        selectElement.name = 'userPlan';
 
-        plans.forEach(plan => {
-            const option = document.createElement('option');
-            option.value = plan.id; // Eeldusel, et plaanil on `id`
-            option.textContent = plan.planName; // Eeldusel, et plaanil on `name`
-            selectElement.appendChild(option);
-        });
+        async function loadClassInfo(classId) {
+            try {
+                const response = await fetch(`/api/class-info?classId=${classId}`);
 
-        plansContainer.appendChild(selectElement);
-    }
-
-
-    async function loadClassInfo(classId) {
-        try {
-            const response = await fetch(`/api/class-info?classId=${classId}`);
-
-            const data = await response.json();
-            if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
-                const freeSpots = data.memberCapacity - data.enrolledCount;
-                document.getElementById('freeSpots').textContent = freeSpots;
-                document.getElementById('classCapacity').textContent = data.memberCapacity;
-            } else {
-                // Kui andmete lugemine ebaõnnestus, pane mingid vaikimisi väärtused
+                const data = await response.json();
+                if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
+                    const freeSpots = data.memberCapacity - data.enrolledCount;
+                    document.getElementById('freeSpots').textContent = freeSpots;
+                    document.getElementById('classCapacity').textContent = data.memberCapacity;
+                } else {
+                    // Kui andmete lugemine ebaõnnestus, pane mingid vaikimisi väärtused
+                    document.getElementById('freeSpots').textContent = '?';
+                    document.getElementById('classCapacity').textContent = '?';
+                }
+            } catch (err) {
+                console.error('Error loading class info:', err);
                 document.getElementById('freeSpots').textContent = '?';
                 document.getElementById('classCapacity').textContent = '?';
             }
-        } catch (err) {
-            console.error('Error loading class info:', err);
-            document.getElementById('freeSpots').textContent = '?';
-            document.getElementById('classCapacity').textContent = '?';
         }
-    }
 
 
-    async function checkEnrollment(classId) {
-        try {
-            const response = await fetch(`/api/is-enrolled?classId=${classId}`);
-            const data = await response.json();
-            if (data.isEnrolled) {
-                // Kasutaja on juba registreeritud
-                registerForClassBtn.style.display = 'none';
-                cancelClassBtn.style.display = 'inline-block';
-            } else {
-                // Kasutaja ei ole registreeritud
-                registerForClassBtn.style.display = 'inline-block';
-                cancelClassBtn.style.display = 'none';
+        async function checkEnrollment(classId) {
+            try {
+                const response = await fetch(`/api/is-enrolled?classId=${classId}`);
+                const data = await response.json();
+                if (data.isEnrolled) {
+                    // Kasutaja on juba registreeritud
+                    registerForClassBtn.style.display = 'none';
+                    cancelClassBtn.style.display = 'inline-block';
+                } else {
+                    // Kasutaja ei ole registreeritud
+                    registerForClassBtn.style.display = 'inline-block';
+                    cancelClassBtn.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Error checking enrollment:', err);
             }
-        } catch (err) {
-            console.error('Error checking enrollment:', err);
         }
-    }
 
 // "Register for class" klikk on juba olemas
-    registerForClassBtn.addEventListener('click', async function () {
-        const classId = modalClassId.value;
-        const planSelectElement = document.getElementById('user-plans-select');
+        registerForClassBtn.addEventListener('click', async function () {
+            const classId = modalClassId.value;
+            const planSelectElement = document.getElementById('user-plans-select');
 
-        if (!planSelectElement) {
-            alert('Please select a plan or buy a new one.');
-            return;
-        }
-
-
-        const planId = planSelectElement.value;
-
-        if (planId === null) {
-            alert('Please select a plan or buy a new one.');
-            return;
-        }
-
-        if (!classId) return;
-        try {
-            const response = await fetch('/api/register-for-class', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({classId, planId})
-            });
-            if (response.ok) {
-                alert('Registered successfully!');
-
-                await loadClassInfo(classId);
-                // Näita nüüd "Cancel Training" nuppu
-                registerForClassBtn.style.display = 'none';
-                cancelClassBtn.style.display = 'inline-block';
-
-            } else {
-                const err = await response.json();
-                alert('Error registering: ' + err.error);
+            if (!planSelectElement) {
+                alert('Please select a plan or buy a new one.');
+                return;
             }
-        } catch (err) {
-            console.error('Error registering for class:', err);
-        }
-    });
+
+
+            const planId = planSelectElement.value;
+
+            if (planId === null) {
+                alert('Please select a plan or buy a new one.');
+                return;
+            }
+
+            if (!classId) return;
+            try {
+                const response = await fetch('/api/register-for-class', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({classId, planId})
+                });
+                if (response.ok) {
+                    alert('Registered successfully!');
+
+                    await loadClassInfo(classId);
+                    // Näita nüüd "Cancel Training" nuppu
+                    registerForClassBtn.style.display = 'none';
+                    cancelClassBtn.style.display = 'inline-block';
+
+                } else {
+                    const err = await response.json();
+                    alert('Error registering: ' + err.error);
+                }
+            } catch (err) {
+                console.error('Error registering for class:', err);
+            }
+        });
 
 // "Cancel training" klikk
-    cancelClassBtn.addEventListener('click', async function () {
-        const classId = modalClassId.value;
-        if (!classId) return;
+        cancelClassBtn.addEventListener('click', async function () {
+            const classId = modalClassId.value;
+            if (!classId) return;
 
 
-        try {
-            const response = await fetch(`/api/cancel-class?classId=${classId}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({classId})
-            });
-            if (response.ok) {
-                await loadClassInfo(classId);
-                // Nüüd näita uuesti "Register for Class"
-                registerForClassBtn.style.display = 'inline-block';
-                cancelClassBtn.style.display = 'none';
-            } else {
-                const err = await response.json();
-                alert('Error canceling enrollment: ' + err.error);
+            try {
+                const response = await fetch(`/api/cancel-class?classId=${classId}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({classId})
+                });
+                if (response.ok) {
+                    await loadClassInfo(classId);
+                    // Nüüd näita uuesti "Register for Class"
+                    registerForClassBtn.style.display = 'inline-block';
+                    cancelClassBtn.style.display = 'none';
+                } else {
+                    const err = await response.json();
+                    alert('Error canceling enrollment: ' + err.error);
+                }
+            } catch (err) {
+                console.error('Error canceling enrollment:', err);
             }
-        } catch (err) {
-            console.error('Error canceling enrollment:', err);
+        });
+
+        function getStartOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay(); // 0 = pühapäev, 6 = laupäev
+            const diff = (day === 0 ? -6 : 1) - day; // Esmaspäevaks teisendamine
+            d.setDate(d.getDate() + diff);
+            d.setHours(0, 0, 0, 0); // Nullib kellaaja
+            return d;
         }
-    });
 
-    function getStartOfWeek(date) {
-        const d = new Date(date);
-        const day = d.getDay(); // 0 = pühapäev, 6 = laupäev
-        const diff = (day === 0 ? -6 : 1) - day; // Esmaspäevaks teisendamine
-        d.setDate(d.getDate() + diff);
-        d.setHours(0, 0, 0, 0); // Nullib kellaaja
-        return d;
+
+        function formatDate(date) {
+            return date.toLocaleDateString();
+        }
+
+
     }
 
-
-    function formatDate(date) {
-        return date.toLocaleDateString();
-    }
-
-
-})
-;
+)
+    ;

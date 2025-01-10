@@ -1,41 +1,500 @@
-<div class="container-training">
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-center ">
+        <button type="button" class="btn btn-secondary btn-profile active" data-type="profile" id="profile-btn">
+            Profile
+        </button>
+        <button type="button" class="btn btn-secondary btn-profile" data-type="history" id="visit-history-btn">Visit
+            history
+        </button>
+        <button type="button" class="btn btn-secondary btn-profile" data-type="credit" id="credit-btn">Credit</button>
+        <button type="button" class="btn btn-secondary btn-profile" data-type="purchase" id="purchase-history-btn">
+            Purchase history
+        </button>
+        <button type="button" class="btn btn-secondary btn-profile" data-type="plans" id="active-plans-btn">Active
+            plans
+        </button>
+    </div>
+
+</div>
+<div class="container-training" id="profile-container">
     <div class="form-def">
-        <div class="form_front form-training">
+        <div class="layout1 text-dark">
             <div class="card-body">
 
-                <div id="profile-view">
+                <div id="profile-list">
                     <h2 class="form-label" class="text-center">My profile</h2>
-                    <p class="form-label"><strong>Full Name:</strong> {{user.fullName}}</p>
-                    <p class="form-label"><strong>Age:</strong> {{age}} years</p>
+                    <div id="profile-view">
 
-                    <p class="form-label"><strong>Sex:</strong> {{user.sex}}</p>
-                    <button id="edit-btn" class="btn btn-primary float-end">Edit</button>
+                    </div>
+                    <button id="change-password" class="btn btn-secondary float-end m-1">Change password</button>
+                    <button id="edit-btn" class="btn btn-primary float-end m-1">Edit</button>
                 </div>
+                <div>
 
-                <form id="profile-edit" style="display: none;">
-                    <h2 class="text-center">Edit Profile</h2>
-                    <div class="mb-3">
-                        <label class="form-label" for="fullName" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="fullName" name="fullName" value="{{user.fullName}}">
+                </div>
+                <form id="profile-edit-div" style="display: none;">
+                    <div>
+                        <h2>Edit Profile</h2>
+                        <div id="profile-edit" class="d-flex flex-column ">
+                            <label for="full-name" class="m-1">Full name:</label>
+                            <input type="text" id="full-name" name="full-name" class="m-1">
+                            <label for="date-of-birth" class="m-1">Date of birth:</label>
+                            <input type="date" id="date-of-birth" name="date-of-birth" class="m-1">
+                            <label type="text" class="m-1">Email:</label>
+                            <input type="email" id="email" name="email" class="m-1">
+                        </div>
+
+                            <button type="submit" id="save-btn" class="btn btn-success float-end mt-1">Save</button>
+
                     </div>
-                    <div class="mb-3 form-group">
-                        <label class="form-label"  for="dateOfBirth" class="form-label">Date of Birth</label>
-                        <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth"
-                               value="{{user.dateOfBirth}}">
-                    </div>
-                    <div class="mb-3">
-                        <label  class="form-label">Sex</label><br>
-                        <input type="radio" id="sexMale" name="sex" value="Man"
-                               {{#if (eq user.sex 'Man')}}checked{{/if}}>
-                        <label for="sexMale">Man</label><br>
-                        <input type="radio" id="sexFemale" name="sex" value="Woman"
-                               {{#if (eq user.sex 'Woman')}}checked{{/if}}>
-                        <label for="sexFemale">Woman</label>
-                    </div>
-                    <button type="submit" class="btn btn-success">Save</button>
                 </form>
+                <div style="display: none;" id="change-password-form">
+                    <h2>Change password</h2>
+                    <div class="d-flex flex-column">
+                        <label for="old-password" class="m-1">Old password:</label>
+                        <input type="password" id="old-password" name="old-password" class="m-1">
+                        <label for="new-password" class="m-1">New password:</label>
+                        <input type="password" id="new-password" name="new-password" class="m-1">
+                        <label for="confirm-password" class="m-1">Confirm new password:</label>
+                        <input type="password" id="confirm-password" name="confirm-password" class="m-1">
+                        <button type="submit" id="change-password-btn" class="btn btn-success float-end mt-1">Change password</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-<script src="/client.js"></script>
+
+
+<!-- Visit History -->
+<div id="visit-history-container" class="container-training" style="display: none">
+    <div class="form-def">
+        <div class="layout1 text-dark">
+            <div class="card-body">
+                <h2 class="form-label">Visit History</h2>
+                <div id="visitList">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credit -->
+<div id="credit-container" class="container-training" style="display: none">
+    <div class="form-def">
+        <div class="layout1 text-dark">
+            <div class="card-body">
+                <h2 class="form-label">Credit</h2>
+                <p class="form-label">Your current credit is: {{user.credit}} €</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Purchase History -->
+<div id="purchase-history-container" class="container-training" style="display: none">
+    <div class="form-def">
+        <div class="layout1 text-dark">
+            <div class="card-body">
+                <h2 class="form-label">Purchase History</h2>
+                <div id="purchaseList">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Plans -->
+<div id="active-plans-container" class="container-training" style="display: none">
+    <div class="form-def">
+        <div class="layout1 text-dark">
+            <div class="card-body">
+                <h2 class="form-label">Active Plans</h2>
+                <div id="activePlanList">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Profile Page Scripts
+
+
+        const containers = {
+            profile: document.getElementById('profile-container'),
+            history: document.getElementById('visit-history-container'),
+            credit: document.getElementById('credit-container'),
+            purchase: document.getElementById('purchase-history-container'),
+            plans: document.getElementById('active-plans-container'),
+        };
+
+        const profilebtns = document.querySelectorAll('.btn-profile');
+
+        function hideAllContainers() {
+            Object.values(containers).forEach((container) => {
+                if (container) container.style.display = 'none';
+            });
+        }
+
+        function showContainer(type) {
+            if (containers[type]) {
+
+                containers[type].style.display = 'block';
+            }
+        }
+
+        profilebtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                profilebtns.forEach((btn) => {
+                    btn.classList.remove('active');
+                });
+                btn.classList.add('active');
+                hideAllContainers();
+                showContainer(btn.dataset.type);
+            });
+        });
+
+        hideAllContainers();
+        showContainer('profile');
+
+        // visit history
+        // get the visit history from the server
+        const visitList = document.getElementById('visitList')
+
+
+        const visitTable = document.createElement('table');
+        visitTable.classList.add('table', 'table-striped', 'table-hover', 'table-bordered');
+
+        if (visitList) {
+            getVisitHistory().then(visits => {
+                // Kontrolli, kas visits on olemas
+                if (visits && Array.isArray(visits)) {
+                    // Tee nimekiri iga külastuse jaoks
+                    const thead = document.createElement('thead')
+
+
+                    thead.innerHTML = `
+                    <tr>
+                       <th>Date</th>
+
+                        <th>Class</th>
+
+                    `
+
+                    const tbody = document.createElement('tbody');
+
+                    visits.forEach((visit) => {
+                        const row = document.createElement('tr');
+
+                        row.innerHTML = `
+                        <td>${formatDateToDDMMYYYY(new Date(visit.classSchedule.time))}</td>
+
+                        <td>${visit.classSchedule.trainingName}</td>
+                        `
+                        tbody.appendChild(row);
+                    });
+                    visitTable.appendChild(thead)
+                    visitTable.appendChild(tbody);
+                    visitList.appendChild(visitTable);
+                }
+            }).catch(err => {
+                console.log('Error processing visit history!', err);
+            });
+        }
+
+        // purchase history
+
+        const purchaseList = document.getElementById('purchaseList');
+
+        const purchaseTabel = document.createElement('table');
+        purchaseTabel.classList.add('table', 'table-striped', 'table-hover', 'table-bordered');
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>Purchase date</th>
+                <th>End date</th>
+                <th>Plan</th>
+                <th>Price</th>
+            </tr>
+        `;
+        purchaseTabel.appendChild(thead);
+
+        if (purchaseList) {
+            getPurchaseHistory().then(purchases => {
+                // Kontrolli, kas purchases on olemas
+                if (purchases && Array.isArray(purchases)) {
+                    // Tee nimekiri iga ostu jaoks
+                    const tbody = document.createElement('tbody');
+                    purchases.forEach((purchase) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formatDateToDDMMYYYY(new Date(purchase.purchasedAt))}</td>
+                            <td>${formatDateToDDMMYYYY(new Date(purchase.endDate))}</td>
+                            <td>${purchase.planName}</td>
+                            <td>${purchase.price} €</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    purchaseTabel.appendChild(tbody);
+                    purchaseList.appendChild(purchaseTabel);
+                }
+            }).catch(err => {
+                console.log('Error processing purchase history!', err);
+            });
+        }
+
+
+        async function getPurchaseHistory() {
+            try {
+                const response = await fetch('/api/user-purchase-history');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch purchase history');
+                }
+                const purchases = await response.json();
+                return purchases;
+            } catch (err) {
+                console.log('Error getting purchase history!', err);
+                throw err; // Tagastame vea edasiseks töötlemiseks
+            }
+        }
+
+        function formatDateToDDMMYYYY(date) {
+            const day = String(date.getDate()).padStart(2, '0'); // Päev (kahe numbriga)
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Kuu (kahe numbriga, kuud on 0-põhised)
+            const year = date.getFullYear(); // Aasta
+
+            return `${day}.${month}.${year}`; // Tagasta formaadis dd.mm.yyyy
+        }
+
+        async function getVisitHistory() {
+            try {
+                const response = await fetch('/api/user-visit-history');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch visit history');
+                }
+                const visits = await response.json();
+                return visits;
+            } catch (err) {
+                console.log('Error getting visit history!', err);
+                throw err; // Tagastame vea edasiseks töötlemiseks
+            }
+        }
+
+        // active plans
+        const activePlanList = document.getElementById('activePlanList');
+
+        const activePlanTable = document.createElement('table');
+        activePlanTable.classList.add('table', 'table-striped', 'table-hover', 'table-bordered');
+        const theadActive = document.createElement('thead');
+        theadActive.innerHTML = `
+            <tr>
+                <th>Plan</th>
+                <th>Start date</th>
+                <th>End date</th>
+                <th>Price</th>
+            </tr>
+        `;
+        activePlanTable.appendChild(theadActive);
+
+        if (activePlanList) {
+            getPurchaseHistory().then(plans => {
+                // Kontrolli, kas plans on olemas
+                if (plans && Array.isArray(plans)) {
+                    // Tee nimekiri iga plaani jaoks
+                    const tbody = document.createElement('tbody');
+                    const currentTime = new Date();
+                    plans.forEach((plan) => {
+                        if (new Date(plan.endDate) < currentTime) {
+                            return;
+                        }
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${plan.planName}</td>
+                            <td>${formatDateToDDMMYYYY(new Date(plan.purchasedAt))}</td>
+                            <td>${formatDateToDDMMYYYY(new Date(plan.endDate))}</td>
+                            <td>${plan.price} €</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    activePlanTable.appendChild(tbody);
+                    activePlanList.appendChild(activePlanTable);
+                }
+            }).catch(err => {
+                console.log('Error processing active plans!', err);
+            });
+        }
+
+
+        // get user data
+        async function getUserData() {
+            try {
+                const response = await fetch('/api/user');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                const user = await response.json();
+                return user;
+            } catch (err) {
+                console.log('Error getting user data!', err);
+                throw err; // Tagastame vea edasiseks töötlemiseks
+            }
+        }
+
+        const myProfile = document.getElementById('profile-view');
+
+        const fullName = document.createElement('p');
+        const dateOfBirth = document.createElement('p');
+        const sex = document.createElement('p');
+        const email = document.createElement('p');
+
+
+        getUserData().then(user => {
+
+            fullName.textContent = `Full name: ${user.fullName}`;
+            dateOfBirth.textContent = `Date of birth: ${formatDateToDDMMYYYY(new Date(user.dateOfBirth))}`;
+            sex.textContent = `Sex: ${user.sex}`;
+            email.textContent = `Email: ${user.email}`;
+            myProfile.appendChild(fullName);
+            myProfile.appendChild(dateOfBirth);
+            myProfile.appendChild(sex);
+            myProfile.appendChild(email);
+        }).catch(err => {
+            console.log('Error processing user data!', err);
+        });
+
+
+        const editBtn = document.getElementById('edit-btn');
+        const saveBtn = document.getElementById('save-btn');
+       const fullNameInput = document.getElementById('full-name');
+        const dateOfBirthInput = document.getElementById('date-of-birth');
+        const emailInput = document.getElementById('email');
+        const editForm = document.getElementById('profile-edit-div');
+        const profileList = document.getElementById('profile-list');
+        // Edit profile
+
+        // Edit nupu sündmuse kuulaja
+        editBtn.addEventListener('click', () => {
+            // Näita redigeerimise vormi ja peida muud osad
+            editForm.style.display = 'block';
+            myProfile.style.display = 'none';
+            editBtn.style.display = 'none';
+            changePasswordBtn.style.display = 'none';
+            profileList.style.display = 'none';
+        });
+
+// Save nupu sündmuse kuulaja
+        saveBtn.addEventListener('click', async () => {
+            // Peida redigeerimise vorm ja taasta muud osad
+            editForm.style.display = 'none';
+            myProfile.style.display = 'block';
+            editBtn.style.display = 'block';
+            changePasswordBtn.style.display = 'block';
+            profileList.style.display = 'block';
+
+            // Profiili redigeerimise funktsioon
+            const editProfile = async () => {
+                try {
+                    const response = await fetch('/profile', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            fullName: fullNameInput.value,
+                            dateOfBirth: dateOfBirthInput.value,
+                            email: emailInput.value,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to update user data');
+                    }
+
+                    const user = await response.json();
+                    return user;
+                } catch (err) {
+                    console.log('Error updating user data!', err);
+                    throw err;
+                }
+            };
+
+            try {
+                const updatedUser = await editProfile();
+                console.log('Profile updated successfully:', updatedUser);
+                alert('Profile updated successfully!');
+            } catch (err) {
+                console.error('Error updating profile:', err);
+                alert('Failed to update profile. Please try again.');
+            }
+        });
+
+
+        // Change password
+        const changePasswordBtn = document.getElementById('change-password');
+        const changePasswordForm = document.getElementById('change-password-form');
+        const oldPasswordInput = document.getElementById('old-password');
+        const newPasswordInput = document.getElementById('new-password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const changePasswordSubmit = document.getElementById('change-password-btn');
+
+        changePasswordBtn.addEventListener('click', () => {
+            changePasswordForm.style.display = 'block';
+            myProfile.style.display = 'none';
+            editBtn.style.display = 'none';
+            changePasswordBtn.style.display = 'none';
+            profileList.style.display = 'none';
+        });
+
+        changePasswordSubmit.addEventListener('click', async () => {
+            changePasswordForm.style.display = 'none';
+            myProfile.style.display = 'block';
+            editBtn.style.display = 'block';
+            changePasswordBtn.style.display = 'block';
+            profileList.style.display = 'block';
+
+            const changePassword = async () => {
+                try {
+                    const response = await fetch('/api/change-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            oldPassword: oldPasswordInput.value,
+                            newPassword: newPasswordInput.value,
+                            confirmPassword: confirmPasswordInput.value,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to change password');
+                    }
+
+                    const result = await response.json();
+                    return result;
+                } catch (err) {
+                    console.log('Error changing password!', err);
+                    throw err;
+                }
+            };
+
+            try {
+                const result = await changePassword();
+                console.log('Password changed successfully:', result);
+                alert('Password changed successfully!');
+            } catch (err) {
+                console.error('Error changing password:', err);
+                alert('Failed to change password. Please try again.');
+            }
+        });
+
+    });
+</script>

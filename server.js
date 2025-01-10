@@ -355,7 +355,7 @@ app.post('/api/login', async (req, res) => {
             const passwordMatch = await bcrypt.compare(password, user.password);
             if (passwordMatch) {
                 req.session.userId = user.id;
-                req.session.username = user.username;
+                req.session.username = user.username.toLowerCase();
                 req.session.isAffiliateOwner = user.isAffiliateOwner || false;
 
                 // Kontrollime, kas kasutaja on treener kuskil affiliate all
@@ -383,8 +383,6 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'An error occurred during login.' });
     }
 });
-
-
 
 // Profile view, protected
 app.get('/profile', ensureAuthenticated, async (req, res) => {
@@ -421,16 +419,56 @@ app.get('/profile', ensureAuthenticated, async (req, res) => {
     }
 });
 
+
+// change password api
+
+app.post('/api/change-password', ensureAuthenticated, async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.session.userId },
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!passwordMatch) {
+            return res.status(400).json({ error: 'Invalid current password.' });
+        }
+
+        // Validate the new password
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.isValid) {
+            return res.status(400).json({ error: passwordValidation.message });
+        }
+
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({
+            where: { id: req.session.userId },
+            data: { password: hashedPassword },
+        });
+
+        res.json({ message: 'Password changed successfully!' });
+    } catch (error) {
+        console.error('Error changing password:', error);
+        res.status(500).json({ error: 'An error occurred while changing password.' });
+    }
+});
+
 // Edit profile
 app.post('/profile', ensureAuthenticated, async (req, res) => {
-    const { fullName, dateOfBirth, sex } = req.body;
+    const { fullName, dateOfBirth, email } = req.body;
     try {
         await prisma.user.update({
             where: { id: req.session.userId },
             data: {
-                fullName,
+                fullName: fullName || null,
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-                sex,
+                email: email || null,
             },
         });
 
@@ -453,8 +491,10 @@ app.get('/api/user', ensureAuthenticated, async (req, res) => {
                 username: true,
                 fullName: true,
                 email: true,
-                homeAffiliate: true,
+                dateOfBirth: true,
+                sex: true,
                 credit: true,
+                homeAffiliate: true
             }
         });
         res.json(user)
@@ -463,6 +503,26 @@ app.get('/api/user', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch user.' });
     }
 })
+
+// update user data
+app.put('/api/user', ensureAuthenticated, async (req, res) => {
+    const { fullName, email, dayOfBirth, sex} = req.body;
+    try {
+        await prisma.user.update({
+            where: { id: req.session.userId },
+            data: {
+                fullName,
+                email,
+                dateOfBirth,
+                sex
+            }
+        });
+        res.json({ message: 'User data updated successfully.' });
+    } catch (error) {
+        console.error('Error updating user data:', error);
+        res.status(500).json({ error: 'Failed to update user data.' });
+    }
+});
 
 // Log out API
 app.post('/api/logout', (req, res) => {
@@ -2331,6 +2391,26 @@ app.post('/api/add-score', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// edit score api
+app.put('/api/edit-score', ensureAuthenticated, async (req, res) => {
+    const { leaderboardId, scoreType, scoreInput } = req.body;
+
+    try {
+        const updatedScore = await prisma.classLeaderboard.update({
+            where: { id: parseInt(leaderboardId)
+            },
+            data: { score: scoreInput,
+                    scoreType: scoreType
+            }
+        });
+
+        res.status(200).json({ message: 'Score updated successfully!', score: updatedScore });
+    } catch (error) {
+        console.error('Error updating score:', error);
+        res.status(500).json({ error: 'Failed to update score.' });
+    }
+});
+
 // get leaderboard
 app.get('/api/leaderboard', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
@@ -2341,7 +2421,7 @@ app.get('/api/leaderboard', ensureAuthenticated, async (req, res) => {
     try {
         const leaderboard = await prisma.classLeaderboard.findMany({
             where: { classId },
-            include: { user: true },
+            include: { user: true},
             orderBy: { score: 'desc' }
         });
 
@@ -2351,6 +2431,27 @@ app.get('/api/leaderboard', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch leaderboard.' });
     }
 
+});
+
+// get leadboardId
+app.get('/api/leaderboard-id', ensureAuthenticated, async (req, res) => {
+    const classId = req.query.classId;
+
+
+    if (!classId) {
+        return res.status(400).json({error: 'Class ID required'});
+    }
+
+    try {
+        const leaderboardId = await prisma.classLeaderboard.findFirst({
+            where: { classId: parseInt(classId), userId: req.session.userId }
+        });
+
+        res.json(leaderboardId);
+    } catch (error) {
+        console.error('Error fetching leaderboard ID:', error);
+        res.status(500).json({ error: 'Failed to fetch leaderboard ID.' });
+    }
 });
 
 //get user data
@@ -2366,6 +2467,39 @@ app.get('/api/user-data', ensureAuthenticated, async (req, res) => {
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({error: 'Failed to fetch user data.'});
+    }
+});
+
+// get user visit history from ClassAttendee
+app.get('/api/user-visit-history', ensureAuthenticated, async (req, res) => {
+    const userId = req.session.userId;
+    try {
+        const visits = await prisma.classAttendee.findMany({
+            where: { userId },
+            include: { classSchedule: true },
+            orderBy: { classId: 'desc' }
+        });
+
+        res.json(visits);
+    } catch (error) {
+        console.error('Error fetching user visit history:', error);
+        res.status(500).json({ error: 'Failed to fetch user visit history.' });
+    }
+});
+
+// get user plans
+app.get('/api/user-purchase-history', ensureAuthenticated, async (req, res) => {
+    const userId = req.session.userId;
+    try {
+        const plans = await prisma.userPlan.findMany({
+            where: { userId },
+            orderBy: { id: 'desc' }
+        });
+
+        res.json(plans);
+    } catch (error) {
+        console.error('Error fetching user plans:', error);
+        res.status(500).json({ error: 'Failed to fetch user plans.' });
     }
 });
 
