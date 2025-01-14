@@ -84,6 +84,7 @@
 
 
             <div class="modal-footer">
+                <button id="showLeaderboard" type="button" class="btn btn-primary">Show Leaderboard</button>
                 <button type="button" id="edit-class-btn" class="btn btn-primary">Edit</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -186,6 +187,25 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal fade" id="leaderboardModal" tabindex="-1" aria-labelledby="leaderboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg"> <!-- use modal-lg if you want a larger dialog -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="leaderboardModalLabel" class="modal-title">Leaderboard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="leaderboardBody">
+                <!-- We'll dynamically fill this with data (e.g., a table or list) -->
+                <p>Loading leaderboard...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>

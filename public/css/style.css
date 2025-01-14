@@ -644,6 +644,31 @@ h6,
     margin: 10px;
 }
 
+.form-label-login{
+    color: #ffffff
+}
+
+.profile-types button {
+    flex: 1 1 auto;
+    max-width: 200px;
+    min-width: 80px;
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .profile-types button {
+        max-width: 150px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .profile-types button {
+
+        font-size: 0.8rem;
+    }
+}
+
 .layout1 {
     width: 80%;
 

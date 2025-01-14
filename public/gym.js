@@ -35,10 +35,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const addTrainingBtnSave = document.getElementById('save-training-btn');
     const editTrainingBtn = document.getElementById('edit-training-btn');
 
-
+    const leaderboardBtn = document.getElementById('showLeaderboard');
+    const leaderboardModal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
+    const leaderboardBody = document.getElementById('leaderboardBody');
 
     let currentDate = new Date(); // Start with the current date
     let classesData = [];
+
+    let currentClassId = null;
 
     let isSmallScreen = window.innerWidth < 1143; // Kontrollime, kas ekraan on väike
     let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
@@ -442,6 +446,114 @@ document.addEventListener('DOMContentLoaded', function () {
         trainingModalSearch.show();
     }
 
+
+    leaderboardBtn.addEventListener('click', async () => {
+
+        try {
+            // 1) Fetch leaderboard data from the server
+            const response = await fetch(`/api/leaderboard?classId=${currentClassId}`);
+            const data = await response.json();
+
+
+
+            // 2) Show the modal and clear any previous content
+            const leaderboardList = document.getElementById('leaderboardBody');
+            leaderboardList.innerHTML = '';
+            leaderboardModal.show();
+
+            // 3) Create buttons for Rx / Sc / Beg
+            const buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('my-3', 'd-flex', 'gap-2');
+            // "my-3" = margin-y:1rem, "gap-2" = spacing between items
+
+            const rxBtn = document.createElement('button');
+            rxBtn.textContent = 'Rx';
+            rxBtn.classList.add('btn', 'btn-primary');
+
+            const scBtn = document.createElement('button');
+            scBtn.textContent = 'Sc';
+            scBtn.classList.add('btn', 'btn-primary');
+
+            const begBtn = document.createElement('button');
+            begBtn.textContent = 'Beg';
+            begBtn.classList.add('btn', 'btn-primary');
+
+            // 4) Add click listeners that filter + re-render the table
+            rxBtn.addEventListener('click', () => {
+                const filtered = data.filter(item => item.scoreType === 'rx');
+                renderTable(filtered, leaderboardList);
+            });
+
+            scBtn.addEventListener('click', () => {
+                const filtered = data.filter(item => item.scoreType === 'sc');
+                renderTable(filtered, leaderboardList);
+            });
+
+            begBtn.addEventListener('click', () => {
+                const filtered = data.filter(item => item.scoreType === 'beg');
+                renderTable(filtered, leaderboardList);
+            });
+
+            // Add the buttons to the container, then add the container to the modal
+            buttonContainer.append(rxBtn, scBtn, begBtn);
+            leaderboardList.appendChild(buttonContainer);
+
+            // 5) Initially show all items (unfiltered)
+            renderTable(data, leaderboardList);
+
+        } catch (err) {
+            console.error('Error loading leaderboard:', err);
+        }
+    });
+
+    async function renderTable(dataset, container) {
+
+        // Remove any old table (but keep the buttons, so do not clear container entirely)
+        const oldTable = container.querySelectorAll('table');
+        oldTable.forEach(tbl => tbl.remove());
+
+        // Create a new table with a header
+        const table = document.createElement('table');
+
+        table.classList.add('table', 'table-striped', 'table-hover');
+
+
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+    <tr>
+      <th>Place</th>
+      <th>Name</th>
+      <th>Score</th>
+      <th>Type</th>
+    </tr>
+  `;
+        table.appendChild(thead);
+
+        // Create <tbody> for the data rows
+        const tbody = document.createElement('tbody');
+
+        // Build rows from dataset
+        for (const [index, item] of dataset.entries()) {
+
+            const userResponse = await fetch(`/api/user-data?userId=${item.userId}`);
+            const userData = await userResponse.json();
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+      <td>${index + 1}.</td>
+      <td><strong>${userData.fullName || ''}</strong></td>
+      <td>${item.score}</td>
+      <td>${item.scoreType.toUpperCase()}</td>
+    `;
+            tbody.appendChild(row);
+        }
+        ;
+
+        table.appendChild(tbody);
+        container.appendChild(table);
+    }
+
+
     // load class attandance
     async function loadClassAttendance(classId) {
         try {
@@ -520,6 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         await loadClassAttendance(cls.id);
 
+        currentClassId = cls.id;
 
         // Uus samm: lae class info (capacity, enrolled count)
         await loadClassInfo(cls.id);
