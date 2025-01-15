@@ -30,8 +30,9 @@
     </div>
 {{else}}
 {{!-- Affiliate andmed juba olemas --}}
-    <div class="container my-5">
-        <div id="affiliate-view">
+    <div class="container">
+        <div id="affiliate-view" class="form-def">
+            <div class="layout1">
             <h3>{{affiliate.name}}</h3>
             <p><strong>Address:</strong> {{affiliate.address}}</p>
             <p><strong>Training Type:</strong> {{affiliate.trainingType}}</p>
@@ -42,6 +43,7 @@
                 {{/each}}
             </ul>
             <button id="edit-affiliate-btn" class="btn btn-secondary">Edit</button>
+        </div>
         </div>
 
         <div id="affiliate-edit" style="display:none;">

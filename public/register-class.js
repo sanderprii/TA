@@ -492,10 +492,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 noClassesMessage.classList.add('text-muted', 'fst-italic');
                 dayColumn.appendChild(noClassesMessage);
             } else {
-                classesForDay.forEach(classData => {
-                    const classDiv = createClassDiv(classData);
-                    dayColumn.appendChild(classDiv);
-                });
+                renderClasses(classesForDay, dayColumn);
             }
 
             scheduleContainer.appendChild(dayColumn);
@@ -548,7 +545,20 @@ document.addEventListener('DOMContentLoaded', async function () {
     };
 
 
-    function createClassDiv(c) {
+        // Lisame treeningud päeva tulpadesse
+        async function renderClasses(classesForDay, dayColumn) {
+            try {
+                // Kasutame Promise.all, et luua kõik klasside div-id paralleelselt
+                const classDivs = await Promise.all(classesForDay.map(classData => createClassDiv(classData)));
+
+                // Kui kõik lubadused on täidetud, lisame need DOM-i
+                classDivs.forEach(classDiv => dayColumn.appendChild(classDiv));
+            } catch (error) {
+                console.error('Error rendering classes:', error);
+            }
+        }
+
+    async function createClassDiv(c) {
         const classDiv = document.createElement('div');
         classDiv.classList.add('border', 'border-dark', 'row', 'm-1', 'bg-light', 'rounded', 'text-center', 'py-2', 'px-3', 'text-black', 'class-entry', 'align-items-start');
         classDiv.style.cursor = 'pointer';
@@ -575,9 +585,22 @@ document.addEventListener('DOMContentLoaded', async function () {
         classInfoName.classList.add('fw-bold', 'text-start');
 
         const classTrainer = document.createElement('div');
-        classTrainer.textContent = c.trainer;
+        classTrainer.textContent = 'With ' + c.trainer;
         dataDiv.appendChild(classTrainer);
-        classTrainer.classList.add('text-start');
+        classTrainer.classList.add('text-start', 'fst-italic');
+
+        const response = await fetch(`/api/class-info?classId=${c.id}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch class data');
+        }
+
+        const datas = await response.json();
+
+        const classCapacity = document.createElement('div');
+        classCapacity.textContent = `👤 ${datas.enrolledCount}/${c.memberCapacity}`;
+        dataDiv.appendChild(classCapacity);
+        classCapacity.classList.add('text-start', 'text-muted', 'fs-6');
+
 
         classDiv.appendChild(timeDiv);
         classDiv.appendChild(dataDiv);
@@ -918,7 +941,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                 const data = await response.json();
                 if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
-                    const freeSpots = data.memberCapacity - data.enrolledCount;
+                    const freeSpots = data.memberCapacity - data.memberCapacity + data.enrolledCount;
                     document.getElementById('freeSpots').textContent = freeSpots;
                     document.getElementById('classCapacity').textContent = data.memberCapacity;
                 } else {

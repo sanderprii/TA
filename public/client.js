@@ -615,7 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const wodType = wodTypeRadio ? wodTypeRadio.value : null;
 
                     // Get the exerciseData from the textarea
-                    const exerciseData = document.querySelector('#wod-options textarea[name="exercise-name"]').value;
+                    const exercises = document.querySelector('#wod-options textarea[name="exercise-name"]').value;
 
                     // Get the score specific to WOD
                     score = document.getElementById('wod-score').value;
@@ -626,33 +626,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         score,
                         wodName,
                         wodType,
-                        exercises: [
-                            {
-                                exerciseData,
-                            },
-                        ],
+                        exercises
+
                     };
                 } else if (type === 'Weightlifting') {
-                    const exerciseData = document.querySelector('#weightlifting-options textarea[name="exercise-name"]').value;
+                    const exercises = document.querySelector('#weightlifting-options textarea[name="exercise-name"]').value;
 
                     trainingData = {
                         ...trainingData,
-                        exercises: [
-                            {
-                                exerciseData,
-                            },
-                        ],
+                        exercises
                     };
                 } else if (type === 'Cardio') {
-                    const exerciseData = document.querySelector('#cardio-options textarea[name="exercise-name"]').value;
+                    const exercises = document.querySelector('#cardio-options textarea[name="exercise-name"]').value;
 
                     trainingData = {
                         ...trainingData,
-                        exercises: [
-                            {
-                                exerciseData,
-                            },
-                        ],
+                        exercises
                     };
                 } else {
                     alert('Please select a valid training type.');

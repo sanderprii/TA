@@ -561,11 +561,11 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
             score: score || null,
             userId: req.session.userId,
             exercises: {
-                create: [{ exerciseData: exercises || '' }],
+                create: { exerciseData: exercises || '' },
 
             },
         };
-
+        console.log(trainingData);
         // Save training with associated exercises
         const training = await prisma.training.create({
             data: trainingData,
@@ -1478,7 +1478,9 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
             return res.status(403).json({ error: 'No permission.' });
         }
 
-        const classTime = new Date(`${date}T${time}Z`);
+        const classTime = new Date(`${date}T${time}`);
+        
+        console.log(classTime)
         const newClass = await prisma.classSchedule.create({
             data: {
                 trainingName,

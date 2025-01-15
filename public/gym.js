@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let classesData = [];
 
     let currentClassId = null;
+    let freeSpots = 0;
 
     let isSmallScreen = window.innerWidth < 1143; // Kontrollime, kas ekraan on väike
     let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
@@ -218,10 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 dayColumn.appendChild(noClassesMessage);
             } else {
                 // Lisame treeningud päeva tulpadesse
-                classesForDay.forEach(classData => {
-                    const classDiv = createClassDiv(classData);
-                    dayColumn.appendChild(classDiv);
-                });
+                renderClasses(classesForDay, dayColumn);
             }
 
             scheduleContainer.appendChild(dayColumn);
@@ -229,6 +227,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         scheduleElement.appendChild(scheduleContainer);
     }
+
+    // Lisame treeningud päeva tulpadesse
+    async function renderClasses(classesForDay, dayColumn) {
+        try {
+            // Kasutame Promise.all, et luua kõik klasside div-id paralleelselt
+            const classDivs = await Promise.all(classesForDay.map(classData => createClassDiv(classData)));
+
+            // Kui kõik lubadused on täidetud, lisame need DOM-i
+            classDivs.forEach(classDiv => dayColumn.appendChild(classDiv));
+        } catch (error) {
+            console.error('Error rendering classes:', error);
+        }
+    }
+
 
 // Event listener ekraani suuruse muutmiseks
     window.addEventListener('resize', () => {
@@ -289,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
-    function createClassDiv(classData) {
+    async function createClassDiv(classData) {
 
         const classDiv = document.createElement('div');
         classDiv.classList.add('border', 'border-dark', 'row', 'm-1', 'bg-light', 'rounded', 'text-center', 'py-2', 'px-3', 'text-black', 'class-entry', 'align-items-start');
@@ -320,9 +332,23 @@ document.addEventListener('DOMContentLoaded', function () {
         classInfoName.classList.add('fw-bold', 'text-start');
 
         const classTrainer = document.createElement('div');
-        classTrainer.textContent = classData.trainer;
+        classTrainer.textContent = 'With ' + classData.trainer;
         dataDiv.appendChild(classTrainer);
-        classTrainer.classList.add('text-start');
+        classTrainer.classList.add('text-start', 'fst-italic');
+
+
+        const response = await fetch(`/api/class-info?classId=${classData.id}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch class data');
+        }
+
+        const datas = await response.json();
+
+        const classCapacity = document.createElement('div');
+        classCapacity.textContent = `👤 ${datas.enrolledCount}/${classData.memberCapacity}`;
+        dataDiv.appendChild(classCapacity);
+        classCapacity.classList.add('text-start', 'text-muted', 'fs-6');
+
 
         classDiv.appendChild(timeDiv);
         classDiv.appendChild(dataDiv);
@@ -657,7 +683,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await response.json();
             if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
-                const freeSpots = data.memberCapacity - data.enrolledCount;
+                let freeSpots = data.memberCapacity - data.memberCapacity + data.enrolledCount;
                 document.getElementById('freeSpots').textContent = freeSpots;
                 document.getElementById('classCapacity').textContent = data.memberCapacity;
             } else {
