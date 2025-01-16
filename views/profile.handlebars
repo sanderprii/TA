@@ -186,6 +186,8 @@
                        <th>Date</th>
 
                         <th>Class</th>
+                        <th>Check-in</th>
+                    </tr>
 
                     `
 
@@ -198,6 +200,7 @@
                         <td>${formatDateToDDMMYYYY(new Date(visit.classSchedule.time))}</td>
 
                         <td>${visit.classSchedule.trainingName}</td>
+                        <td>${visit.checkIn ? 'Yes' : 'No'}</td>
                         `
                         tbody.appendChild(row);
                     });

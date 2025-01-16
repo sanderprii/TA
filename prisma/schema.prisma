@@ -151,6 +151,7 @@ model ClassAttendee {
   user          User          @relation(fields: [userId], references: [id])
   userPlanId    Int
   createdAt     DateTime      @default(now())
+  checkIn       Boolean       @default(false)
 
   @@unique([classId, userId]) // vältimaks duplikaatregistratsioone
 }

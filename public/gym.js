@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const classModal = new bootstrap.Modal(classModalElement);
     const classAttendance = document.getElementById('classAttendance');
 
+
+
     const modalTrainingName = document.getElementById('modalTrainingName');
     const modalTime = document.getElementById('modalTime');
     const modalTrainer = document.getElementById('modalTrainer');
@@ -123,22 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    deleteTrainingBtn.addEventListener('click', async function () {
-        const trainingId = document.getElementById('trainingId').value;
-        if (trainingId) {
-            if (confirm('Are you sure you want to delete this training?')) {
-                try {
-                    await fetch(`/api/classes/${trainingId}`, {
-                        method: 'DELETE'
-                    });
-                    trainingModal.hide();
-                    loadSchedule();
-                } catch (error) {
-                    console.error('Error deleting training:', error);
-                }
-            }
-        }
-    });
+
 
 
 
@@ -385,12 +372,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
             document.getElementById('trainingId').value = training.id;
-            deleteTrainingBtn.style.display = 'inline-block';
+
         } else {
             document.getElementById('trainingModalLabel').textContent = 'Add Training';
             trainingForm.reset();
             document.getElementById('trainingId').value = '';
-            deleteTrainingBtn.style.display = 'none';
+
             // Set default date to current date
             document.getElementById('trainingDate').value = formatDateInput(currentDate);
         }
@@ -589,10 +576,33 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.length > 0) {
                 data.forEach(member => {
                     const memberDiv = document.createElement('div');
-                    memberDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'mb-2');
+                    memberDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'mb-2', 'border-bottom', 'p-2');
+
+
+
 
                     const memberNameSpan = document.createElement('span');
                     memberNameSpan.textContent = '👤 ' + member.user.fullName.toUpperCase();
+
+
+                    const buttonDiv = document.createElement('div');
+                    buttonDiv.classList.add('d-flex', 'gap-2');
+
+                    const checkInButton = document.createElement('button');
+                    checkInButton.textContent = 'Check-in';
+                    checkInButton.style.color = 'white';
+                    checkInButton.style.backgroundColor = 'blue';
+                    checkInButton.style.border = 'none';
+                    checkInButton.style.borderRadius = '4px';
+                    checkInButton.style.width = '100px';
+                    checkInButton.style.height = '24px';
+                    checkInButton.style.cursor = 'pointer';
+                    checkInButton.style.marginRight = '10px';
+
+                    if (member.checkIn) {
+                        checkInButton.disabled = true;
+                        checkInButton.style.backgroundColor = 'green';
+                    }
 
                     const removeBtn = document.createElement('button');
                     removeBtn.textContent = 'X';
@@ -603,6 +613,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     removeBtn.style.width = '24px';
                     removeBtn.style.height = '24px';
                     removeBtn.style.cursor = 'pointer';
+
+                    buttonDiv.appendChild(checkInButton);
+                    buttonDiv.appendChild(removeBtn);
+
+                    checkInButton.addEventListener('click', async () => {
+                        // update check-in status
+                        try {
+                            // NB! Näidis-URL – kohanda oma API järgi
+                            await fetch(`/api/check-in?classId=${classId}&userId=${member.user.id}`, {
+                                method: 'PUT',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({classId, userId: member.user.id})
+                            });
+
+                            alert(`${member.user.fullName.toUpperCase()} checked in!`);
+
+                            // Lae osalejate nimekiri uuesti või eemalda see DOM-ist
+                            loadClassAttendance(classId);
+                            // Või remove DOMist: memberDiv.remove();
+                        } catch (err) {
+                            console.error('Error checking in user:', err);
+                        }
+                    });
 
                     removeBtn.addEventListener('click', async () => {
                         if (confirm(`Remove ${member.user.fullName.toUpperCase()} from class?`)) {
@@ -624,7 +657,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
 
                     memberDiv.appendChild(memberNameSpan);
-                    memberDiv.appendChild(removeBtn);
+                    memberDiv.appendChild(buttonDiv);
+
                     classAttendance.appendChild(memberDiv);
                 });
             } else {
@@ -674,8 +708,29 @@ document.addEventListener('DOMContentLoaded', function () {
             openTrainingModal(cls);
         })
 
+
+
         classModal.show();
+
+
     }
+
+    deleteTrainingBtn.addEventListener('click', async function () {
+        const trainingId = document.getElementById('modalClassId').value;
+        if (trainingId) {
+            if (confirm('Are you sure you want to delete this training?')) {
+                try {
+                    await fetch(`/api/classes/${trainingId}`, {
+                        method: 'DELETE'
+                    });
+                    classModal.hide();
+                    loadSchedule();
+                } catch (error) {
+                    console.error('Error deleting training:', error);
+                }
+            }
+        }
+    });
 
     async function loadClassInfo(classId) {
         try {

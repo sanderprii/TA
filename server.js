@@ -3,6 +3,9 @@
 require('dotenv').config();
 
 const express = require('express');
+
+
+
 const session = require('express-session');
 const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
@@ -10,7 +13,7 @@ const { engine } = require('express-handlebars');
 const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // CORS and JSON middleware
 app.use(cors());
@@ -565,7 +568,7 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
 
             },
         };
-        console.log(trainingData);
+
         // Save training with associated exercises
         const training = await prisma.training.create({
             data: trainingData,
@@ -632,6 +635,7 @@ app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// Records view
 // Records view
 app.get('/records', ensureAuthenticated, (req, res) => {
     res.render('records', { title: 'Records' });
@@ -1480,7 +1484,7 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
 
         const classTime = new Date(`${date}T${time}`);
         
-        console.log(classTime)
+        
         const newClass = await prisma.classSchedule.create({
             data: {
                 trainingName,
@@ -2504,6 +2508,28 @@ app.get('/api/user-purchase-history', ensureAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch user plans.' });
     }
 });
+
+// update classattandee checkin
+app.put('/api/check-in', ensureAuthenticated, async (req, res) => {
+    const { classId, userId } = req.body;
+    try {
+        const updatedCheckin = await prisma.classAttendee.update({
+            where: {
+                classId_userId: {
+                    classId: classId,
+                    userId: userId
+                }
+            },
+            data: { checkIn: true }
+        });
+
+        res.status(200).json({ message: 'Checkin updated successfully!', checkin: updatedCheckin });
+    } catch (error) {
+        console.error('Error updating checkin:', error);
+        res.status(500).json({ error: 'Failed to update checkin.' });
+    }
+});
+
 
 // Start server
 app.listen(PORT, () => {
