@@ -134,6 +134,7 @@ app.get('/choose-role', ensureAuthenticated, (req, res) => {
 
     let roles = [];
     if (isOwner) roles.push({ url: '/gym?role=owner', label: 'Affiliate Owner', id: 'choose-owner' });
+    if (isOwner) roles.push({ url: '/gymCheckIn?role=owner', label: 'Check-In', id: 'choose-owner'})
     if (isTrainer) roles.push({ url: '/gym?role=trainer', label: 'Trainer' });
     // Regular user alati kättesaadav
     roles.push({ url: '/', label: 'Regular User'});
@@ -144,6 +145,33 @@ app.get('/choose-role', ensureAuthenticated, (req, res) => {
 
 app.get('/api/current-role', ensureAuthenticated, (req, res) => {
     res.json({ currentRole: req.session.currentRole || null });
+});
+
+app.get('/gymCheckIn', ensureAuthenticated, (req, res) => {
+    const role = req.query.role;
+
+    // Kui on defineeritud role query param ja kasutaja vastab tingimustele, uuenda currentRole
+    if (role === 'owner' && req.session.isAffiliateOwner) {
+        req.session.currentRole = 'owner';
+    } else if (role === 'trainer' && req.session.isTrainer) {
+        req.session.currentRole = 'trainer';
+    }
+
+
+
+    // Siin jõudes on kas user regular user (pole rolli vaja) või tal on already currentRole määratud.
+    const dashboardTitle = (req.session.currentRole === 'trainer')
+        ? 'Trainer Dashboard'
+        : (req.session.currentRole === 'owner')
+            ? 'Affiliate Owner Dashboard'
+            : 'Dashboard';
+
+    // Renderda gym leht owner layoutiga
+    res.render('gymCheckIn', {
+        title: 'check-in',
+        layout: 'checkIn',
+        currentRole: req.session.currentRole,
+    });
 });
 
 //  route for /gym

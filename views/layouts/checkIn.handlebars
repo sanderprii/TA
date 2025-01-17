@@ -52,26 +52,12 @@
                 <!-- Collapsible Navbar Content -->
                 <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
                     <!-- Left Side Navbar Buttons -->
-                    {{#if (eq currentRole 'owner')}}
-                        <div class="navbar-nav">
-                            <a href="/gym" class="nav-item nav-link active">Dashboard</a>
-                            <a href="/my-affiliate" class="nav-item nav-link">My affiliate</a>
-                            <a href="/classes" class="nav-item nav-link">Classes</a>
-                            <a href="/plans" class="nav-item nav-link">Plans</a>
-                            <a href="/members" class="nav-item nav-link">Members</a>
-                            <a href="/finance" class="nav-item nav-link">Finance</a>
-                        </div>
-                    {{else if (eq currentRole 'trainer')}}
-                        <div class="navbar-nav">
-                            <a href="/classes" class="nav-item nav-link">Classes</a>
-                            <a href="/members" class="nav-item nav-link">Members</a>
-                        </div>
-                    {{/if}}
+
                     <!-- Right Side Navbar -->
                     <div class="navbar-nav ms-auto flex-column flex-lg-row">
                         {{#if username}}
                             <!-- Kui kasutajanimi on määratletud -->
-                            <a href="/choose-role" class="nav-item nav-link">Switch Role</a>
+
                             <button id="logout-btn" class="nav-item nav-link  btn btn-link p-0 logout">Log Out</button>
 
                         {{/if}}

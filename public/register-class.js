@@ -627,8 +627,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         if (!cls.wodName || cls.wodName.trim() === '') {
             wodInfo.style.display = 'none';
+            addScoreBtn.style.display = 'none';
         } else {
             wodInfo.style.display = 'block';
+            addScoreBtn.style.display = 'inline-block';
         }
         currentClassId = cls.id;
 
