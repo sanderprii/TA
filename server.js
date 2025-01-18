@@ -112,10 +112,7 @@ app.get('/training', ensureAuthenticated, (req, res) => {
     res.render('training', { title: 'Add Training' });
 });
 
-// Statistics and Analysis view
-app.get('/stat', ensureAuthenticated, (req, res) => {
-    res.render('stat', { title: 'Statistics and Analysis' });
-});
+
 
 // Register-training view
 app.get('/register-training', ensureAuthenticated, (req, res) => {
@@ -145,6 +142,11 @@ app.get('/choose-role', ensureAuthenticated, (req, res) => {
 
 app.get('/api/current-role', ensureAuthenticated, (req, res) => {
     res.json({ currentRole: req.session.currentRole || null });
+});
+
+//get finance page
+app.get('/finance', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
+    res.render('finance', { title: 'Finance', layout: 'owner' });
 });
 
 app.get('/gymCheckIn', ensureAuthenticated, (req, res) => {
@@ -264,32 +266,6 @@ app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
 
 
 
-
-
-
-
-
-// Training sessions
-app.get('/sessions', ensureAuthenticated, async (req, res) => {
-    try {
-        // Fetch trainings for the current user
-        const trainings = await prisma.training.findMany({
-            where: { userId: req.session.userId },
-            include: { exercises: true },
-        });
-
-        // Pass trainings to the view
-        res.render('sessions', {
-            title: 'Training Sessions',
-            username: req.session.username,
-            trainings: JSON.stringify(trainings), // Pass as JSON string
-        });
-    } catch (error) {
-        console.error('Error fetching trainings:', error);
-        res.status(500).send('An error occurred while fetching trainings.');
-    }
-});
-
 // Function to validate password
 function validatePassword(password) {
     // Define a regular expression that allows only certain characters
@@ -317,6 +293,7 @@ function validatePassword(password) {
 // API for registration
 app.post('/api/register', async (req, res) => {
     const {
+        fullName,
         username,
         password,
         email,
@@ -353,6 +330,7 @@ app.post('/api/register', async (req, res) => {
 
         const user = await prisma.user.create({
             data: {
+                fullName,
                 username,
                 password: hashedPassword, // Store the hashed password
                 email,
@@ -2679,6 +2657,197 @@ app.put('/api/check-in', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// 📌 Endpoint order history jaoks (GET)
+app.get('/api/orders', async (req, res) => {
+
+
+    let affiliateIds = null;
+
+    if (req.session.currentRole === 'owner') {
+        // Leia affiliate, mis kuulub sisseloginud ownerile
+        const affiliate = await prisma.affiliate.findFirst({
+            where: {ownerId: req.session.userId},
+        });
+
+
+        if (!affiliate) {
+            return res.render('members', {title: 'Members', members: []});
+        }
+        affiliateIds = affiliate.id;
+
+
+    } else if (req.session.currentRole === 'trainer') {
+        // Leia affiliate'id, kus kasutaja on treener
+        const relations = await prisma.affiliateTrainer.findMany({
+            where: {trainerId: req.session.userId},
+        });
+        affiliateIds = relations.map(r => r.affiliateId);
+    }
+
+    try {
+        const orders = await prisma.userPlan.findMany({
+            where: {
+                affiliateId: parseInt(affiliateIds)
+            },
+            include: {
+                user: {
+                    select: { fullName: true, email: true }
+                }
+            },
+            orderBy: {
+                purchasedAt: 'desc' // Uuemad tellimused eespool
+            }
+        });
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 📌 Endpoint ühe kasutaja tellimuste jaoks (GET)
+app.get('/api/orders/:userId', async (req, res) => {
+    const { userId } = req.params;
+
+
+    try {
+        const orders = await prisma.userPlan.findMany({
+            where: { userId: parseInt(userId) },
+            include: {
+                user: {
+                    select: { username: true, email: true }
+                }
+            },
+            orderBy: {
+                purchasedAt: 'desc'
+            }
+        });
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching user orders:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 📌 Endpoint, et saada tulu ja plaanide müügi andmed määratud perioodi jooksul
+app.get('/api/finance', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+
+        // Määrame vaikimisi kuupäevad jooksvale aastale
+        const currentYear = new Date().getFullYear();
+        const defaultStart = new Date(`${currentYear}-01-01`);
+        const defaultEnd = new Date(`${currentYear}-12-31`);
+
+        const start = startDate ? new Date(startDate) : defaultStart;
+        const end = endDate ? new Date(endDate) : defaultEnd;
+
+        let affiliateIds = null;
+
+        if (req.session.currentRole === 'owner') {
+            // Leia affiliate, mis kuulub sisseloginud ownerile
+            const affiliate = await prisma.affiliate.findFirst({
+                where: {ownerId: req.session.userId},
+            });
+
+
+            if (!affiliate) {
+                return res.render('members', {title: 'Members', members: []});
+            }
+            affiliateIds = affiliate.id;
+
+
+        } else if (req.session.currentRole === 'trainer') {
+            // Leia affiliate'id, kus kasutaja on treener
+            const relations = await prisma.affiliateTrainer.findMany({
+                where: {trainerId: req.session.userId},
+            });
+            affiliateIds = relations.map(r => r.affiliateId);
+        }
+
+        // Leidke kokku tulu antud perioodil
+        const revenue = await prisma.userPlan.aggregate({
+            _sum: {
+                price: true
+            },
+            where: {
+                purchasedAt: {
+
+                    gte: start,
+                    lte: end
+                },
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+        // Leidke ostetud plaanid ja nende kogused
+        const plansSold = await prisma.userPlan.groupBy({
+            by: ['planName'],
+            _count: {
+                planName: true
+            },
+            where: {
+                purchasedAt: {
+                    gte: start,
+                    lte: end
+                },
+                affiliateId: parseInt(affiliateIds)
+            },
+            orderBy: {
+                _count: {
+                    planName: 'desc'
+                }
+            }
+        });
+
+        // Leia aktiivsed, aegunud ja kõik liikmed
+        const activeMembers = await prisma.userPlan.count({
+            where: {
+                endDate: {
+                    gte: new Date()
+                },
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+        const expiredMembers = await prisma.userPlan.count({
+            where: {
+                userId: {
+                    notIn: (
+                        await prisma.userPlan.findMany({
+                            where: {
+                                endDate: {
+                                    gte: new Date() // Leia kasutajad, kellel on kehtiv plaan
+                                },
+                                affiliateId: parseInt(affiliateIds)
+                            },
+                            select: { userId: true }
+                        })
+                    ).map(u => u.userId) // Eemalda need, kellel on aktiivne plaan
+                },
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+        const totalMembers = await prisma.members.count({
+            where: {
+                affiliateId: parseInt(affiliateIds)
+            }
+        }); // Kõik registreeritud liikmed
+
+        res.json({
+            revenue: revenue._sum.price || 0,
+            plansSold,
+            activeMembers,
+            expiredMembers,
+            totalMembers
+        });
+
+    } catch (error) {
+        console.error('Error fetching finance data:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 // Start server
 app.listen(PORT, () => {

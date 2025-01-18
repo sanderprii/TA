@@ -1,0 +1,274 @@
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-center flex-wrap profile-types">
+        <button type="button" class="btn btn-secondary btn-finance btn-profile flex-grow-1 active" data-type="orders"
+                id="orders-btn">
+            Orders history
+        </button>
+        <button type="button" class="btn btn-secondary btn-finance btn-profile flex-grow-1" data-type="finance"
+                id="finance-btn">Finance
+        </button>
+
+    </div>
+
+</div>
+
+<!-- Orders History -->
+<div id="orders-container" class="container-training" style="display: block">
+    <div class="form-def">
+        <div class="layout1 finance text-dark">
+            <div class="card-body">
+                <h2 class="form-label">Orders History</h2>
+                <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search by user or plan...">
+
+                <select id="sortSelect" class="form-control mb-3">
+                    <option value="0">Sort by User</option>
+                    <option value="1">Sort by Plan</option>
+                    <option value="2">Sort by Price</option>
+                    <option value="3">Sort by Purchased Date</option>
+                </select>
+                <div id="ordersList">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Finance-->
+<div id="finance-container" class="container-training" style="display: none">
+    <div class="form-def">
+        <div class="layout1 finance text-dark">
+            <div class="card-body">
+                <h2 class="form-label">Finance</h2>
+                <div class="container mt-3">
+                    <form id="dateRangeForm" class="mb-3">
+                        <div>
+                            <label for="startDate">Start Date:</label>
+                            <input type="date" id="startDate" class="form-control">
+                        </div>
+                        <div>
+                            <label for="endDate">End Date:</label>
+                            <input type="date" id="endDate" class="form-control">
+                        </div>
+                        <div class="text-end">
+                            <button type="button" id="lastYearBtn" class="btn btn-secondary mt-2">Last Year</button>
+                            <button type="button" id="currentYearBtn" class="btn btn-secondary mt-2">Current Year
+                            </button>
+                            <button type="submit" class="btn btn-primary mt-2">Update</button>
+                        </div>
+                    </form>
+
+                    <h3>Total Revenue: <span id="totalRevenue">€0.00</span></h3>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h4>Active Members: <span id="activeMembers">0</span></h4>
+                        </div>
+                        <div class="col-md-4">
+                            <h4>Expired Members: <span id="expiredMembers">0</span></h4>
+                        </div>
+                        <div class="col-md-4">
+                            <h4>Total Members: <span id="totalMembers">0</span></h4>
+                        </div>
+                    </div>
+
+                    <h3 class="mt-4">Plans Sold</h3>
+                    <div id="financeList"></div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const containersFinance = {
+            orders: document.getElementById('orders-container'),
+            finance: document.getElementById('finance-container')
+        }
+
+        const financeBtns = document.querySelectorAll('.btn-finance');
+
+
+        function hideAllContainersFinance() {
+            Object.values(containersFinance).forEach((container) => {
+                if (container) container.style.display = 'none';
+            });
+        }
+
+        function showContainerFinance(type) {
+            if (containersFinance[type]) {
+
+                containersFinance[type].style.display = 'block';
+            }
+        }
+
+        financeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                financeBtns.forEach(btn => btn.classList.remove('active'));
+                btn.classList.add('active');
+                hideAllContainersFinance()
+                showContainerFinance(btn.dataset.type);
+            });
+        });
+
+        fetchOrders();
+
+
+        document.getElementById('searchInput').addEventListener('input', filterOrders);
+        document.getElementById('sortSelect').addEventListener('change', sortOrders);
+    });
+
+    // 📌 Tõmba kõik tellimused API-st
+    async function fetchOrders() {
+        try {
+            const response = await fetch('/api/orders');
+            const orders = await response.json();
+            displayOrders(orders);
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+        }
+    }
+
+    // 📌 Kuva tellimused tabelis
+    function displayOrders(orders) {
+        const ordersList = document.getElementById('ordersList');
+        ordersList.innerHTML = `
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Plan</th>
+                    <th>Price (€)</th>
+                    <th>Purchased At</th>
+                    <th>Valid Until</th>
+                    <th>Sessions Left</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${orders.map(order => `
+                    <tr>
+                        <td>${order.user.fullName}</td>
+                        <td>${order.planName}</td>
+                        <td>${order.price.toFixed(2)}</td>
+                        <td>${new Date(order.purchasedAt).toLocaleDateString()}</td>
+                        <td>${new Date(order.endDate).toLocaleDateString()}</td>
+                        <td>${order.sessionsLeft}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    }
+
+    // 📌 Filtreeri tellimusi otsingu sisendi järgi
+    function filterOrders() {
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#ordersList tbody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchText) ? '' : 'none';
+        });
+    }
+
+    // 📌 Sorteeri tellimusi (nt kuupäeva või hinna järgi)
+    function sortOrders() {
+        const sortBy = document.getElementById('sortSelect').value;
+        const rows = Array.from(document.querySelectorAll('#ordersList tbody tr'));
+
+        rows.sort((a, b) => {
+            const aValue = a.children[sortBy].textContent;
+            const bValue = b.children[sortBy].textContent;
+
+            return sortBy === "2" || sortBy === "3" // Hinna ja kuupäeva puhul teisenda arvuks/kuupäevaks
+                    ? parseFloat(bValue) - parseFloat(aValue)
+                    : aValue.localeCompare(bValue);
+        });
+
+        document.querySelector('#ordersList tbody').append(...rows);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchFinanceData();
+
+        document.getElementById('dateRangeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            fetchFinanceData();
+        });
+
+        document.getElementById('lastYearBtn').addEventListener('click', () => {
+            setLastYear();
+            fetchFinanceData();
+        });
+
+        document.getElementById('currentYearBtn').addEventListener('click', () => {
+            setCurrentYear();
+            fetchFinanceData();
+        });
+    });
+
+    function setLastYear() {
+        const lastYear = new Date().getFullYear() - 1;
+        document.getElementById('startDate').value = `${lastYear}-01-01`;
+        document.getElementById('endDate').value = `${lastYear}-12-31`;
+    }
+
+    // 📌 Funktsioon, mis seab jooksva aasta kuupäevad
+    function setCurrentYear() {
+        const currentYear = new Date().getFullYear();
+        document.getElementById('startDate').value = `${currentYear}-01-01`;
+        document.getElementById('endDate').value = `${currentYear}-12-31`;
+    }
+
+    // 📌 Tõmba finantsandmed API-st
+    async function fetchFinanceData() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+
+        try {
+            const response = await fetch(`/api/finance?${params.toString()}`);
+            const data = await response.json();
+            displayFinanceData(data);
+        } catch (error) {
+            console.error('Error fetching finance data:', error);
+        }
+    }
+
+    // 📌 Kuva finantsandmed
+    function displayFinanceData(data) {
+        document.getElementById('totalRevenue').textContent = `€${data.revenue.toFixed(2)}`;
+        document.getElementById('activeMembers').textContent = data.activeMembers;
+        document.getElementById('expiredMembers').textContent = data.expiredMembers;
+        document.getElementById('totalMembers').textContent = data.totalMembers;
+
+        const financeList = document.getElementById('financeList');
+        financeList.innerHTML = `
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th>Sold</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.plansSold.map(plan => `
+                    <tr>
+                        <td>${plan.planName}</td>
+                        <td>${plan._count.planName}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    }
+
+
+</script>

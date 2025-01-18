@@ -103,10 +103,7 @@
 
     </div>
 
-    <div class="training-list">
-        <h3 class="mt-5">Training List</h3>
-        <ul id="training-list" class="list-group"></ul>
-    </div>
+
 </div>
 <!-- Modal -->
 <div class="modal fade" id="training-modal" tabindex="-1" role="dialog" aria-labelledby="trainingModalLabel"
@@ -134,3 +131,46 @@
         </div>
     </div>
 </div>
+
+<!-- sessions.handlebars -->
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Training Sessions</h2>
+
+    <!-- Legend -->
+    <div class="mb-3">
+        <span class="legend-item">
+            <span class="legend-color " style="background-color: blue;"></span> WOD
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: green;"></span> Weightlifting
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: yellow;"></span> Cardio
+        </span>
+    </div>
+
+    <!-- Calendar Container -->
+    <div id="calendar"></div>
+</div>
+<!-- Training Modal -->
+<div class="modal fade" id="training-modal" tabindex="-1" aria-labelledby="trainingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"> <!-- You can customize the header as needed -->
+                <h5 class="modal-title" id="trainingModalLabel">Training Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="training-modal-body">
+                <!-- Content will be injected here by showTrainingModal function -->
+            </div>
+            <div class="modal-footer">
+                <!-- Buttons (Edit, Save, Add to Records) will be injected here by showTrainingModal function -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

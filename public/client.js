@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isSignUp) {
 
 
-
+                const fullName = document.getElementById('fullName').value.trim();
                 const username = document.getElementById('register_username').value.trim();
                 const password = document.getElementById('register_password').value;
                 const confirmPassword = document.getElementById('confirm_password').value;
@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({
+                            fullName,
                             username,
                             password,
                             email,
@@ -366,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const wodOptions = document.getElementById('wod-options');
         const weightliftingOptions = document.getElementById('weightlifting-options');
         const cardioOptions = document.getElementById('cardio-options');
-        const trainingList = document.getElementById('training-list');
+
 
         // WOD Search and Modal logic starts here
         const wodSearchInput = document.getElementById('wod-search');
@@ -480,8 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
             trainingOptionsDiv &&
             wodOptions &&
             weightliftingOptions &&
-            cardioOptions &&
-            trainingList
+            cardioOptions
         ) {
             // Training Type Change Event
             trainingTypeSelect.addEventListener('change', () => {
@@ -522,72 +522,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Function to render trainings in the list
             function renderTrainings(trainings) {
-                trainingList.innerHTML = ''; // Clear the list before rendering
+                const trainingsData = trainings;
+                if (document.getElementById('calendar') &&
+                    typeof trainingsData !== 'undefined' &&
+                    typeof FullCalendar !== 'undefined') {
 
-                trainings.forEach((training) => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item';
 
-                    const trainingHeader = document.createElement('div');
-                    trainingHeader.className = 'training-header d-flex justify-content-between align-items-center';
+                    // The sessions page is loaded, and trainingsData is available
+                    initializeCalendar();
+                }
 
-                    // Format the date
-                    const dateObj = new Date(training.date);
-                    const day = String(dateObj.getDate()).padStart(2, '0');
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    const year = dateObj.getFullYear();
-                    const formattedDate = `${day}.${month}.${year}`;
 
-                    // Construct header text
-                    let headerText = `${formattedDate} - ${training.type}`;
+                function initializeCalendar() {
+                    const calendarEl = document.getElementById('calendar');
 
-                    if (training.type === 'WOD') {
-                        headerText += ` - ${training.wodType || ''}`;
-                        headerText += training.wodName ? ` - ${training.wodName}` : '';
-                    }
+                    // Parse the trainings data
+                    const trainings = trainingsData; // Ensure trainingsData is available
 
-                    const trainingInfo = document.createElement('span');
-                    trainingInfo.textContent = headerText.trim();
-                    trainingInfo.style.cursor = 'pointer';
+                    // Map trainings to events
+                    const events = [];
 
-                    // Delete button
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'btn btn-danger btn-sm';
-                    deleteBtn.textContent = 'Delete';
-
-                    // Delete button click event
-                    deleteBtn.addEventListener('click', async () => {
-                        const confirmed = confirm('Are you sure you want to delete this training?');
-                        if (!confirmed) return;
-                        try {
-                            const response = await fetch(`/api/training/${training.id}`, {
-                                method: 'DELETE',
-                                headers: { 'Content-Type': 'application/json' },
-                            });
-
-                            if (response.ok) {
-                                // Remove the list item from the UI
-                                li.remove();
-                            } else {
-                                const result = await response.json();
-                                alert(`Error: ${result.error}`);
-                            }
-                        } catch (error) {
-                            alert('Error: ' + error.message);
+                    trainings.forEach((training) => {
+                        // Determine the color based on training type
+                        let backgroundColor = '';
+                        if (training.type === 'WOD') {
+                            backgroundColor = 'blue';
+                        } else if (training.type === 'Weightlifting') {
+                            backgroundColor = 'green';
+                        } else if (training.type === 'Cardio') {
+                            backgroundColor = 'yellow';
                         }
+
+                        // Create event
+                        events.push({
+                            id: training.id,
+                            title: '', // Leave empty to show only color
+                            start: training.date,
+                            backgroundColor: backgroundColor,
+                            borderColor: backgroundColor,
+                            training: training, // Attach the training data
+                        });
                     });
 
-                    trainingHeader.appendChild(trainingInfo);
-                    trainingHeader.appendChild(deleteBtn);
-
-                    li.appendChild(trainingHeader);
-                    trainingList.appendChild(li);
-
-                    // Event listener for trainingInfo click
-                    trainingInfo.addEventListener('click', () => {
-                        showTrainingModal(training);
+                    // Initialize the calendar
+                    const calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        events: events,
+                        eventContent: function (arg) {
+                            // Custom rendering to show multiple colors
+                            return {
+                                html: `<div style="width:100%;height:10px;background-color:${arg.event.backgroundColor};margin-bottom:2px;"></div>`,
+                            };
+                        },
+                        eventClick: function (info) {
+                            // Show modal with training details
+                            showTrainingModal(info.event.extendedProps.training);
+                        },
                     });
-                });
+
+                    calendar.render();
+
+
+                }
             }
 
             loadTrainings(); // Load trainings on initial page load
@@ -1220,65 +1216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Sessions Page Code
-    if (document.getElementById('calendar') &&
-        typeof trainingsData !== 'undefined' &&
-        typeof FullCalendar !== 'undefined') {
 
-        // The sessions page is loaded, and trainingsData is available
-        initializeCalendar();
-    }
-
-    function initializeCalendar() {
-        const calendarEl = document.getElementById('calendar');
-        
-        // Parse the trainings data
-        const trainings = trainingsData; // Ensure trainingsData is available
-
-        // Map trainings to events
-        const events = [];
-
-        trainings.forEach((training) => {
-            // Determine the color based on training type
-            let backgroundColor = '';
-            if (training.type === 'WOD') {
-                backgroundColor = 'blue';
-            } else if (training.type === 'Weightlifting') {
-                backgroundColor = 'green';
-            } else if (training.type === 'Cardio') {
-                backgroundColor = 'yellow';
-            }
-
-            // Create event
-            events.push({
-                id: training.id,
-                title: '', // Leave empty to show only color
-                start: training.date,
-                backgroundColor: backgroundColor,
-                borderColor: backgroundColor,
-                training: training, // Attach the training data
-            });
-        });
-
-        // Initialize the calendar
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            events: events,
-            eventContent: function (arg) {
-                // Custom rendering to show multiple colors
-                return {
-                    html: `<div style="width:100%;height:10px;background-color:${arg.event.backgroundColor};margin-bottom:2px;"></div>`,
-                };
-            },
-            eventClick: function (info) {
-                // Show modal with training details
-                showTrainingModal(info.event.extendedProps.training);
-            },
-        });
-
-        calendar.render();
-
-
-    }
 
     // Find Users Page Scripts
     const findUsersPage = document.getElementById('find-users-page') || document.querySelector('.find-users-container');
