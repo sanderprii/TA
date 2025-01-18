@@ -355,7 +355,7 @@
 
         const fullName = document.createElement('p');
         const dateOfBirth = document.createElement('p');
-        const sex = document.createElement('p');
+
         const email = document.createElement('p');
 
 
@@ -363,11 +363,11 @@
 
             fullName.textContent = `Full name: ${user.fullName}`;
             dateOfBirth.textContent = `Date of birth: ${formatDateToDDMMYYYY(new Date(user.dateOfBirth))}`;
-            sex.textContent = `Sex: ${user.sex}`;
+
             email.textContent = `Email: ${user.email}`;
             myProfile.appendChild(fullName);
             myProfile.appendChild(dateOfBirth);
-            myProfile.appendChild(sex);
+
             myProfile.appendChild(email);
         }).catch(err => {
             console.log('Error processing user data!', err);

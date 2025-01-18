@@ -3,14 +3,16 @@
 
 <div class="container mt-4">
     <h1>Members</h1>
+
+    <div class="container mt-5 find-users-container" id="find-member">
+        <h2>Find Users</h2>
+        <input type="text" id="search-input-member" class="form-control" placeholder="Search by username or full name">
+        <ul id="search-results-member" class="list-group mt-3" style="display: none;"></ul>
+    </div>
+
     <div class="d-flex flex-wrap" id="membersContainer">
-        {{#each members}}
-            <button class="btn btn-outline-primary m-2 plan-button member-card border border-dark btn-home bg-light text-dark"
-                 style="width:100px; height:100px; cursor:pointer;"
-                 data-user-id="{{this.user.id}}">
-                <div class="small">{{this.user.fullName}}</div>
-            </button>
-        {{/each}}
+
+
     </div>
 </div>
 
@@ -29,6 +31,8 @@
                 <ul id="modalPlansList" class="list-group"></ul>
             </div>
             <div class="modal-footer">
+                <button id="addAsMember" type="button" class="btn btn-primary" style="display: none">Add as member
+                </button>
                 <button id="addCreditBtn" type="button" class="btn btn-warning">Add credit</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -46,7 +50,7 @@
             </div>
             <div class="modal-body">
                 <label for="creditAmount" class="form-plan">Amount to add:</label>
-                <input type="number" id="creditAmount" class="form-control" placeholder="Enter amount" />
+                <input type="number" id="creditAmount" class="form-control" placeholder="Enter amount"/>
             </div>
             <div class="modal-footer">
                 <button id="confirmAddCreditBtn" type="button" class="btn btn-success">Add</button>
@@ -68,17 +72,156 @@
         const creditAmountInput = document.getElementById('creditAmount');
         const confirmAddCreditBtn = document.getElementById('confirmAddCreditBtn');
 
+        const membersContainer = document.getElementById('membersContainer');
+
         let currentUserId = null; // hoiab meeles, kelle modali avasime
 
+        const addMember = document.getElementById('addAsMember')
+
+        async function isMemberActive(userId) {
+            try {
+                const response = await fetch(`/api/member-info?userId=${userId}`);
+                const data = await response.json();
+                const currentDate = new Date();
+
+                // check if any plans are active with foreach
+                let isActive = false;
+                data.plans.forEach(plan => {
+                    if (new Date(plan.endDate) > currentDate) {
+                        isActive = true;
+                    }
+                });
+
+                return isActive;
+
+            } catch (err) {
+                console.error('Error fetching member info:', err);
+            }
+        }
+
+        // get members
+        async function getMembers() {
+            try {
+                const response = await fetch('/api/members');
+                const data = await response.json();
+
+                for (const member of data) {
+                    const memberCard = document.createElement('button');
+                    memberCard.classList.add(
+                            'btn', 'btn-outline-primary', 'm-2', 'plan-button',
+                            'member-card', 'border', 'border-dark', 'btn-home',
+                            'bg-light', 'text-dark'
+                    );
+
+                    memberCard.dataset.userId = member.userId;
+                    memberCard.style.height = '100px';
+                    memberCard.style.width = '100px';
+                    memberCard.style.cursor = 'pointer';
+                    memberCard.innerHTML = `<div class="small">${member.user.fullName}</div>`;
+
+                    const statusIndicator = document.createElement('div');
+                    statusIndicator.classList.add('status-indicator');
+                    memberCard.appendChild(statusIndicator);
+
+                    // Wait for isMemberActive to resolve before setting background color
+                    const isActive = await isMemberActive(member.userId);
+                    if (isActive) {
+                        statusIndicator.style.backgroundColor = 'green';
+
+                    } else {
+                        statusIndicator.style.backgroundColor = 'red';
+                    }
+
+                    membersContainer.appendChild(memberCard);
+                }
+            } catch (err) {
+                console.error('Error fetching members:', err);
+            }
+        }
+
+
+        getMembers()
+
         // 1. Lisa klikk igale .member-card elemendile
-        document.querySelectorAll('.member-card').forEach(card => {
-            card.addEventListener('click', async () => {
-                const userId = card.dataset.userId;
-                currentUserId = userId;
-                await loadMemberInfo(userId);
-                memberModal.show();
-            });
+        document.getElementById('membersContainer').addEventListener('click', async (event) => {
+            const card = event.target.closest('.member-card');
+            if (!card) return;
+
+            const userId = card.getAttribute('data-user-id');
+
+
+            if (!userId) {
+                console.error('User ID not found:', card);
+                return;
+            }
+
+            currentUserId = userId;
+            await loadMemberInfo(userId);
+            memberModal.show();
         });
+
+
+        // Find Users
+        const findMember = document.getElementById('find-member');
+        if (findMember) {
+            const searchInputMember = document.getElementById('search-input-member');
+            const resultsListMember = document.getElementById('search-results-member');
+
+            let debounceTimeout = null;
+
+            searchInputMember.addEventListener('input', () => {
+                const query = searchInputMember.value.trim();
+
+                clearTimeout(debounceTimeout);
+
+                // Delay the request to avoid too many requests
+                debounceTimeout = setTimeout(async () => {
+                    if (query.length === 0) {
+                        resultsListMember.style.display = 'none';
+                        resultsListMember.innerHTML = '';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/search-users?q=${encodeURIComponent(query)}`);
+                        if (response.ok) {
+                            const users = await response.json();
+                            resultsListMember.innerHTML = '';
+
+                            if (users.length > 0) {
+                                users.forEach(user => {
+                                    const li = document.createElement('li');
+                                    li.classList.add('list-group-item');
+                                    li.textContent = `${user.username} - ${user.fullName || ''}`;
+                                    li.style.cursor = 'pointer';
+                                    li.addEventListener('click', () => {
+                                        loadMemberInfo(user.id);
+                                        currentUserId = user.id;
+                                        resultsListMember.style.display = 'none';
+                                        resultsListMember.innerHTML = '';
+                                        searchInputMember.value = '';
+                                        addMember.style.display = 'block';
+                                        memberModal.show();
+                                    });
+                                    resultsListMember.appendChild(li);
+                                });
+                                resultsListMember.style.display = 'block';
+                            } else {
+                                const li = document.createElement('li');
+                                li.classList.add('list-group-item');
+                                li.textContent = 'No users found.';
+                                resultsListMember.appendChild(li);
+                                resultsListMember.style.display = 'block';
+                            }
+                        } else {
+                            console.error('Failed to fetch users');
+                        }
+                    } catch (error) {
+                        console.error('Error fetching users:', error);
+                    }
+                }, 300); // Waits 300ms after typing stops
+            });
+        }
 
         async function loadMemberInfo(userId) {
             try {
@@ -113,8 +256,8 @@
                         // Saada PATCH vms
                         await fetch('/api/userplan-enddate', {
                             method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json'},
-                            body: JSON.stringify({ userPlanId, endDate: newDate })
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({userPlanId, endDate: newDate})
                         });
                         // Reload member info
                         await loadMemberInfo(userId);
@@ -125,6 +268,30 @@
                 console.error('Error fetching member info:', err);
             }
         }
+
+        // add as member
+        addMember.addEventListener('click', async () => {
+            try {
+                const resp = await fetch('/api/add-member', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({userId: currentUserId})
+                });
+                if (resp.ok) {
+                    memberModal.hide();
+                    // uuenda modali info
+                    await loadMemberInfo(currentUserId);
+                    // uuenda ka memberite listi
+                    document.getElementById('membersContainer').innerHTML = '';
+                    getMembers()
+                    addMember.style.display = 'none';
+                } else {
+                    console.error('Error adding member:', resp.status);
+                }
+            } catch (err) {
+                console.error('Error adding member:', err);
+            }
+        });
 
         // 2. Add credit
         addCreditBtn.addEventListener('click', () => {
@@ -138,8 +305,8 @@
             try {
                 const resp = await fetch('/api/add-credit', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json'},
-                    body: JSON.stringify({ userId: currentUserId, amount })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({userId: currentUserId, amount})
                 });
                 if (resp.ok) {
                     creditModal.hide();

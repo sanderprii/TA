@@ -648,6 +648,11 @@ h6,
     color: #ffffff
 }
 
+.member-card {
+    position: relative; /* Et täpp jääks õigesse kohta */
+    display: inline-block; /* Veendu, et see käitub õigesti */
+}
+
 .profile-types button {
     flex: 1 1 auto;
     max-width: 200px;
@@ -669,6 +674,17 @@ h6,
     }
 }
 
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: transparent; /* Algselt nähtamatu */
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+
+
 .layout1 {
 
 
@@ -676,7 +692,8 @@ h6,
     display: flex;
     flex-direction: column;
     justify-content: left;
-
+    max-width: 800px;
+    width: 100%;
 
     padding: 10px 35px;
     cursor: pointer;

@@ -321,7 +321,6 @@ app.post('/api/register', async (req, res) => {
         password,
         email,
         isAffiliateOwner,
-        sex,
         dateOfBirth,
     } = req.body;
     try {
@@ -358,7 +357,6 @@ app.post('/api/register', async (req, res) => {
                 password: hashedPassword, // Store the hashed password
                 email,
                 isAffiliateOwner,
-                sex,
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
             },
         });
@@ -523,7 +521,6 @@ app.get('/api/user', ensureAuthenticated, async (req, res) => {
                 fullName: true,
                 email: true,
                 dateOfBirth: true,
-                sex: true,
                 credit: true,
                 homeAffiliate: true
             }
@@ -537,7 +534,7 @@ app.get('/api/user', ensureAuthenticated, async (req, res) => {
 
 // update user data
 app.put('/api/user', ensureAuthenticated, async (req, res) => {
-    const { fullName, email, dayOfBirth, sex} = req.body;
+    const { fullName, email, dayOfBirth} = req.body;
     try {
         await prisma.user.update({
             where: { id: req.session.userId },
@@ -545,7 +542,7 @@ app.put('/api/user', ensureAuthenticated, async (req, res) => {
                 fullName,
                 email,
                 dateOfBirth,
-                sex
+
             }
         });
         res.json({ message: 'User data updated successfully.' });
@@ -2133,6 +2130,25 @@ app.post('/api/buy-plan', ensureAuthenticated, async (req, res) => {
             }
         });
 
+        // Check if user is already a member
+        const existingMember = await prisma.members.findFirst({
+            where: {
+                userId: parseInt(userId),
+                affiliateId: parseInt(affiliateId)
+            }
+        });
+
+        if (!existingMember) {
+            await prisma.members.create({
+                data: {
+                    userId: parseInt(userId),
+                    affiliateId: parseInt(affiliateId)
+                }
+            });
+        }
+
+
+
         return res.json({ message: 'Plan purchased successfully!', newCredit });
     } catch (error) {
         console.error('Error buying plan:', error);
@@ -2172,6 +2188,13 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
         const userPlans = await prisma.userPlan.findMany({
             where: { affiliateId: { in: affiliateIds }},
             include: { user: true }
+        });
+
+
+
+        // find members by home gym
+        const userHomeGym = await prisma.user.findMany({
+            where: { homeAffiliate: { in: affiliateIds }},
         });
 
 
@@ -2247,6 +2270,104 @@ app.get('/api/member-info', ensureAuthenticated, ensureOwnerOrTrainer, async (re
     } catch (err) {
         console.error('Error in /api/member-info:', err);
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// API to get members by affiliate
+app.get('/api/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    try {
+        let affiliateIds = [];
+
+        if (req.session.currentRole === 'owner') {
+            // Leia affiliate, mis kuulub sisseloginud ownerile
+            const affiliate = await prisma.affiliate.findFirst({
+                where: {ownerId: req.session.userId},
+            });
+
+
+            if (!affiliate) {
+                return res.render('members', {title: 'Members', members: []});
+            }
+            affiliateIds = [affiliate.id];
+
+
+        } else if (req.session.currentRole === 'trainer') {
+            // Leia affiliate'id, kus kasutaja on treener
+            const relations = await prisma.affiliateTrainer.findMany({
+                where: {trainerId: req.session.userId},
+            });
+            affiliateIds = relations.map(r => r.affiliateId);
+        }
+
+        // find users bu affiliateId on members
+        const users = await prisma.members.findMany({
+            where: {affiliateId: {in: affiliateIds}},
+            include: {user: true}
+        });
+
+        res.json(users);
+    } catch (error) {
+        console.error('Error loading members:', error);
+        res.status(500).send('Error');
+    }
+});
+
+// api for adding member
+app.post('/api/add-member', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'Missing fields' });
+    }
+
+    try {
+
+        let affiliateIds = [];
+
+        if (req.session.currentRole === 'owner') {
+            // Leia affiliate, mis kuulub sisseloginud ownerile
+            const affiliate = await prisma.affiliate.findFirst({
+                where: {ownerId: req.session.userId},
+            });
+
+
+            if (!affiliate) {
+                return res.render('members', {title: 'Members', members: []});
+            }
+            affiliateIds = [affiliate.id];
+
+
+        } else if (req.session.currentRole === 'trainer') {
+            // Leia affiliate'id, kus kasutaja on treener
+            const relations = await prisma.affiliateTrainer.findMany({
+                where: {trainerId: req.session.userId},
+            });
+            affiliateIds = relations.map(r => r.affiliateId);
+        }
+
+        // Check if user is already a member
+        const existingMember = await prisma.members.findFirst({
+            where: {
+                userId: parseInt(userId),
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+        if (existingMember) {
+            return res.status(400).json({ error: 'User is already a member' });
+        }
+
+        await prisma.members.create({
+            data: {
+                userId: parseInt(userId),
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+        res.status(201).json({ message: 'Member added successfully' });
+    } catch (error) {
+        console.error('Error adding member:', error);
+        res.status(500).json({ error: 'Failed to add member' });
     }
 });
 

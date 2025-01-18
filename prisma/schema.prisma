@@ -19,7 +19,6 @@ model User {
   password         String
   fullName         String?
   dateOfBirth      DateTime?
-  sex              String?
   email            String?            @unique
   isAffiliateOwner Boolean?
   records          Record[]
@@ -34,6 +33,7 @@ model User {
   UserPlan         UserPlan[]
   homeAffiliate    Int?
   classLeaderboard ClassLeaderboard[]
+  members          Members[]
 }
 
 model Training {
@@ -130,6 +130,7 @@ model Affiliate {
   owner         User               @relation(fields: [ownerId], references: [id])
   trainers      AffiliateTrainer[]
   ClassSchedule ClassSchedule[]
+  members       Members[]
 }
 
 model AffiliateTrainer {
@@ -165,4 +166,12 @@ model ClassLeaderboard {
   scoreType     String
   score         String
   createdAt     DateTime      @default(now())
+}
+
+model Members {
+  id          Int       @id @default(autoincrement())
+  affiliateId Int
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
 }

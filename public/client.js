@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const email = document.getElementById('email').value.trim() || null;
                 const isAffiliateOwnerValue = document.querySelector('input[name="isAffiliateOwner"]:checked').value;
                 const isAffiliateOwner = isAffiliateOwnerValue === 'true' ? true : false;
-                const sex = document.getElementById('sex').value || null;
+
                 const dateOfBirthValue = document.getElementById('dateOfBirth').value;
                 const dateOfBirth = dateOfBirthValue ? new Date(dateOfBirthValue) : null;
 
@@ -49,8 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             password,
                             email,
                             isAffiliateOwner,
-                            sex,
-                            dateOfBirth,
+                            dateOfBirth
                         }),
                     });
 
