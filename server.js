@@ -36,7 +36,7 @@ app.set('views', './views');
 
 // Configure session middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your_secret_key',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false }
@@ -228,6 +228,8 @@ app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, 
             }
         });
 
+
+
         if (!affiliate) {
             // Pole veel affiliate infot
             return res.render('my-affiliate', {
@@ -241,7 +243,8 @@ app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, 
         const trainers = affiliate.trainers.map(t => ({
             fullName: t.trainer.fullName || '',
             username: t.trainer.username,
-            trainerId: t.trainerId
+            trainerId: t.trainerId,
+
         }));
 
         res.render('my-affiliate', {
@@ -1430,6 +1433,7 @@ app.get('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, r
 // API endpoint to create a new class
 app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
     const {
+        classTrainingType,
         trainingName,
         date,
         time,
@@ -1490,6 +1494,7 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
         
         const newClass = await prisma.classSchedule.create({
             data: {
+                trainingType: classTrainingType,
                 trainingName,
                 time: classTime,
                 duration: parseInt(duration),
@@ -1520,6 +1525,7 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
             for (let i = 1; i <= 52; i++) {
                 nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Lisa 7 päeva iga iteratsiooniga
                 repeats.push({
+                    trainingType: classTrainingType,
                     trainingName,
                     time: new Date(nextTime),
                     duration: parseInt(duration),
@@ -1545,10 +1551,12 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
 });
 
 
+
 // API endpoint to update a class
 app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
     const classId = parseInt(req.params.id);
     const {
+        classTrainingType,
         trainingName,
         date,
         time,
@@ -1626,6 +1634,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
         const updatedClass = await prisma.classSchedule.update({
             where: { id: classId },
             data: {
+                trainingType: classTrainingType,
                 trainingName,
                 time: classTime,
                 duration: parseInt(duration),
@@ -1666,6 +1675,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
                 for (let i = 1; i <= 52; i++) {
                     nextTime = new Date(nextTime.getTime() + 7 * 24 * 60 * 60 * 1000);
                     repeats.push({
+                        trainingType: classTrainingType,
                         trainingName,
                         time: new Date(nextTime),
                         duration: parseInt(duration),
@@ -1938,7 +1948,7 @@ app.delete('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (r
 
 // API affiliate loomiseks või uuendamiseks
 app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
-    const { affiliateId, name, address, trainingType, trainers } = req.body;
+    const { affiliateId, name, address, trainingType, trainers, email, phone, iban, bank } = req.body;
 
     try {
         const trainerIds = Array.isArray(trainers) ? trainers.map(id => parseInt(id)) : [];
@@ -1960,6 +1970,10 @@ app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req
                     name,
                     address,
                     trainingType,
+                    email,
+                    phone,
+                    iban,
+                    bankName: bank
                 }
             });
 
@@ -2051,7 +2065,6 @@ app.get('/api/user-plans', async (req, res) => {
                 sessionsLeft: true,
             },
         });
-
 
 
         res.json(userPlans);

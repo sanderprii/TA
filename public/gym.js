@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const classModalElement = document.getElementById('classModal');
     const classModal = new bootstrap.Modal(classModalElement);
     const classAttendance = document.getElementById('classAttendance');
-
+    const classTrainingType = document.getElementById('classTrainingType');
 
 
     const modalTrainingName = document.getElementById('modalTrainingName');
@@ -85,16 +85,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const trainingId = document.getElementById('trainingId').value;
         const repeatWeeklyValue = document.querySelector('input[name="repeatWeekly"]:checked').value;
         const trainingData = {
+            classTrainingType: document.getElementById('classTrainingType').value,
                 trainingName: document.getElementById('trainingName').value.toUpperCase(),
                 date: document.getElementById('trainingDate').value,
                 time: document.getElementById('trainingTime').value,
-                duration: document.getElementById('duration').value,
-                trainer: document.getElementById('trainer').value,
+                duration: document.getElementById('duration').value || null,
+                trainer: document.getElementById('trainer').value || null,
                 memberCapacity: document.getElementById('memberCapacity').value,
-                location: document.getElementById('location').value,
+                location: document.getElementById('location').value || '',
                 repeatWeekly: (repeatWeeklyValue === 'true'),
-                description: document.getElementById('trainingDescription').value,
-                wodName: document.getElementById('wod-name').value.toUpperCase(),
+                description: document.getElementById('trainingDescription').value || null,
+                wodName: document.getElementById('wod-name').value.toUpperCase() || null,
                 wodType: document.querySelector('input[name="wod-type"]:checked').value
             }
         ;
@@ -119,14 +120,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             trainingModal.hide();
+
             loadSchedule();
         } catch (error) {
             console.error('Error saving training:', error);
         }
     });
-
-
-
 
 
     // Functions
@@ -352,6 +351,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function openTrainingModal(training = null) {
         if (training) {
             document.getElementById('trainingModalLabel').textContent = 'Edit Training';
+            document.getElementById('classTrainingType').value = training.trainingType;
             document.getElementById('trainingName').value = training.trainingName;
 
             const trainingDateTime = new Date(training.time);
@@ -365,6 +365,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Convert boolean to string to match the radio buttons value="true"/"false"
             const repeatValue = training.repeatWeekly ? 'true' : 'false';
+
             document.querySelector(`input[name="repeatWeekly"][value="${repeatValue}"]`).checked = true;
             document.getElementById('wod-name').value = training.wodName || '';
             document.querySelector(`input[name="wod-type"][value="${training.wodType}"]`).checked = true;
@@ -466,7 +467,6 @@ document.addEventListener('DOMContentLoaded', function () {
             // 1) Fetch leaderboard data from the server
             const response = await fetch(`/api/leaderboard?classId=${currentClassId}`);
             const data = await response.json();
-
 
 
             // 2) Show the modal and clear any previous content
@@ -579,8 +579,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     memberDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'mb-2', 'border-bottom', 'p-2');
 
 
-
-
                     const memberNameSpan = document.createElement('span');
                     memberNameSpan.textContent = '👤 ' + member.user.fullName.toUpperCase();
 
@@ -673,19 +671,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function openClassModal(cls) {
-
+        openClassModal.innerHTML = '';
 
         modalTrainingName.textContent = cls.trainingName;
         const classTime = new Date(cls.time);
         modalTime.textContent = classTime.toLocaleString();
         modalTrainer.textContent = cls.trainer || 'N/A';
         modalLocation.textContent = cls.location || 'N/A';
+
+        if (!cls.trainer || cls.trainer.trim() === '') {
+            classTrainer.style.display = 'none';
+        }
+
+        if (!cls.location || cls.location.trim() === '') {
+            classLocation.style.display = 'none';
+        }
+
         modalClassId.value = cls.id;
 
         wodName.textContent = cls.wodName || 'N/A';
         wodType.textContent = cls.wodType || 'N/A';
         modalDescription.textContent = cls.description || 'N/A';
         if (!cls.wodName || cls.wodName.trim() === '') {
+            wodName2.style.display = 'none';
+        } else {
+            wodName2.style.display = 'block';
+        }
+        if (!cls.description || cls.description.trim() === '') {
             wodInfo.style.display = 'none';
         } else {
             wodInfo.style.display = 'block';
@@ -707,7 +719,6 @@ document.addEventListener('DOMContentLoaded', function () {
             trainingModalBody.innerHTML = '';
             openTrainingModal(cls);
         })
-
 
 
         classModal.show();

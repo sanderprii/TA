@@ -1,548 +1,550 @@
 // public/register-class.js
 
 document.addEventListener('DOMContentLoaded', async function () {
-    const affiliateSearch = document.getElementById('affiliateSearch');
-    const affiliateSuggestions = document.getElementById('affiliateSuggestions');
-    const affiliateInfo = document.getElementById('affiliateInfo');
-    const affName = document.getElementById('affName');
-    const affAddress = document.getElementById('affAddress');
-    const affTrainingType = document.getElementById('affTrainingType');
-    const affTrainers = document.getElementById('affTrainers');
-    const viewScheduleBtn = document.getElementById('viewScheduleBtn');
-    const scheduleContainer = document.getElementById('scheduleContainer');
-    const registerHomeTraining = document.getElementById('register-home-training');
-    const currentWeekElement = document.getElementById('current-week');
-    const scheduleElement = document.getElementById('schedule');
+        const affiliateSearch = document.getElementById('affiliateSearch');
+        const affiliateSuggestions = document.getElementById('affiliateSuggestions');
+        const affiliateInfo = document.getElementById('affiliateInfo');
+        const affName = document.getElementById('affName');
+        const affAddress = document.getElementById('affAddress');
+        const affTrainingType = document.getElementById('affTrainingType');
+        const affTrainers = document.getElementById('affTrainers');
+        const viewScheduleBtn = document.getElementById('viewScheduleBtn');
+        const scheduleContainer = document.getElementById('scheduleContainer');
+        const registerHomeTraining = document.getElementById('register-home-training');
+        const currentWeekElement = document.getElementById('current-week');
+        const scheduleElement = document.getElementById('schedule');
 
-    const dayButtonsContainer = document.getElementById('day-buttons');
+        const dayButtonsContainer = document.getElementById('day-buttons');
 
-    const classModal = new bootstrap.Modal(document.getElementById('classModal'));
-    const registerForClassBtn = document.getElementById('registerForClassBtn');
-    const cancelClassBtn = document.getElementById('cancelClassBtn');
-    const modalTrainingName = document.getElementById('modalTrainingName');
-    const modalTime = document.getElementById('modalTime');
-    const modalTrainer = document.getElementById('modalTrainer');
-    const modalLocation = document.getElementById('modalLocation');
-    const modalClassId = document.getElementById('modalClassId');
+        const classModal = new bootstrap.Modal(document.getElementById('classModal'));
+        const registerForClassBtn = document.getElementById('registerForClassBtn');
+        const cancelClassBtn = document.getElementById('cancelClassBtn');
+        const modalTrainingName = document.getElementById('modalTrainingName');
+        const modalTime = document.getElementById('modalTime');
+        const modalTrainer = document.getElementById('modalTrainer');
+        const modalLocation = document.getElementById('modalLocation');
+        const modalClassId = document.getElementById('modalClassId');
 
-    const planSelect = document.getElementById('planSelect');
-    const planDivs = document.getElementById('planDiv');
-    const addHomeAffiliate = document.getElementById('addHomeAffiliate');
-    const removeHomeAffiliate = document.getElementById('removeHomeAffiliate');
-
-
-    // Plaanide konteiner ja modal
-    const plansContainer = document.getElementById('plansContainer');
-    const plansList = document.getElementById('plansList');
-    const planInfoModal = new bootstrap.Modal(document.getElementById('planInfoModal'));
-    const modalPlanName = document.getElementById('modalPlanName');
-    const modalPlanDays = document.getElementById('modalPlanDays');
-    const modalPlanPrice = document.getElementById('modalPlanPrice');
-    const modalPlanData = document.getElementById('modalPlanData');
-
-    const buyPlanBtn = document.getElementById('buyPlanBtn');
-    const onAppBtn = document.getElementById('onAppBtn');
-    const byCardBtn = document.getElementById('byCardBtn');
-
-    const paymentMethodModalEl = document.getElementById('paymentMethodModal');
-    const paymentMethodModal = new bootstrap.Modal(paymentMethodModalEl);
-
-    const leaderboardBtn = document.getElementById('showLeaderboard');
-    const addScoreBtn = document.getElementById('addScore');
-    const scoreRadio = document.querySelector('input[name="score-type"]:checked');
-    const leaderboardModal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
-    const leaderboardBody = document.getElementById('leaderboardBody');
-    const editScoreBtn = document.getElementById('editScore');
-
-    let currentPlan = null;
-
-    let selectedAffiliateId = null;
-    let currentDate = new Date();
-    let classesData = [];
-
-    let affiliateName = ''
-    let affiliateIds = null;
-    let currentClassId = null;
-
-    let isSmallScreen = window.innerWidth < 1143; // kontrolli ekraani laiust
-    let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
-
-    if (window.location.pathname === '/') {
-        registerHomeTraining.style.display = 'none';
-        affiliateSearch.style.display = 'none';
-    }
+        const planSelect = document.getElementById('planSelect');
+        const planDivs = document.getElementById('planDiv');
+        const addHomeAffiliate = document.getElementById('addHomeAffiliate');
+        const removeHomeAffiliate = document.getElementById('removeHomeAffiliate');
 
 
-    async function isHomeGym() {
-        try {
-            const response = await fetch('/api/user');
-            const data = await response.json();
-            if (data.homeAffiliate) {
+        // Plaanide konteiner ja modal
+        const plansContainer = document.getElementById('plansContainer');
+        const plansList = document.getElementById('plansList');
+        const planInfoModal = new bootstrap.Modal(document.getElementById('planInfoModal'));
+        const modalPlanName = document.getElementById('modalPlanName');
+        const modalPlanDays = document.getElementById('modalPlanDays');
+        const modalPlanPrice = document.getElementById('modalPlanPrice');
+        const modalPlanData = document.getElementById('modalPlanData');
 
-                const responseAff = await fetch(`/api/affiliate-name?affiliateId=${data.homeAffiliate}`);
-                const dataAff = await responseAff.json();
+        const buyPlanBtn = document.getElementById('buyPlanBtn');
+        const onAppBtn = document.getElementById('onAppBtn');
+        const byCardBtn = document.getElementById('byCardBtn');
 
-                affiliateName = dataAff.name;
+        const paymentMethodModalEl = document.getElementById('paymentMethodModal');
+        const paymentMethodModal = new bootstrap.Modal(paymentMethodModalEl);
 
+        const leaderboardBtn = document.getElementById('showLeaderboard');
+        let addScoreBtn = document.getElementById('addScore');
+        const scoreRadio = document.querySelector('input[name="score-type"]:checked');
+        const leaderboardModal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
+        const leaderboardBody = document.getElementById('leaderboardBody');
+        let editScoreBtn = document.getElementById('editScore');
 
-            } else {
-                return false;
-            }
+        addToTrainingsBtn = document.getElementById('addToTrainings');
 
-        } catch (err) {
-            console.error('Error fetching user home affiliates:', err);
-        } finally {
+        let currentPlan = null;
 
-            loadAffiliateInfo(affiliateName);
+        let selectedAffiliateId = null;
+        let currentDate = new Date();
+        let classesData = [];
 
+        let affiliateName = ''
+        let affiliateIds = null;
+        let currentClassId = null;
+
+        let isSmallScreen = window.innerWidth < 1143; // kontrolli ekraani laiust
+        let selectedDayIndex = 0; // Väiksel ekraanil valitud päeva indeks (0-6, 0 = esmaspäev)
+
+        if (window.location.pathname === '/') {
+            registerHomeTraining.style.display = 'none';
+            affiliateSearch.style.display = 'none';
         }
-    }
 
-    isHomeGym()
+
+        async function isHomeGym() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                if (data.homeAffiliate) {
+
+                    const responseAff = await fetch(`/api/affiliate-name?affiliateId=${data.homeAffiliate}`);
+                    const dataAff = await responseAff.json();
+
+                    affiliateName = dataAff.name;
+
+
+                } else {
+                    return false;
+                }
+
+            } catch (err) {
+                console.error('Error fetching user home affiliates:', err);
+            } finally {
+
+                loadAffiliateInfo(affiliateName);
+
+            }
+        }
+
+        isHomeGym()
 
 // Funktsioon tuvastamaks tänase päeva indeksit (0=Mon,...,6=Sun)
-    function getTodayDayIndex(date) {
-        const g = date.getDay(); // 0 (pühap) - 6(laup)
-        // Meie nädal algab esmaspäev(=1 getDay), seega teisendame:
-        // Mon(1)->0, Tue(2)->1, ..., Sun(0)->6
-        return g === 0 ? 6 : g - 1;
-    }
+        function getTodayDayIndex(date) {
+            const g = date.getDay(); // 0 (pühap) - 6(laup)
+            // Meie nädal algab esmaspäev(=1 getDay), seega teisendame:
+            // Mon(1)->0, Tue(2)->1, ..., Sun(0)->6
+            return g === 0 ? 6 : g - 1;
+        }
 
-    // Kui on väike ekraan, siis vaikimisi tänane päev
+        // Kui on väike ekraan, siis vaikimisi tänane päev
 
-    selectedDayIndex = getTodayDayIndex(new Date());
-
-
-    // Otsingukasti eventid
-    affiliateSearch.addEventListener('input', async function () {
-        const query = affiliateSearch.value.trim();
-        affiliateSuggestions.innerHTML = '';
-        if (query.length > 0) {
-            try {
-                const response = await fetch(`/api/search-affiliates?q=${encodeURIComponent(query)}`);
-                const affiliates = await response.json();
-                if (Array.isArray(affiliates)) {
-                    affiliates.forEach(a => {
-                        const item = document.createElement('a');
-                        item.href = '#';
-                        item.classList.add('list-group-item', 'list-group-item-action');
-                        item.textContent = a.name;
-                        item.addEventListener('click', async (e) => {
-                            e.preventDefault();
-                            affiliateSearch.value = a.name;
-                            affiliateSearch.value = '';
-                            plansContainer.style.display = 'none';
-                            scheduleContainer.style.display = 'none';
-                            affiliateSuggestions.innerHTML = '';
+        selectedDayIndex = getTodayDayIndex(new Date());
 
 
-                            // Laeme kohe affiliate info ilma nupuvajutuseta
-                            await loadAffiliateInfo(a.name);
+        // Otsingukasti eventid
+        affiliateSearch.addEventListener('input', async function () {
+            const query = affiliateSearch.value.trim();
+            affiliateSuggestions.innerHTML = '';
+            if (query.length > 0) {
+                try {
+                    const response = await fetch(`/api/search-affiliates?q=${encodeURIComponent(query)}`);
+                    const affiliates = await response.json();
+                    if (Array.isArray(affiliates)) {
+                        affiliates.forEach(a => {
+                            const item = document.createElement('a');
+                            item.href = '#';
+                            item.classList.add('list-group-item', 'list-group-item-action');
+                            item.textContent = a.name;
+                            item.addEventListener('click', async (e) => {
+                                e.preventDefault();
+                                affiliateSearch.value = a.name;
+                                affiliateSearch.value = '';
+                                plansContainer.style.display = 'none';
+                                scheduleContainer.style.display = 'none';
+                                affiliateSuggestions.innerHTML = '';
+
+
+                                // Laeme kohe affiliate info ilma nupuvajutuseta
+                                await loadAffiliateInfo(a.name);
+
+                            });
+                            affiliateSuggestions.appendChild(item);
 
                         });
-                        affiliateSuggestions.appendChild(item);
+                    } else {
+                        console.error('Unexpected response format', affiliates);
+                    }
+                } catch (err) {
+                    console.error('Error searching affiliates:', err);
+                }
+            }
+        });
 
+        async function loadAffiliateInfo(name) {
+            try {
+                const response = await fetch(`/api/get-affiliate-by-name?name=${encodeURIComponent(name)}`);
+                const data = await response.json();
+                if (data && data.affiliate) {
+                    selectedAffiliateId = data.affiliate.ownerId;
+                    affName.textContent = data.affiliate.name;
+                    affiliateIds = data.affiliate.id;
+                    affAddress.textContent = data.affiliate.address;
+                    affTrainingType.textContent = data.affiliate.trainingType;
+                    affTrainers.innerHTML = '';
+                    data.trainers.forEach(t => {
+                        const li = document.createElement('li');
+                        li.textContent = t.fullName || t.username;
+                        affTrainers.appendChild(li);
                     });
+                    if (window.location.pathname === '/') {
+
+                        scheduleContainer.style.display = 'block';
+                        affiliateSearch.style.display = 'none';
+                        affiliateInfo.style.display = 'none';
+                        registerHomeTraining.style.display = 'none';
+
+                        loadSchedule()
+                    } else {
+
+                        affiliateInfo.style.display = 'block';
+                    }
+                    loadUserHomeAffiliates();
                 } else {
-                    console.error('Unexpected response format', affiliates);
+                    affiliateInfo.style.display = 'none';
                 }
             } catch (err) {
-                console.error('Error searching affiliates:', err);
+                console.error('Error fetching affiliate data:', err);
             }
+
         }
-    });
 
-    async function loadAffiliateInfo(name) {
-        try {
-            const response = await fetch(`/api/get-affiliate-by-name?name=${encodeURIComponent(name)}`);
-            const data = await response.json();
-            if (data && data.affiliate) {
-                selectedAffiliateId = data.affiliate.ownerId;
-                affName.textContent = data.affiliate.name;
-                affiliateIds = data.affiliate.id;
-                affAddress.textContent = data.affiliate.address;
-                affTrainingType.textContent = data.affiliate.trainingType;
-                affTrainers.innerHTML = '';
-                data.trainers.forEach(t => {
-                    const li = document.createElement('li');
-                    li.textContent = t.fullName || t.username;
-                    affTrainers.appendChild(li);
+        viewScheduleBtn.addEventListener('click', async function () {
+            if (!selectedAffiliateId) return;
+            scheduleContainer.style.display = 'block';
+
+            // Peida otsinguriba ja affiliate info
+            const affiliateInfo = document.getElementById('affiliateInfo');
+
+
+            if (affiliateInfo) affiliateInfo.style.display = 'none';
+
+            plansContainer.style.display = 'none';
+            loadSchedule();
+        });
+
+        viewPlansBtn.addEventListener('click', function () {
+            if (!selectedAffiliateId) return;
+            // Näita plaane, peida affiliate info ja schedule
+            plansContainer.style.display = 'block';
+            scheduleContainer.style.display = 'none';
+            affiliateInfo.style.display = 'none';
+
+            loadAffiliatePlans(selectedAffiliateId);
+        });
+
+        // save affiliate to home affiliate
+        addHomeAffiliate.addEventListener('click', async function () {
+            if (!selectedAffiliateId) return;
+            try {
+                const response = await fetch('/api/add-home-affiliate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        homeAffiliates: affiliateIds // serveris loed selle req.body.homeAffiliate
+                    })
                 });
-                if (window.location.pathname === '/') {
+                if (response.ok) {
+                    alert('Affiliate added to home affiliates');
+                    addHomeAffiliate.style.display = 'none';
+                    removeHomeAffiliate.style.display = 'inline-block';
 
-                    scheduleContainer.style.display = 'block';
-                    affiliateSearch.style.display = 'none';
-                    affiliateInfo.style.display = 'none';
-                    registerHomeTraining.style.display = 'none';
-
-                    loadSchedule()
                 } else {
-
-                    affiliateInfo.style.display = 'block';
+                    const err = await response.json();
+                    alert('Error adding affiliate to home affiliates: ' + err.error);
                 }
-                loadUserHomeAffiliates();
-            } else {
-                affiliateInfo.style.display = 'none';
+            } catch (err) {
+                console.error('Error adding affiliate to home affiliates:', err);
             }
-        } catch (err) {
-            console.error('Error fetching affiliate data:', err);
-        }
+        });
 
-    }
+        // remove affiliate from home affiliate
+        removeHomeAffiliate.addEventListener('click', async function () {
+            if (!selectedAffiliateId) return;
+            try {
+                const response = await fetch('/api/remove-home-affiliate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
 
-    viewScheduleBtn.addEventListener('click', async function () {
-        if (!selectedAffiliateId) return;
-        scheduleContainer.style.display = 'block';
-
-        // Peida otsinguriba ja affiliate info
-        const affiliateInfo = document.getElementById('affiliateInfo');
-
-
-        if (affiliateInfo) affiliateInfo.style.display = 'none';
-
-        plansContainer.style.display = 'none';
-        loadSchedule();
-    });
-
-    viewPlansBtn.addEventListener('click', function () {
-        if (!selectedAffiliateId) return;
-        // Näita plaane, peida affiliate info ja schedule
-        plansContainer.style.display = 'block';
-        scheduleContainer.style.display = 'none';
-        affiliateInfo.style.display = 'none';
-
-        loadAffiliatePlans(selectedAffiliateId);
-    });
-
-    // save affiliate to home affiliate
-    addHomeAffiliate.addEventListener('click', async function () {
-        if (!selectedAffiliateId) return;
-        try {
-            const response = await fetch('/api/add-home-affiliate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    homeAffiliates: affiliateIds // serveris loed selle req.body.homeAffiliate
-                })
-            });
-            if (response.ok) {
-                alert('Affiliate added to home affiliates');
-                addHomeAffiliate.style.display = 'none';
-                removeHomeAffiliate.style.display = 'inline-block';
-
-            } else {
-                const err = await response.json();
-                alert('Error adding affiliate to home affiliates: ' + err.error);
-            }
-        } catch (err) {
-            console.error('Error adding affiliate to home affiliates:', err);
-        }
-    });
-
-    // remove affiliate from home affiliate
-    removeHomeAffiliate.addEventListener('click', async function () {
-        if (!selectedAffiliateId) return;
-        try {
-            const response = await fetch('/api/remove-home-affiliate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-
-            });
-            if (response.ok) {
-                alert('Affiliate removed from home affiliates');
-                removeHomeAffiliate.style.display = 'none';
-                addHomeAffiliate.style.display = 'inline-block';
-            } else {
-                const err = await response.json();
-                alert('Error removing affiliate from home affiliates: ' + err.error);
-            }
-        } catch (err) {
-            console.error('Error removing affiliate from home affiliates:', err);
-        }
-    });
-
-    // get user home affiliates
-
-    async function loadUserHomeAffiliates() {
-        try {
-            const response = await fetch('/api/user');
-            const data = await response.json();
-            if (data && data.homeAffiliate === affiliateIds) {
-                addHomeAffiliate.style.display = 'none';
-                removeHomeAffiliate.style.display = 'inline-block';
-            } else {
-                removeHomeAffiliate.style.display = 'none';
-                addHomeAffiliate.style.display = 'inline-block';
-            }
-
-        } catch (err) {
-            console.error('Error fetching user home affiliates:', err);
-        }
-    }
-
-    // Plaanide laadimine
-    // ==========================
-    async function loadAffiliatePlans(ownerId) {
-        try {
-
-            // Eeldame, et serveripoolsel /api/plans endpointil on toetatud ?ownerId=...
-            const response = await fetch(`/api/plans?ownerId=${ownerId}`);
-            const data = await response.json();
-
-            renderPlans(data);
-        } catch (err) {
-            console.error('Error loading affiliate plans:', err);
-        }
-    }
-
-    async function renderPlans(plans) {
-
-        plansList.innerHTML = '';
-
-        const userPlans = await fetchUserPlans(affiliateIds);
-
-
-        if (!Array.isArray(plans) || plans.length === 0) {
-            plansList.innerHTML = '<p class="text-muted">No plans found for this affiliate.</p>';
-            return;
-        }
-
-        plans.forEach(plan => {
-
-            const isBought = userPlans.some(userPlan => userPlan.planId === plan.id);
-            let activePlan = false;
-            let plansEndDate = '';
-            if (isBought) {
-                const userPlan = userPlans.filter(userPlan => userPlan.planId === plan.id);
-
-
-                const currentDate = new Date();
-
-                userPlan.forEach(userPlan => {
-                    const planEndDate = new Date(userPlan.endDate);
-                    if (currentDate < planEndDate) {
-                        activePlan = true;
-                        plansEndDate = planEndDate.toLocaleDateString();
-                    }
                 });
-
+                if (response.ok) {
+                    alert('Affiliate removed from home affiliates');
+                    removeHomeAffiliate.style.display = 'none';
+                    addHomeAffiliate.style.display = 'inline-block';
+                } else {
+                    const err = await response.json();
+                    alert('Error removing affiliate from home affiliates: ' + err.error);
+                }
+            } catch (err) {
+                console.error('Error removing affiliate from home affiliates:', err);
             }
-            ;
-            const planButton = document.createElement('button');
-            planButton.classList.add('btn', 'btn-outline-primary', 'btn-home', 'text-dark', 'bg-light', 'm-2', 'plan-button', 'border', 'border-dark');
-            planButton.style.width = '200px';
-            planButton.style.height = '200px';
+        });
 
-            planButton.innerHTML = `
+        // get user home affiliates
+
+        async function loadUserHomeAffiliates() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                if (data && data.homeAffiliate === affiliateIds) {
+                    addHomeAffiliate.style.display = 'none';
+                    removeHomeAffiliate.style.display = 'inline-block';
+                } else {
+                    removeHomeAffiliate.style.display = 'none';
+                    addHomeAffiliate.style.display = 'inline-block';
+                }
+
+            } catch (err) {
+                console.error('Error fetching user home affiliates:', err);
+            }
+        }
+
+        // Plaanide laadimine
+        // ==========================
+        async function loadAffiliatePlans(ownerId) {
+            try {
+
+                // Eeldame, et serveripoolsel /api/plans endpointil on toetatud ?ownerId=...
+                const response = await fetch(`/api/plans?ownerId=${ownerId}`);
+                const data = await response.json();
+
+                renderPlans(data);
+            } catch (err) {
+                console.error('Error loading affiliate plans:', err);
+            }
+        }
+
+        async function renderPlans(plans) {
+
+            plansList.innerHTML = '';
+
+            const userPlans = await fetchUserPlans(affiliateIds);
+
+
+            if (!Array.isArray(plans) || plans.length === 0) {
+                plansList.innerHTML = '<p class="text-muted">No plans found for this affiliate.</p>';
+                return;
+            }
+
+            plans.forEach(plan => {
+
+                const isBought = userPlans.some(userPlan => userPlan.planId === plan.id);
+                let activePlan = false;
+                let plansEndDate = '';
+                if (isBought) {
+                    const userPlan = userPlans.filter(userPlan => userPlan.planId === plan.id);
+
+
+                    const currentDate = new Date();
+
+                    userPlan.forEach(userPlan => {
+                        const planEndDate = new Date(userPlan.endDate);
+                        if (currentDate < planEndDate) {
+                            activePlan = true;
+                            plansEndDate = planEndDate.toLocaleDateString();
+                        }
+                    });
+
+                }
+                ;
+                const planButton = document.createElement('button');
+                planButton.classList.add('btn', 'btn-outline-primary', 'btn-home', 'text-dark', 'bg-light', 'm-2', 'plan-button', 'border', 'border-dark');
+                planButton.style.width = '200px';
+                planButton.style.height = '200px';
+
+                planButton.innerHTML = `
                     <h4>${plan.name}</h4>
                     <p>${Number(plan.price).toFixed(2)}€</p>
                 ${activePlan ? `<p style="color: green;">valid until: ${plansEndDate}</p>` : ''}
                 `;
-            planButton.addEventListener('click', () => {
-                openPlanModal(plan);
-                buyPlanBtn.style.display = activePlan ? 'none' : 'inline-block';
+                planButton.addEventListener('click', () => {
+                    openPlanModal(plan);
+                    buyPlanBtn.style.display = activePlan ? 'none' : 'inline-block';
+                });
+                plansList.appendChild(planButton);
             });
-            plansList.appendChild(planButton);
+        }
+
+        function openPlanModal(plan) {
+            // Täidame modali read-only andmetega
+            modalPlanName.textContent = plan.name;
+            modalPlanDays.textContent = plan.validityDays;
+            modalPlanPrice.textContent = Number(plan.price).toFixed(2);
+            modalPlanData.textContent = plan.additionalData || '-';
+            currentPlan = plan;
+            planInfoModal.show();
+        }
+
+        // 1. "Buy plan" klikk modali sees
+        buyPlanBtn.addEventListener('click', () => {
+            // Sulgeme planInfoModal
+            planInfoModal.hide();
+            // Avame paymentMethodModal
+            paymentMethodModal.show();
         });
-    }
 
-    function openPlanModal(plan) {
-        // Täidame modali read-only andmetega
-        modalPlanName.textContent = plan.name;
-        modalPlanDays.textContent = plan.validityDays;
-        modalPlanPrice.textContent = Number(plan.price).toFixed(2);
-        modalPlanData.textContent = plan.additionalData || '-';
-        currentPlan = plan;
-        planInfoModal.show();
-    }
+        // 2. "On App" nupp
+        onAppBtn.addEventListener('click', async () => {
+            if (!currentPlan) return;
 
-    // 1. "Buy plan" klikk modali sees
-    buyPlanBtn.addEventListener('click', () => {
-        // Sulgeme planInfoModal
-        planInfoModal.hide();
-        // Avame paymentMethodModal
-        paymentMethodModal.show();
-    });
+            // Kutsu serveri API /api/buy-plan
+            try {
+                const body = {
+                    affiliateId: affiliateIds,
+                    planId: currentPlan.id,
+                    planName: currentPlan.name,
+                    validityDays: currentPlan.validityDays,
+                    price: currentPlan.price,
+                    sessionsLeft: currentPlan.sessions
+                };
+                const response = await fetch('/api/buy-plan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`Plan purchased successfully! New credit: ${data.newCredit}`);
+                    location.reload();
 
-    // 2. "On App" nupp
-    onAppBtn.addEventListener('click', async () => {
-        if (!currentPlan) return;
-
-        // Kutsu serveri API /api/buy-plan
-        try {
-            const body = {
-                affiliateId: affiliateIds,
-                planId: currentPlan.id,
-                planName: currentPlan.name,
-                validityDays: currentPlan.validityDays,
-                price: currentPlan.price,
-                sessionsLeft: currentPlan.sessions
-            };
-            const response = await fetch('/api/buy-plan', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            });
-            if (response.ok) {
-                const data = await response.json();
-                alert(`Plan purchased successfully! New credit: ${data.newCredit}`);
-                location.reload();
-
-            } else {
-                const errData = await response.json();
-                alert('Error buying plan: ' + errData.error);
+                } else {
+                    const errData = await response.json();
+                    alert('Error buying plan: ' + errData.error);
+                }
+            } catch (error) {
+                console.error('Error buying plan:', error);
+            } finally {
+                // Sulgeme paymentMethodModal
+                paymentMethodModal.hide();
             }
-        } catch (error) {
-            console.error('Error buying plan:', error);
-        } finally {
+        });
+
+        // 3. "By Card" nupp
+        byCardBtn.addEventListener('click', () => {
+            alert('By card payment is not implemented yet.');
             // Sulgeme paymentMethodModal
             paymentMethodModal.hide();
-        }
-    });
-
-    // 3. "By Card" nupp
-    byCardBtn.addEventListener('click', () => {
-        alert('By card payment is not implemented yet.');
-        // Sulgeme paymentMethodModal
-        paymentMethodModal.hide();
-    });
-
-
-    document.getElementById('prev-week').addEventListener('click', () => {
-        currentDate.setDate(currentDate.getDate() - 7);
-
-        loadSchedule();
-    });
-
-    document.getElementById('next-week').addEventListener('click', () => {
-        currentDate.setDate(currentDate.getDate() + 7);
-        loadSchedule();
-    });
-
-    async function loadSchedule() {
-
-        const startOfWeek = getStartOfWeek(currentDate);
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(endOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999); // Tagab, et pühapäeva lõpuni kaasatakse
-
-        currentWeekElement.textContent = `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
-
-        try {
-            const response = await fetch(`/api/classes-view?affiliateId=${selectedAffiliateId}&start=${startOfWeek.toISOString()}&end=${endOfWeek.toISOString()}`);
-            console.log('API Response:', response);
-            classesData = await response.json();
-            console.log('Classes Data:', classesData);
-
-            if (!Array.isArray(classesData) || classesData.length === 0) {
-                console.warn('No classes found for this week.');
-            }
-
-            renderSchedule(startOfWeek);
-        } catch (error) {
-            console.error('Error loading schedule:', error);
-        }
-    }
-
-    function renderSchedule(startOfWeek) {
-        scheduleElement.innerHTML = '';
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-        const scheduleContainer = document.createElement('div');
-        scheduleContainer.classList.add('schedule-container', 'd-flex', 'w-100');
-
-
-        renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
-
-
-        for (let i = 0; i < 7; i++) {
-            const dayDate = new Date(startOfWeek);
-            dayDate.setDate(dayDate.getDate() + i);
-
-            if (selectedDayIndex !== i) {
-                continue; // Väikese ekraani puhul kuvame ainult valitud päeva
-            }
-
-            const dayColumn = document.createElement('div');
-            dayColumn.classList.add('day-column', 'flex-grow-1');
-
-            const dayHeader = document.createElement('div');
-            dayHeader.textContent = `${days[i]} (${dayDate.toLocaleDateString()})`;
-            dayHeader.classList.add('day-header');
-            dayColumn.appendChild(dayHeader);
-
-            const classesForDay = classesData
-                .filter(c => {
-                    const classDate = new Date(c.time);
-                    return (
-                        classDate.getFullYear() === dayDate.getFullYear() &&
-                        classDate.getMonth() === dayDate.getMonth() &&
-                        classDate.getDate() === dayDate.getDate()
-                    );
-                })
-                .sort((a, b) => new Date(a.time) - new Date(b.time));
-
-            if (classesForDay.length === 0) {
-                const noClassesMessage = document.createElement('p');
-                noClassesMessage.textContent = 'No trainings scheduled.';
-                noClassesMessage.classList.add('text-muted', 'fst-italic');
-                dayColumn.appendChild(noClassesMessage);
-            } else {
-                renderClasses(classesForDay, dayColumn);
-            }
-
-            scheduleContainer.appendChild(dayColumn);
-        }
-
-        scheduleElement.appendChild(scheduleContainer);
-    }
-
-
-    function renderDayButtons(startOfWeek) {
-        dayButtonsContainer.innerHTML = '';
-        const dayNamesShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        for (let i = 0; i < 7; i++) {
-            const btn = document.createElement('button');
-            btn.classList.add('rounded-pill', 'text-white', 'bg-dark', 'day-btn');
-            const dayDate = new Date(startOfWeek);
-            dayDate.setDate(dayDate.getDate() + i);
-            const dayNumber = dayDate.getDate();
-            btn.textContent = `${dayNamesShort[i]}`;
-            if (i === selectedDayIndex) {
-                btn.classList.add('btn-primary');
-                btn.classList.remove('btn-outline-primary', 'bg-dark');
-            }
-            btn.addEventListener('click', () => {
-                selectedDayIndex = i;
-                // uuenda nuppude stiili
-                document.querySelectorAll('.day-btn').forEach((b, idx) => {
-                    b.classList.remove('btn-primary');
-                    b.classList.add('btn-outline-primary');
-                    if (idx === i) {
-                        b.classList.add('btn-primary');
-                        b.classList.remove('btn-outline-primary');
-                    }
-                });
-                renderSchedule(startOfWeek);
-            });
-            dayButtonsContainer.appendChild(btn);
-        }
-    }
-
-    // Abifunktsioon, et leida antud kuupäevaga klassen
-    Array.prototype.filterMatches = function (cellDate) {
-        return this.filter(c => {
-            const classDate = new Date(c.time);
-            return classDate.getFullYear() === cellDate.getFullYear() &&
-                classDate.getMonth() === cellDate.getMonth() &&
-                classDate.getDate() === cellDate.getDate() &&
-                classDate.getHours() === cellDate.getHours();
         });
-    };
+
+
+        document.getElementById('prev-week').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() - 7);
+
+            loadSchedule();
+        });
+
+        document.getElementById('next-week').addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() + 7);
+            loadSchedule();
+        });
+
+        async function loadSchedule() {
+
+            const startOfWeek = getStartOfWeek(currentDate);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999); // Tagab, et pühapäeva lõpuni kaasatakse
+
+            currentWeekElement.textContent = `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
+
+            try {
+                const response = await fetch(`/api/classes-view?affiliateId=${selectedAffiliateId}&start=${startOfWeek.toISOString()}&end=${endOfWeek.toISOString()}`);
+                console.log('API Response:', response);
+                classesData = await response.json();
+                console.log('Classes Data:', classesData);
+
+                if (!Array.isArray(classesData) || classesData.length === 0) {
+                    console.warn('No classes found for this week.');
+                }
+
+                renderSchedule(startOfWeek);
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+            }
+        }
+
+        function renderSchedule(startOfWeek) {
+            scheduleElement.innerHTML = '';
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+            const scheduleContainer = document.createElement('div');
+            scheduleContainer.classList.add('schedule-container', 'd-flex', 'w-100');
+
+
+            renderDayButtons(startOfWeek); // Kuvame päevanupud väikese ekraani jaoks
+
+
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(startOfWeek);
+                dayDate.setDate(dayDate.getDate() + i);
+
+                if (selectedDayIndex !== i) {
+                    continue; // Väikese ekraani puhul kuvame ainult valitud päeva
+                }
+
+                const dayColumn = document.createElement('div');
+                dayColumn.classList.add('day-column', 'flex-grow-1');
+
+                const dayHeader = document.createElement('div');
+                dayHeader.textContent = `${days[i]} (${dayDate.toLocaleDateString()})`;
+                dayHeader.classList.add('day-header');
+                dayColumn.appendChild(dayHeader);
+
+                const classesForDay = classesData
+                    .filter(c => {
+                        const classDate = new Date(c.time);
+                        return (
+                            classDate.getFullYear() === dayDate.getFullYear() &&
+                            classDate.getMonth() === dayDate.getMonth() &&
+                            classDate.getDate() === dayDate.getDate()
+                        );
+                    })
+                    .sort((a, b) => new Date(a.time) - new Date(b.time));
+
+                if (classesForDay.length === 0) {
+                    const noClassesMessage = document.createElement('p');
+                    noClassesMessage.textContent = 'No trainings scheduled.';
+                    noClassesMessage.classList.add('text-muted', 'fst-italic');
+                    dayColumn.appendChild(noClassesMessage);
+                } else {
+                    renderClasses(classesForDay, dayColumn);
+                }
+
+                scheduleContainer.appendChild(dayColumn);
+            }
+
+            scheduleElement.appendChild(scheduleContainer);
+        }
+
+
+        function renderDayButtons(startOfWeek) {
+            dayButtonsContainer.innerHTML = '';
+            const dayNamesShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            for (let i = 0; i < 7; i++) {
+                const btn = document.createElement('button');
+                btn.classList.add('rounded-pill', 'text-white', 'bg-dark', 'day-btn');
+                const dayDate = new Date(startOfWeek);
+                dayDate.setDate(dayDate.getDate() + i);
+                const dayNumber = dayDate.getDate();
+                btn.textContent = `${dayNamesShort[i]}`;
+                if (i === selectedDayIndex) {
+                    btn.classList.add('btn-primary');
+                    btn.classList.remove('btn-outline-primary', 'bg-dark');
+                }
+                btn.addEventListener('click', () => {
+                    selectedDayIndex = i;
+                    // uuenda nuppude stiili
+                    document.querySelectorAll('.day-btn').forEach((b, idx) => {
+                        b.classList.remove('btn-primary');
+                        b.classList.add('btn-outline-primary');
+                        if (idx === i) {
+                            b.classList.add('btn-primary');
+                            b.classList.remove('btn-outline-primary');
+                        }
+                    });
+                    renderSchedule(startOfWeek);
+                });
+                dayButtonsContainer.appendChild(btn);
+            }
+        }
+
+        // Abifunktsioon, et leida antud kuupäevaga klassen
+        Array.prototype.filterMatches = function (cellDate) {
+            return this.filter(c => {
+                const classDate = new Date(c.time);
+                return classDate.getFullYear() === cellDate.getFullYear() &&
+                    classDate.getMonth() === cellDate.getMonth() &&
+                    classDate.getDate() === cellDate.getDate() &&
+                    classDate.getHours() === cellDate.getHours();
+            });
+        };
 
 
         // Lisame treeningud päeva tulpadesse
@@ -558,211 +560,289 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         }
 
-    async function createClassDiv(c) {
-        const classDiv = document.createElement('div');
-        classDiv.classList.add('border', 'border-dark', 'row', 'm-1', 'bg-light', 'rounded', 'text-center', 'py-2', 'px-3', 'text-black', 'class-entry', 'align-items-start');
-        classDiv.style.cursor = 'pointer';
+        async function createClassDiv(c) {
+            const classDiv = document.createElement('div');
+            classDiv.classList.add('border', 'border-dark', 'row', 'm-1', 'bg-light', 'rounded', 'text-center', 'py-2', 'px-3', 'text-black', 'class-entry', 'align-items-start');
+            classDiv.style.cursor = 'pointer';
 
-        const timeDiv = document.createElement('div');
-        timeDiv.classList.add('col-2', 'h-100', 'border-end', 'border-dark');
-
-
-        const dataDiv = document.createElement('div');
-        dataDiv.classList.add('col-9');
+            const timeDiv = document.createElement('div');
+            timeDiv.classList.add('col-2', 'h-100', 'border-end', 'border-dark');
 
 
-        const classInfoTime = document.createElement('div');
-
-        const classTime = new Date(c.time);
-        const timeString = classTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-        classInfoTime.textContent = timeString;
-        classInfoTime.classList.add('align-text-top');
-        timeDiv.appendChild(classInfoTime);
-
-        const classInfoName = document.createElement('div');
-        classInfoName.textContent = c.trainingName;
-        dataDiv.appendChild(classInfoName);
-        classInfoName.classList.add('fw-bold', 'text-start');
-
-        const classTrainer = document.createElement('div');
-        classTrainer.textContent = 'With ' + c.trainer;
-        dataDiv.appendChild(classTrainer);
-        classTrainer.classList.add('text-start', 'fst-italic');
-
-        const response = await fetch(`/api/class-info?classId=${c.id}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch class data');
-        }
-
-        const datas = await response.json();
-
-        const classCapacity = document.createElement('div');
-        classCapacity.textContent = `👤 ${datas.enrolledCount}/${c.memberCapacity}`;
-        dataDiv.appendChild(classCapacity);
-        classCapacity.classList.add('text-start', 'text-muted', 'fs-6');
+            const dataDiv = document.createElement('div');
+            dataDiv.classList.add('col-9');
 
 
-        classDiv.appendChild(timeDiv);
-        classDiv.appendChild(dataDiv);
+            const classInfoTime = document.createElement('div');
 
-        // Lisa sündmuse kuulaja, mis avab modaalakna klassi detailidega
-        classDiv.addEventListener('click', () => {
-            openClassModal(c);
-        });
+            const classTime = new Date(c.time);
+            const timeString = classTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            classInfoTime.textContent = timeString;
+            classInfoTime.classList.add('align-text-top');
+            timeDiv.appendChild(classInfoTime);
 
-        return classDiv;
-    }
+            const classInfoName = document.createElement('div');
+            classInfoName.textContent = c.trainingName;
+            dataDiv.appendChild(classInfoName);
+            classInfoName.classList.add('fw-bold', 'text-start');
 
-    async function openClassModal(cls) {
+            const classTrainer = document.createElement('div');
+            classTrainer.textContent = 'With ' + c.trainer;
+            dataDiv.appendChild(classTrainer);
+            classTrainer.classList.add('text-start', 'fst-italic');
 
-        modalTrainingName.textContent = cls.trainingName;
-        const classTime = new Date(cls.time);
-        modalTime.textContent = classTime.toLocaleString();
-        modalTrainer.textContent = cls.trainer || 'N/A';
-        modalLocation.textContent = cls.location || 'N/A';
-        modalClassId.value = cls.id;
-        wodName.textContent = cls.wodName || 'N/A';
-        wodType.textContent = cls.wodType || 'N/A';
-        modalDescription.textContent = cls.description || 'N/A';
-
-        if (!cls.wodName || cls.wodName.trim() === '') {
-            wodInfo.style.display = 'none';
-            addScoreBtn.style.display = 'none';
-        } else {
-            wodInfo.style.display = 'block';
-            addScoreBtn.style.display = 'inline-block';
-        }
-        currentClassId = cls.id;
-
-        // Uus samm: lae class info (capacity, enrolled count)
-        await loadClassInfo(cls.id);
-
-        // Kontrolli, kas kasutaja on registreeritud
-
-        const isEnrolled = await checkEnrollment(cls.id);
-
-        if (!isEnrolled) {
-            // Kui kasutaja pole registreeritud, kuva select treeningplaanidega
-
-            const userPlans = await fetchUserPlans(affiliateIds);
-            populatePlansSelect(userPlans);
-        }
-        const currentDate = new Date();
-        if (classTime < currentDate) {
-            registerForClassBtn.style.display = 'none';
-            cancelClassBtn.style.display = 'none';
-            planDivs.style.display = 'none';
-        }
-
-        checkScoreAdded(cls.id);
-
-        addScoreBtn.addEventListener('click', async () => {
-            const scoreRadio = document.querySelector('input[name="score-type"]:checked');
-            const score = document.getElementById('score').value;
-
-            try {
-                // Add score to leaderboard
-                const response = await fetch('/api/add-score', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        classId: cls.id,
-                        scoreType: scoreRadio?.value, // Use optional chaining to avoid errors if undefined
-                        scoreInput: score,
-                    }),
-                });
-
-                if (response.ok) {
-                    alert('Score added successfully');
-                } else {
-                    console.error('Failed to add score', await response.json());
-                }
-            } catch (err) {
-                console.error('Error adding score:', err);
+            const response = await fetch(`/api/class-info?classId=${c.id}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch class data');
             }
 
-            try {
-                // Add training record
-                if (!classTime) throw new Error('classTime is not defined');
-                const addToTraining = await fetch('/api/training', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        type: 'WOD',
-                        date: classTime,
-                        score: score || 'N/A', // Provide a default value for score
-                        wodName: cls.wodName || 'Unknown',
-                        wodType: cls.wodType || 'Unknown',
-                        exercises: cls.description || 'N/A',
-                    }),
+            const datas = await response.json();
+
+            const classCapacity = document.createElement('div');
+            classCapacity.textContent = `👤 ${datas.enrolledCount}/${c.memberCapacity}`;
+            dataDiv.appendChild(classCapacity);
+            classCapacity.classList.add('text-start', 'text-muted', 'fs-6');
+
+
+            classDiv.appendChild(timeDiv);
+            classDiv.appendChild(dataDiv);
+
+            // Lisa sündmuse kuulaja, mis avab modaalakna klassi detailidega
+            classDiv.addEventListener('click', () => {
+                openClassModal(c);
+            });
+
+            return classDiv;
+        }
+
+        async function openClassModal(cls) {
+            debugger;
+            modalTrainingName.textContent = cls.trainingName;
+            const classTime = new Date(cls.time);
+            modalTime.textContent = classTime.toLocaleString();
+            modalTrainer.textContent = cls.trainer || 'N/A';
+            modalLocation.textContent = cls.location || 'N/A';
+
+            if (!cls.trainer || cls.trainer.trim() === '') {
+                classTrainer.style.display = 'none';
+            }
+
+            if (!cls.location || cls.location.trim() === '') {
+                classLocation.style.display = 'none';
+            }
+
+            modalClassId.value = cls.id;
+            wodName.textContent = cls.wodName || 'N/A';
+            wodType.textContent = cls.wodType || 'N/A';
+            modalDescription.textContent = cls.description || 'N/A';
+
+            if (!cls.wodName || cls.wodName.trim() === '') {
+                wodName3.style.display = 'none';
+
+            } else {
+                wodName3.style.display = 'block';
+            }
+            if (!cls.description || cls.description.trim() === '') {
+                wodInfo.style.display = 'none';
+                addScoreBtn.style.display = 'none';
+                editScoreBtn.style.display = 'none';
+            } else {
+
+                wodInfo.style.display = 'block';
+                addScoreBtn.style.display = 'inline-block';
+            }
+
+            if (cls.trainingType === 'WOD') {
+                wodName3.style.display = 'inline-block';
+                wodType3.style.display = 'inline-block';
+                leaderboardBtn.style.display = 'inline-block';
+                addScoreDiv.style.display = 'block';
+                addScoreBtn.style.display = 'inline-block';
+                addToTrainingsBtn.style.display = 'none';
+            } else {
+                wodName3.style.display = 'none';
+                wodType3.style.display = 'none';
+                addScoreDiv.style.display = 'none';
+                addScoreBtn.style.display = 'none';
+                leaderboardBtn.style.display = 'none';
+                editScoreBtn.style.display = 'none';
+                addToTrainingsBtn.style.display = 'inline-block';
+            }
+            currentClassId = cls.id;
+
+            // Uus samm: lae class info (capacity, enrolled count)
+            await loadClassInfo(cls.id);
+
+            // Kontrolli, kas kasutaja on registreeritud
+
+            const isEnrolled = await checkEnrollment(cls.id);
+
+            if (!isEnrolled) {
+                // Kui kasutaja pole registreeritud, kuva select treeningplaanidega
+
+                const userPlans = await fetchUserPlans(affiliateIds);
+
+                //check if enddate is not passed. old plans are not shown
+                const currentDate = new Date();
+                userPlans.forEach(plan => {
+                    if (currentDate > new Date(plan.endDate)) {
+                        userPlans.splice(userPlans.indexOf(plan), 1);
+                    } else {
+                        userPlans.push(plan);
+                    }
                 });
 
-                if (addToTraining.ok) {
-                    console.log('Training added successfully');
-                } else {
-                    console.error('Failed to add training', await addToTraining.json());
-                }
-            } catch (err) {
-                console.error('Error adding to training:', err);
+
+                populatePlansSelect(userPlans);
             }
-        });
+            const currentDate = new Date();
+            if (classTime < currentDate) {
+                registerForClassBtn.style.display = 'none';
+                cancelClassBtn.style.display = 'none';
+                planDivs.style.display = 'none';
+            }
 
 
-        editScoreBtn.addEventListener('click', async () => {
-           async function editScore() {
-                const scoreRadio = document.querySelector('input[name="score-type"]:checked');
-                const score = document.getElementById('score').value;
 
-                // get leaderboardId
-               try {
+            checkScoreAdded(cls.id);
 
+            // --- Eemalda eelmine sündmuse kuulaja ---
+            let newAddScoreBtn = addScoreBtn.cloneNode(true);
+            addScoreBtn.parentNode.replaceChild(newAddScoreBtn, addScoreBtn);
+            addScoreBtn = newAddScoreBtn;
 
-                     let leaderboardId = data.id;
+            let newEditScoreBtn = editScoreBtn.cloneNode(true);
+            editScoreBtn.parentNode.replaceChild(newEditScoreBtn, editScoreBtn);
+            editScoreBtn = newEditScoreBtn;
 
-
-               } catch (err) {
-                     console.error('Error fetching leaderboard id:', err);
-               }
-
+            addToTrainingsBtn.addEventListener('click', async () => {
                 try {
-                    // Add score to leaderboard
-                    const response1 = await fetch(`/api/leaderboard-id?classId=${cls.id}`);
-                    const data = await response1.json();
-                    const leaderboardId = data.id;
-
-
-
-                    const response = await fetch('/api/edit-score', {
-                        method: 'PUT',
+                    // Add training record
+                    if (!classTime) throw new Error('classTime is not defined');
+                    const addToTraining = await fetch('/api/training', {
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            leaderboardId: leaderboardId,
-                            scoreType: scoreRadio?.value, // Use optional chaining to avoid errors if undefined
-                            scoreInput: score
+                            type: cls.trainingType,
+                            date: classTime,
+                            exercises: cls.description || null,
+                        }),
+                    });
 
+                    if (addToTraining.ok) {
+                        alert('Training added successfully');
+
+                    } else {
+                        console.error('Failed to add training', await addToTraining.json());
+                    }
+                } catch (err) {
+                    console.error('Error adding to training:', err);
+                }
+            });
+
+            addScoreBtn.addEventListener('click', async () => {
+
+                const scoreRadio = document.querySelector('input[name="score-type"]:checked');
+                const score = document.getElementById('score').value;
+
+                try {
+                    // Add score to leaderboard
+                    const response = await fetch('/api/add-score', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            classId: cls.id,
+                            scoreType: scoreRadio?.value, // Use optional chaining to avoid errors if undefined
+                            scoreInput: score,
                         }),
                     });
 
                     if (response.ok) {
-                        alert('Score edited successfully');
+                        alert('Score added successfully');
                     } else {
-                        console.error('Failed to edit score', await response.json());
+                        console.error('Failed to add score', await response.json());
                     }
                 } catch (err) {
-                    console.error('Error editing score:', err);
+                    console.error('Error adding score:', err);
                 }
-            }
-            editScore()
-        });
+
+                try {
+                    // Add training record
+                    if (!classTime) throw new Error('classTime is not defined');
+                    const addToTraining = await fetch('/api/training', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            type: cls.trainingType,
+                            date: classTime,
+                            score: score || null, // Provide a default value for score
+                            wodName: cls.wodName || null,
+                            wodType: cls.wodType || 'Unknown',
+                            exercises: cls.description || null,
+                        }),
+                    });
+
+                    if (addToTraining.ok) {
+                        console.log('Training added successfully');
+                    } else {
+                        console.error('Failed to add training', await addToTraining.json());
+                    }
+                } catch (err) {
+                    console.error('Error adding to training:', err);
+                }
+            });
+
+
+            editScoreBtn.addEventListener('click', async () => {
+
+                async function editScore() {
+                    const scoreRadio = document.querySelector('input[name="score-type"]:checked');
+                    const score = document.getElementById('score').value;
+
+
+                    try {
+                        // Add score to leaderboard
+                        const response1 = await fetch(`/api/leaderboard-id?classId=${cls.id}`);
+                        const data = await response1.json();
+                        const leaderboardId = data.id;
+
+
+                        const response = await fetch('/api/edit-score', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                leaderboardId: leaderboardId,
+                                scoreType: scoreRadio?.value, // Use optional chaining to avoid errors if undefined
+                                scoreInput: score
+
+                            }),
+                        });
+
+                        if (response.ok) {
+                            alert('Score edited successfully');
+                        } else {
+                            console.error('Failed to edit score', await response.json());
+                        }
+                    } catch (err) {
+                        console.error('Error editing score:', err);
+                    }
+                }
+
+                editScore()
+            });
 
             classModal.show();
         }
+
+
 
         // Example: "leaderboardBtn" is the button that opens the leaderboard
         leaderboardBtn.addEventListener('click', async () => {
@@ -771,7 +851,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 // 1) Fetch leaderboard data from the server
                 const response = await fetch(`/api/leaderboard?classId=${currentClassId}`);
                 const data = await response.json();
-
 
 
                 // 2) Show the modal and clear any previous content
@@ -885,12 +964,14 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const userResponse = await fetch('/api/user');
                 const userData = await userResponse.json();
 
+
                 data.forEach(item => {
                     if (item.userId === userData.id && item.classId === classId) {
                         addScoreBtn.style.display = 'none';
                         editScoreBtn.style.display = 'inline-block';
                     } else {
                         addScoreBtn.style.display = 'inline-block';
+                        editScoreBtn.style.display = 'none';
                     }
                 });
 
@@ -967,6 +1048,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     // Kasutaja on juba registreeritud
                     registerForClassBtn.style.display = 'none';
                     cancelClassBtn.style.display = 'inline-block';
+                    planDivs.style.display = 'none';
                 } else {
                     // Kasutaja ei ole registreeritud
                     registerForClassBtn.style.display = 'inline-block';
@@ -1009,6 +1091,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     // Näita nüüd "Cancel Training" nuppu
                     registerForClassBtn.style.display = 'none';
                     cancelClassBtn.style.display = 'inline-block';
+                    planDivs.style.display = 'none';
 
                 } else {
                     const err = await response.json();
@@ -1036,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     // Nüüd näita uuesti "Register for Class"
                     registerForClassBtn.style.display = 'inline-block';
                     cancelClassBtn.style.display = 'none';
+                    planDivs.style.display = 'block';
                 } else {
                     const err = await response.json();
                     alert('Error canceling enrollment: ' + err.error);
@@ -1061,6 +1145,5 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
     }
-
 )
-    ;
+;

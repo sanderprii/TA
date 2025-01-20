@@ -9,6 +9,7 @@
                     <option value="WOD">WOD</option>
                     <option value="Weightlifting">Weightlifting</option>
                     <option value="Cardio">Cardio</option>
+                    <option value="Other">Other</option>
                 </select>
 
 
@@ -95,6 +96,23 @@
 
                     </div>
 
+                    <!-- Other -->
+                    <div id="other-options" class="training-options" style="display: none;">
+                        <div class="form-row align-items-center">
+                            <div id="other-exercise-lines">
+                                <div class="form-row align-items-center mt-2">
+                                    <div class="col">
+                                    <textarea type="text" rows="5" name="exercise-name" rows="5" class="form-control"
+                                              placeholder="Exercise Name"></textarea>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
                     <button type="submit" id="submit-training" class="btn btn-primary mt-3">Save Training</button>
                 </div>
             </div>
@@ -147,6 +165,9 @@
         </span>
         <span class="legend-item">
             <span class="legend-color" style="background-color: yellow;"></span> Cardio
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: orange;"></span> Other
         </span>
     </div>
 

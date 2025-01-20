@@ -367,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const wodOptions = document.getElementById('wod-options');
         const weightliftingOptions = document.getElementById('weightlifting-options');
         const cardioOptions = document.getElementById('cardio-options');
+        const otherOptions = document.getElementById('other-options');
 
 
         // WOD Search and Modal logic starts here
@@ -481,7 +482,8 @@ document.addEventListener('DOMContentLoaded', () => {
             trainingOptionsDiv &&
             wodOptions &&
             weightliftingOptions &&
-            cardioOptions
+            cardioOptions &&
+            otherOptions
         ) {
             // Training Type Change Event
             trainingTypeSelect.addEventListener('change', () => {
@@ -491,6 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 wodOptions.style.display = 'none';
                 weightliftingOptions.style.display = 'none';
                 cardioOptions.style.display = 'none';
+                otherOptions.style.display = 'none';
                 trainingOptionsDiv.style.display = 'none';
 
                 // Show the date input field
@@ -506,10 +509,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         weightliftingOptions.style.display = 'block';
                     } else if (type === 'Cardio') {
                         cardioOptions.style.display = 'block';
+                    } else if (type === 'Other') {
+                        otherOptions.style.display = 'block';
+                    } else {
+                        // Hide the date input field if no type is selected
+                        trainingDateDiv.style.display = 'none';
                     }
-                } else {
-                    // Hide the date input field if no type is selected
-                    trainingDateDiv.style.display = 'none';
                 }
             });
 
@@ -551,6 +556,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             backgroundColor = 'green';
                         } else if (training.type === 'Cardio') {
                             backgroundColor = 'yellow';
+                        } else if (training.type === 'Other') {
+                            backgroundColor = 'orange';
                         }
 
                         // Create event
@@ -633,6 +640,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 } else if (type === 'Cardio') {
                     const exercises = document.querySelector('#cardio-options textarea[name="exercise-name"]').value;
+
+                    trainingData = {
+                        ...trainingData,
+                        exercises
+                    };
+                } else if (type === 'Other') {
+                    const exercises = document.querySelector('#other-options textarea[name="exercise-name"]').value;
 
                     trainingData = {
                         ...trainingData,

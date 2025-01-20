@@ -68,10 +68,16 @@
                     capacity:</strong> <span id="classCapacity"></span></p>
                 <p><strong>Training Name:</strong> <span id="modalTrainingName"></span></p>
                 <p><strong>Time:</strong> <span id="modalTime"></span></p>
-                <p><strong>Trainer:</strong> <span id="modalTrainer"></span></p>
-                <p><strong>Location:</strong> <span id="modalLocation"></span></p>
+                <div id="classTrainer">
+                    <p><strong>Trainer:</strong> <span id="modalTrainer"></span></p>
+                </div>
+                <div id="classLocation">
+                    <p><strong>Location:</strong> <span id="modalLocation"></span></p>
+                </div>
                 <div class="bg-light border p-3" id="wodInfo">
-                    <p><strong>Wod Name:</strong> <span id="wodName"></span></p>
+                    <div id="wodName2" style="display: block">
+                        <p><strong>Wod Name:</strong> <span id="wodName"></span></p>
+                    </div>
                     <p><strong>Wod Type:</strong> <span id="wodType"></span></p>
                     <p><strong>Description:</strong>
                     <div id="modalDescription"></div>
@@ -106,53 +112,64 @@
                 <div class="modal-body">
                     <!-- Form fields -->
                     <div class="mb-3">
-                        <label for="trainingName" class="form-plan">Training Name*</label>
-                        <input type="text" class="form-control" id="trainingName" required>
+                        <label for="trainingType" class="form-plan">Training Type*</label>
+                        <select for="classTrainingType" id="classTrainingType" class="form-control">
+                            <option value="">-- Select Training Type --</option>
+                            <option value="WOD">WOD</option>
+                            <option value="Weightlifting">Weightlifting</option>
+                            <option value="Cardio">Cardio</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="trainingDate" class="form-plan">Date*</label>
-                        <input type="date" class="form-control" id="trainingDate" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="trainingTime" class="form-plan">Time*</label>
-                        <input type="time" class="form-control" id="trainingTime" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="duration" class="form-plan">Duration (min)*</label>
-                        <input type="number" class="form-control" id="duration">
-                    </div>
-                    <div class="mb-3">
-                        <label for="trainer" class="form-plan">Trainer</label>
-                        <input type="text" class="form-control" id="trainer">
-                    </div>
-                    <div class="mb-3">
-                        <label for="memberCapacity" class="form-plan">Member Capacity*</label>
-                        <input type="number" class="form-control" id="memberCapacity">
-                    </div>
-                    <div class="mb-3">
-                        <label for="location" class="form-plan">Location</label>
-                        <input type="text" class="form-control" id="location">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-plan">Repeat Every Week</label><br>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="repeatWeekly" id="repeatYes"
-                                   value="true">
-                            <label class="form-plan" for="repeatYes">Yes</label>
+                        <div class="mb-3">
+                            <label for="trainingName" class="form-plan">Training Name*</label>
+                            <input type="text" class="form-control" id="trainingName" required>
                         </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="repeatWeekly" id="repeatNo" value="false"
-                                   checked>
-                            <label class="form-plan" for="repeatNo">No</label>
+                        <div class="mb-3">
+                            <label for="trainingDate" class="form-plan">Date*</label>
+                            <input type="date" class="form-control" id="trainingDate" required>
                         </div>
-                    </div>
-                    <div class="mb-3">
+                        <div class="mb-3">
+                            <label for="trainingTime" class="form-plan">Time*</label>
+                            <input type="time" class="form-control" id="trainingTime" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duration" class="form-plan">Duration (min)*</label>
+                            <input type="number" class="form-control" id="duration">
+                        </div>
+                        <div class="mb-3">
+                            <label for="trainer" class="form-plan">Trainer</label>
+                            <input type="text" class="form-control" id="trainer">
+                        </div>
+                        <div class="mb-3">
+                            <label for="memberCapacity" class="form-plan">Member Capacity*</label>
+                            <input type="number" class="form-control" id="memberCapacity">
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-plan">Location</label>
+                            <input type="text" class="form-control" id="location">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-plan">Repeat Every Week</label><br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="repeatWeekly" id="repeatYes"
+                                       value="true">
+                                <label class="form-plan" for="repeatYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="repeatWeekly" id="repeatNo"
+                                       value="false"
+                                       checked>
+                                <label class="form-plan" for="repeatNo">No</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
 
-                        <input type="search" id="wod-search" name="wod-search" class="form-control"
-                               placeholder="Search for WODs...">
-                        <ul id="wod-search-results" class="list-group"
-                            style="display: none; position: absolute; z-index: 1000;"></ul>
-                    </div>
+                            <input type="search" id="wod-search" name="wod-search" class="form-control"
+                                   placeholder="Search for WODs...">
+                            <ul id="wod-search-results" class="list-group"
+                                style="display: none; position: absolute; z-index: 1000;"></ul>
+                        </div>
 
                         <div class="form-group">
                             <label class="form-plan" for="wod-name">WOD Name:</label>
@@ -179,13 +196,13 @@
                             <textarea class="form-control" id="trainingDescription" rows="5"></textarea>
                         </div>
 
-                    <input type="hidden" id="trainingId">
-                </div>
-                <div class="modal-footer">
+                        <input type="hidden" id="trainingId">
+                    </div>
+                    <div class="modal-footer">
 
-                    <button type="submit" class="btn btn-primary" id="save-training">Save</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+                        <button type="submit" class="btn btn-primary" id="save-training">Save</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
             </form>
         </div>
     </div>

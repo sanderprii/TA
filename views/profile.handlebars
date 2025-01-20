@@ -204,7 +204,7 @@
                 hideAllContainers();
                 showContainer(btn.dataset.type);
             });
-        }); p
+        }); 
 
         hideAllContainers();
         showContainer('profile');
@@ -594,6 +594,14 @@
         // Edit nupu sündmuse kuulaja
         editBtn.addEventListener('click', () => {
             // Näita redigeerimise vormi ja peida muud osad
+            getUserData().then(user => {
+                fullNameInput.value = user.fullName;
+                dateOfBirthInput.value = user.dateOfBirth;
+                emailInput.value = user.email;
+            }).catch(err => {
+                console.log('Error processing user data!', err);
+            });
+
             editForm.style.display = 'block';
             myProfile.style.display = 'none';
             editBtn.style.display = 'none';

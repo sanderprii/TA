@@ -2,24 +2,26 @@
 <h1 class="text-center my-4">{{title}}</h1>
 
 {{#if noAffiliate}}
-    <div class="container my-5">
-        <div class="card p-4">
-            <div class="mb-3">
+    <div class="container-training">
+        <div class="form-def">
+            <div class="layout1 finance">
                 <label class="form-label">Affiliate Name</label>
-                <input type="text" id="affiliate-name" class="form-control" />
+                <input type="text" id="affiliate-name" class="form-control"/>
             </div>
             <div class="mb-3">
                 <label class="form-label">Affiliate Address</label>
-                <input type="text" id="affiliate-address" class="form-control" />
+                <input type="text" id="affiliate-address" class="form-control"/>
             </div>
             <div class="mb-3">
                 <label class="form-label">Training Type</label>
-                <input type="text" id="affiliate-training-type" class="form-control" />
+                <input type="text" id="affiliate-training-type" class="form-control"/>
             </div>
             <div class="mb-3 position-relative">
                 <label class="form-label">Trainers</label>
-                <input type="text" id="trainer-search" class="form-control" placeholder="Search by name or username" autocomplete="off" />
-                <ul id="trainer-search-results" class="list-group position-absolute w-100" style="top:100%; z-index:1000; display:none;"></ul>
+                <input type="text" id="trainer-search" class="form-control" placeholder="Search by name or username"
+                       autocomplete="off"/>
+                <ul id="trainer-search-results" class="list-group position-absolute w-100"
+                    style="top:100%; z-index:1000; display:none;"></ul>
             </div>
             <div class="mb-3">
                 <h5>Selected Trainers:</h5>
@@ -30,47 +32,73 @@
     </div>
 {{else}}
 {{!-- Affiliate andmed juba olemas --}}
-    <div class="container">
+    <div class="container-training">
         <div id="affiliate-view" class="form-def">
-            <div class="layout1">
-            <h3>{{affiliate.name}}</h3>
-            <p><strong>Address:</strong> {{affiliate.address}}</p>
-            <p><strong>Training Type:</strong> {{affiliate.trainingType}}</p>
-            <h5>Trainers:</h5>
-            <ul class="list-group mb-3">
-                {{#each trainers}}
-                    <li class="list-group-item">{{this.fullName}} - {{this.username}}</li>
-                {{/each}}
-            </ul>
-            <button id="edit-affiliate-btn" class="btn btn-secondary">Edit</button>
-        </div>
+            <div class="layout1 finance">
+                <h3>{{affiliate.name}}</h3>
+                <p><strong>Address:</strong> {{affiliate.address}}</p>
+                <p><strong>Training Type:</strong> {{affiliate.trainingType}}</p>
+                <p><strong>Email:</strong> {{affiliate.email}}</p>
+                <p><strong>Phone:</strong> {{affiliate.phone}}</p>
+                <!-- iban and bank -->
+                <h5>Bank Details:</h5>
+                <p><strong>IBAN:</strong> {{affiliate.iban}}</p>
+                <p><strong>Bank name:</strong> {{affiliate.bankName}}</p>
+                <h5>Trainers:</h5>
+                <ul class="list-group mb-3">
+                    {{#each trainers}}
+                        <li class="list-group-item">{{this.fullName}} - {{this.username}}</li>
+                    {{/each}}
+                </ul>
+                <button id="edit-affiliate-btn" class="btn btn-secondary">Edit</button>
+            </div>
         </div>
 
-        <div id="affiliate-edit" style="display:none;">
+        <div id="affiliate-edit" class="form-def" style="display:none;">
             <input type="hidden" id="affiliate-id" value="{{affiliate.id}}"/>
-            <div class="card p-4">
+            <div class="layout1 finance">
                 <div class="mb-3">
                     <label class="form-label">Affiliate Name</label>
-                    <input type="text" id="affiliate-name" class="form-control" value="{{affiliate.name}}" />
+                    <input type="text" id="affiliate-name" class="form-control" value="{{affiliate.name}}"/>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Affiliate Address</label>
-                    <input type="text" id="affiliate-address" class="form-control" value="{{affiliate.address}}" />
+                    <input type="text" id="affiliate-address" class="form-control" value="{{affiliate.address}}"/>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Training Type</label>
-                    <input type="text" id="affiliate-training-type" class="form-control" value="{{affiliate.trainingType}}" />
+                    <input type="text" id="affiliate-training-type" class="form-control"
+                           value="{{affiliate.trainingType}}"/>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="affiliate-email" class="form-control" value="{{affiliate.email}}"/>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="text" id="affiliate-phone" class="form-control" value="{{affiliate.phone}}"/>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">IBAN</label>
+                    <input type="text" id="affiliate-iban" class="form-control" value="{{affiliate.iban}}"/>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Bank name</label>
+                    <input type="text" id="affiliate-bank" class="form-control" value="{{affiliate.bankName}}"/>
                 </div>
                 <div class="mb-3 position-relative">
                     <label class="form-label">Trainers</label>
-                    <input type="text" id="trainer-search" class="form-control" placeholder="Search by name or username" autocomplete="off" />
-                    <ul id="trainer-search-results" class="list-group position-absolute w-100" style="top:100%; z-index:1000; display:none;"></ul>
+                    <input type="text" id="trainer-search" class="form-control" placeholder="Search by name or username"
+                           autocomplete="off"/>
+                    <ul id="trainer-search-results" class="list-group position-absolute w-100"
+                        style="top:100%; z-index:1000; display:none;"></ul>
                 </div>
                 <div class="mb-3">
                     <h5>Selected Trainers:</h5>
                     <ul id="selected-trainers" class="list-group">
                         {{#each trainers}}
-                            <li class="list-group-item d-flex justify-content-between align-items-center" data-trainer-id="{{this.trainerId}}">
+                            <li class="list-group-item d-flex justify-content-between align-items-center"
+                                data-trainer-id="{{this.trainerId}}">
                                 {{this.fullName}} - {{this.username}}
                                 <button type="button" class="btn btn-sm btn-danger remove-trainer-btn">&times;</button>
                             </li>
@@ -94,7 +122,7 @@
         const affiliateView = document.getElementById('affiliate-view');
         const affiliateEdit = document.getElementById('affiliate-edit');
 
-        if(editBtn) {
+        if (editBtn) {
             editBtn.addEventListener('click', () => {
                 affiliateView.style.display = 'none';
                 affiliateEdit.style.display = 'block';
@@ -106,13 +134,13 @@
         trainerSearch && trainerSearch.addEventListener('input', (e) => {
             const query = e.target.value.trim();
             clearTimeout(searchTimeout);
-            if(query.length > 0) {
+            if (query.length > 0) {
                 searchTimeout = setTimeout(async () => {
                     try {
                         const res = await fetch(`/api/search-users?q=${encodeURIComponent(query)}`);
-                        if(res.ok) {
+                        if (res.ok) {
                             const users = await res.json();
-                            if(users.length > 0) {
+                            if (users.length > 0) {
                                 trainerResults.innerHTML = '';
                                 users.forEach(user => {
                                     const li = document.createElement('li');
@@ -137,7 +165,7 @@
                         } else {
                             console.error('Search error');
                         }
-                    } catch(err) {
+                    } catch (err) {
                         console.error(err);
                     }
                 }, 300);
@@ -148,14 +176,14 @@
         });
 
         document.addEventListener('click', (e) => {
-            if(!trainerResults.contains(e.target) && e.target !== trainerSearch) {
+            if (!trainerResults.contains(e.target) && e.target !== trainerSearch) {
                 trainerResults.style.display = 'none';
             }
         });
 
         function addSelectedTrainer(id, fullName, username) {
             // Kontrolli, et poleks juba lisatud
-            if([...selectedTrainers.querySelectorAll('li')].some(li => li.dataset.trainerId == id)) {
+            if ([...selectedTrainers.querySelectorAll('li')].some(li => li.dataset.trainerId == id)) {
                 return;
             }
             const li = document.createElement('li');
@@ -175,7 +203,7 @@
 
         // Eemalda treenerite event
         selectedTrainers && selectedTrainers.addEventListener('click', (e) => {
-            if(e.target.classList.contains('remove-trainer-btn')) {
+            if (e.target.classList.contains('remove-trainer-btn')) {
                 e.target.closest('li').remove();
             }
         });
@@ -185,6 +213,10 @@
             const nameInput = document.getElementById('affiliate-name');
             const addressInput = document.getElementById('affiliate-address');
             const trainingTypeInput = document.getElementById('affiliate-training-type');
+            const emailInput = document.getElementById('affiliate-email');
+            const phoneInput = document.getElementById('affiliate-phone');
+            const ibanInput = document.getElementById('affiliate-iban');
+            const bankInput = document.getElementById('affiliate-bank');
 
             const trainerIds = [...selectedTrainers.querySelectorAll('li')].map(li => li.dataset.trainerId);
 
@@ -193,7 +225,11 @@
                 name: nameInput.value.toUpperCase(),
                 address: addressInput.value,
                 trainingType: trainingTypeInput.value.toUpperCase(),
-                trainers: trainerIds
+                trainers: trainerIds,
+                email: emailInput.value,
+                phone: phoneInput.value,
+                iban: ibanInput.value,
+                bank: bankInput.value
             }
 
             const res = await fetch('/api/affiliate', {
@@ -204,7 +240,7 @@
                 body: JSON.stringify(data)
             });
 
-            if(res.ok) {
+            if (res.ok) {
                 location.reload();
             } else {
                 console.error('Failed to save affiliate');
