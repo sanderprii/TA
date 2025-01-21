@@ -5,20 +5,19 @@ require('dotenv').config();
 const express = require('express');
 
 
-
 const session = require('express-session');
-const { PrismaClient } = require('@prisma/client');
+const {PrismaClient} = require('@prisma/client');
 const cors = require('cors');
-const { engine } = require('express-handlebars');
+const {engine} = require('express-handlebars');
 const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // CORS and JSON middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // For form data
+app.use(express.urlencoded({extended: true})); // For form data
 app.use('/img', express.static('views/img'));
 app.use('/lib', express.static('lib'));
 
@@ -39,7 +38,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: {secure: false}
 }));
 
 // Middleware to ensure user is an affiliate owner
@@ -60,7 +59,6 @@ function ensureOwnerOrTrainer(req, res, next) {
 }
 
 
-
 // Serve public folder
 app.use(express.static('public'));
 
@@ -73,7 +71,7 @@ function ensureAuthenticated(req, res, next) {
 
     // Check if it's an API request
     if (req.path.startsWith('/api/')) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({error: 'Unauthorized'});
     } else {
         // Redirect to login page
         res.redirect('/info');
@@ -92,31 +90,29 @@ app.use((req, res, next) => {
 
 // Home page, protected route
 app.get('/', ensureAuthenticated, (req, res) => {
-    res.render('home', { title: 'Home' });
+    res.render('home', {title: 'Home'});
 });
 
 // info view
 app.get('/info', (req, res) => {
-    res.render('info', { title: 'info', layout: 'main' });
+    res.render('info', {title: 'info', layout: 'main'});
 });
-
 
 
 // Login view
 app.get('/login', (req, res) => {
-    res.render('login', { title: 'Login' });
+    res.render('login', {title: 'Login'});
 });
 
 // Training route, protected
 app.get('/training', ensureAuthenticated, (req, res) => {
-    res.render('training', { title: 'Add Training' });
+    res.render('training', {title: 'Add Training'});
 });
-
 
 
 // Register-training view
 app.get('/register-training', ensureAuthenticated, (req, res) => {
-    res.render('register-training', { title: 'Register for Training' });
+    res.render('register-training', {title: 'Register for Training'});
 });
 
 // Route to choose role after login
@@ -130,23 +126,25 @@ app.get('/choose-role', ensureAuthenticated, (req, res) => {
     // - Kui on mõlemad: valik owner vs trainer vs regular user
 
     let roles = [];
-    if (isOwner) roles.push({ url: '/gym?role=owner', label: 'Affiliate Owner', id: 'choose-owner' });
-    if (isOwner) roles.push({ url: '/gymCheckIn?role=owner', label: 'Check-In', id: 'choose-owner'})
-    if (isTrainer) roles.push({ url: '/gym?role=trainer', label: 'Trainer' });
+    if (isOwner) roles.push({url: '/gym?role=owner', label: 'Affiliate Owner', id: 'choose-owner'});
+    if (isOwner) roles.push({url: '/gymCheckIn?role=owner', label: 'Check-In', id: 'choose-owner'})
+    if (isTrainer) roles.push({url: '/gym?role=trainer', label: 'Trainer'});
     // Regular user alati kättesaadav
-    roles.push({ url: '/', label: 'Regular User'});
+    roles.push({url: '/', label: 'Regular User'});
 
-    res.render('choose-role', { title: 'Choose Role', layout: 'owner', roles, isOwner,
-        isTrainer });
+    res.render('choose-role', {
+        title: 'Choose Role', layout: 'owner', roles, isOwner,
+        isTrainer
+    });
 });
 
 app.get('/api/current-role', ensureAuthenticated, (req, res) => {
-    res.json({ currentRole: req.session.currentRole || null });
+    res.json({currentRole: req.session.currentRole || null});
 });
 
 //get finance page
 app.get('/finance', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
-    res.render('finance', { title: 'Finance', layout: 'owner' });
+    res.render('finance', {title: 'Finance', layout: 'owner'});
 });
 
 app.get('/gymCheckIn', ensureAuthenticated, (req, res) => {
@@ -158,7 +156,6 @@ app.get('/gymCheckIn', ensureAuthenticated, (req, res) => {
     } else if (role === 'trainer' && req.session.isTrainer) {
         req.session.currentRole = 'trainer';
     }
-
 
 
     // Siin jõudes on kas user regular user (pole rolli vaja) või tal on already currentRole määratud.
@@ -211,14 +208,14 @@ app.get('/gym', ensureAuthenticated, (req, res) => {
 
 // route for plans
 app.get('/plans', ensureAuthenticated, ensureAffiliateOwner, (req, res) => {
-    res.render('plans', { title: 'Plans', layout: 'owner' });
+    res.render('plans', {title: 'Plans', layout: 'owner'});
 });
 
 // My Affiliate lehe kuvamine
 app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
     try {
         const affiliate = await prisma.affiliate.findFirst({
-            where: { ownerId: req.session.userId },
+            where: {ownerId: req.session.userId},
             include: {
                 trainers: {
                     include: {
@@ -227,7 +224,6 @@ app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, 
                 }
             }
         });
-
 
 
         if (!affiliate) {
@@ -260,13 +256,11 @@ app.get('/my-affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, 
 });
 
 
-
 // Classes page for affiliate owners
 app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
     // Loogika klasside laadimiseks
-    res.render('classes', { title: 'Classes', layout: 'owner' });
+    res.render('classes', {title: 'Classes', layout: 'owner'});
 });
-
 
 
 // Function to validate password
@@ -290,7 +284,7 @@ function validatePassword(password) {
     }
     // Additional validation rules can be added here (e.g., minimum length, character types)
 
-    return { isValid: true };
+    return {isValid: true};
 }
 
 // API for registration
@@ -305,27 +299,27 @@ app.post('/api/register', async (req, res) => {
     } = req.body;
     try {
         const existingUser = await prisma.user.findUnique({
-            where: { username },
+            where: {username},
         });
 
         if (existingUser) {
-            return res.status(400).json({ error: 'Username already exists.' });
+            return res.status(400).json({error: 'Username already exists.'});
         }
 
         // Check if email is unique if provided
         if (email) {
             const existingEmail = await prisma.user.findUnique({
-                where: { email },
+                where: {email},
             });
             if (existingEmail) {
-                return res.status(400).json({ error: 'Email already in use.' });
+                return res.status(400).json({error: 'Email already in use.'});
             }
         }
 
         // Validate the password
         const passwordValidation = validatePassword(password);
         if (!passwordValidation.isValid) {
-            return res.status(400).json({ error: passwordValidation.message });
+            return res.status(400).json({error: passwordValidation.message});
         }
 
         // Hash the password
@@ -341,24 +335,21 @@ app.post('/api/register', async (req, res) => {
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
             },
         });
-        res.status(201).json({ message: 'User created successfully!', user });
+        res.status(201).json({message: 'User created successfully!', user});
     } catch (error) {
         console.error("Error during registration:", error);
-        res.status(500).json({ error: 'An error occurred during registration.' });
+        res.status(500).json({error: 'An error occurred during registration.'});
     }
 });
-
-
-
 
 
 // API for login
 // API for login
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
+    const {username, password} = req.body;
     try {
         const user = await prisma.user.findUnique({
-            where: { username },
+            where: {username},
         });
 
         if (user) {
@@ -370,8 +361,8 @@ app.post('/api/login', async (req, res) => {
 
                 // Kontrollime, kas kasutaja on treener kuskil affiliate all
                 const trainerAffiliates = await prisma.affiliateTrainer.findMany({
-                    where: { trainerId: user.id },
-                    select: { affiliateId: true }
+                    where: {trainerId: user.id},
+                    select: {affiliateId: true}
                 });
 
                 req.session.isTrainer = trainerAffiliates.length > 0; // True kui treener kuskil
@@ -383,14 +374,14 @@ app.post('/api/login', async (req, res) => {
                     isTrainer: req.session.isTrainer
                 });
             } else {
-                res.status(401).json({ error: 'Invalid username or password.' });
+                res.status(401).json({error: 'Invalid username or password.'});
             }
         } else {
-            res.status(401).json({ error: 'Invalid username or password.' });
+            res.status(401).json({error: 'Invalid username or password.'});
         }
     } catch (error) {
         console.error("Error during login:", error);
-        res.status(500).json({ error: 'An error occurred during login.' });
+        res.status(500).json({error: 'An error occurred during login.'});
     }
 });
 
@@ -398,7 +389,7 @@ app.post('/api/login', async (req, res) => {
 app.get('/profile', ensureAuthenticated, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
-            where: { id: req.session.userId },
+            where: {id: req.session.userId},
         });
 
         // Age
@@ -416,8 +407,6 @@ app.get('/profile', ensureAuthenticated, async (req, res) => {
         const age = user.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
 
 
-
-
         res.render('profile', {
             title: 'My Profile',
             user,
@@ -433,48 +422,48 @@ app.get('/profile', ensureAuthenticated, async (req, res) => {
 // change password api
 
 app.post('/api/change-password', ensureAuthenticated, async (req, res) => {
-    const { oldPassword, newPassword } = req.body;
+    const {oldPassword, newPassword} = req.body;
     try {
         const user = await prisma.user.findUnique({
-            where: { id: req.session.userId },
+            where: {id: req.session.userId},
         });
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found.' });
+            return res.status(404).json({error: 'User not found.'});
         }
 
         const passwordMatch = await bcrypt.compare(oldPassword, user.password);
         if (!passwordMatch) {
-            return res.status(400).json({ error: 'Invalid current password.' });
+            return res.status(400).json({error: 'Invalid current password.'});
         }
 
         // Validate the new password
         const passwordValidation = validatePassword(newPassword);
         if (!passwordValidation.isValid) {
-            return res.status(400).json({ error: passwordValidation.message });
+            return res.status(400).json({error: passwordValidation.message});
         }
 
         // Hash the new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         await prisma.user.update({
-            where: { id: req.session.userId },
-            data: { password: hashedPassword },
+            where: {id: req.session.userId},
+            data: {password: hashedPassword},
         });
 
-        res.json({ message: 'Password changed successfully!' });
+        res.json({message: 'Password changed successfully!'});
     } catch (error) {
         console.error('Error changing password:', error);
-        res.status(500).json({ error: 'An error occurred while changing password.' });
+        res.status(500).json({error: 'An error occurred while changing password.'});
     }
 });
 
 // Edit profile
 app.post('/profile', ensureAuthenticated, async (req, res) => {
-    const { fullName, dateOfBirth, email } = req.body;
+    const {fullName, dateOfBirth, email} = req.body;
     try {
         await prisma.user.update({
-            where: { id: req.session.userId },
+            where: {id: req.session.userId},
             data: {
                 fullName: fullName || null,
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
@@ -483,12 +472,12 @@ app.post('/profile', ensureAuthenticated, async (req, res) => {
         });
 
         // Send a success response back to the client
-        res.status(200).json({ message: 'Profile updated successfully!' });
+        res.status(200).json({message: 'Profile updated successfully!'});
     } catch (error) {
         console.error('Error updating user profile:', error);
 
         // Send an error response back to the client
-        res.status(500).json({ error: 'An error occurred while updating your profile.' });
+        res.status(500).json({error: 'An error occurred while updating your profile.'});
     }
 });
 
@@ -509,16 +498,16 @@ app.get('/api/user', ensureAuthenticated, async (req, res) => {
         res.json(user)
     } catch (error) {
         console.error('Error fetching user:', error);
-        res.status(500).json({ error: 'Failed to fetch user.' });
+        res.status(500).json({error: 'Failed to fetch user.'});
     }
 })
 
 // update user data
 app.put('/api/user', ensureAuthenticated, async (req, res) => {
-    const { fullName, email, dayOfBirth} = req.body;
+    const {fullName, email, dayOfBirth} = req.body;
     try {
         await prisma.user.update({
-            where: { id: req.session.userId },
+            where: {id: req.session.userId},
             data: {
                 fullName,
                 email,
@@ -526,10 +515,10 @@ app.put('/api/user', ensureAuthenticated, async (req, res) => {
 
             }
         });
-        res.json({ message: 'User data updated successfully.' });
+        res.json({message: 'User data updated successfully.'});
     } catch (error) {
         console.error('Error updating user data:', error);
-        res.status(500).json({ error: 'Failed to update user data.' });
+        res.status(500).json({error: 'Failed to update user data.'});
     }
 });
 
@@ -537,9 +526,9 @@ app.put('/api/user', ensureAuthenticated, async (req, res) => {
 app.post('/api/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            return res.status(500).json({ error: 'Logout failed' });
+            return res.status(500).json({error: 'Logout failed'});
         }
-        res.status(200).json({ message: 'Logged out successfully' });
+        res.status(200).json({message: 'Logged out successfully'});
     });
 });
 
@@ -557,8 +546,8 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
 
     try {
         // Validate request data
-        if (!type || !date ) {
-            return res.status(400).json({ error: 'Invalid training data.' });
+        if (!type || !date) {
+            return res.status(400).json({error: 'Invalid training data.'});
         }
 
         // Build the data object
@@ -570,7 +559,7 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
             score: score || null,
             userId: req.session.userId,
             exercises: {
-                create: { exerciseData: exercises || '' },
+                create: {exerciseData: exercises || ''},
 
             },
         };
@@ -578,19 +567,19 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
         // Save training with associated exercises
         const training = await prisma.training.create({
             data: trainingData,
-            include: { exercises: true },
+            include: {exercises: true},
         });
 
         // Load all trainings for response
         const allTrainings = await prisma.training.findMany({
-            where: { userId: req.session.userId },
-            include: { exercises: true },
-            orderBy: { date: 'desc' },
+            where: {userId: req.session.userId},
+            include: {exercises: true},
+            orderBy: {date: 'desc'},
         });
-        res.status(201).json({ message: 'Training added successfully!', trainings: allTrainings });
+        res.status(201).json({message: 'Training added successfully!', trainings: allTrainings});
     } catch (error) {
         console.error('Error saving training:', error);
-        res.status(500).json({ error: 'Failed to save training.', details: error.message });
+        res.status(500).json({error: 'Failed to save training.', details: error.message});
     }
 });
 
@@ -598,16 +587,16 @@ app.post('/api/training', ensureAuthenticated, async (req, res) => {
 app.get('/api/trainings', ensureAuthenticated, async (req, res) => {
     try {
         const allTrainings = await prisma.training.findMany({
-            where: { userId: req.session.userId },
+            where: {userId: req.session.userId},
             include: {
                 exercises: true,
             },
-            orderBy: { date: 'desc' },
+            orderBy: {date: 'desc'},
         });
         res.json(allTrainings);
     } catch (error) {
         console.error("Error fetching trainings:", error);
-        res.status(500).json({ error: 'Failed to load trainings.' });
+        res.status(500).json({error: 'Failed to load trainings.'});
     }
 });
 
@@ -618,33 +607,33 @@ app.delete('/api/training/:id', ensureAuthenticated, async (req, res) => {
     try {
         // Check if the training exists and if the user is authorized to delete it
         const training = await prisma.training.findUnique({
-            where: { id: trainingId },
-            include: { user: true },
+            where: {id: trainingId},
+            include: {user: true},
         });
 
         if (!training || training.userId !== req.session.userId) {
-            return res.status(404).json({ error: 'Training not found or not authorized.' });
+            return res.status(404).json({error: 'Training not found or not authorized.'});
         }
 
         await prisma.exercise.deleteMany({
-            where: { trainingId },
+            where: {trainingId},
         });
 
         await prisma.training.delete({
-            where: { id: trainingId },
+            where: {id: trainingId},
         });
 
-        res.status(200).json({ message: 'Training deleted successfully!' });
+        res.status(200).json({message: 'Training deleted successfully!'});
     } catch (error) {
         console.error("Error deleting training:", error);
-        res.status(500).json({ error: 'Failed to delete training.', details: error.message });
+        res.status(500).json({error: 'Failed to delete training.', details: error.message});
     }
 });
 
 // Records view
 // Records view
 app.get('/records', ensureAuthenticated, (req, res) => {
-    res.render('records', { title: 'Records' });
+    res.render('records', {title: 'Records'});
 });
 
 // API for Records
@@ -676,7 +665,7 @@ app.get('/api/records', ensureAuthenticated, async (req, res) => {
         res.json(latestRecords);
     } catch (error) {
         console.error('Error fetching records:', error);
-        res.status(500).json({ error: 'Failed to fetch records.' });
+        res.status(500).json({error: 'Failed to fetch records.'});
     }
 });
 
@@ -709,13 +698,13 @@ app.get('/api/records/:name', ensureAuthenticated, async (req, res) => {
         res.json(records);
     } catch (error) {
         console.error('Error fetching records by name:', error);
-        res.status(500).json({ error: 'Failed to fetch records by name.' });
+        res.status(500).json({error: 'Failed to fetch records by name.'});
     }
 });
 
 
 app.post('/api/records', ensureAuthenticated, async (req, res) => {
-    const { type, name, date, score, weight, time } = req.body;
+    const {type, name, date, score, weight, time} = req.body;
 
     try {
         const recordData = {
@@ -732,10 +721,10 @@ app.post('/api/records', ensureAuthenticated, async (req, res) => {
             data: recordData,
         });
 
-        res.status(201).json({ message: 'Record added successfully!' });
+        res.status(201).json({message: 'Record added successfully!'});
     } catch (error) {
         console.error('Error adding record:', error);
-        res.status(500).json({ error: 'Failed to add record.' });
+        res.status(500).json({error: 'Failed to add record.'});
     }
 });
 
@@ -746,25 +735,23 @@ app.delete('/api/records/:id', ensureAuthenticated, async (req, res) => {
     try {
         // Kontrolli, kas rekord eksisteerib ja kasutaja on volitatud seda kustutama
         const record = await prisma.record.findUnique({
-            where: { id: recordId },
+            where: {id: recordId},
         });
 
         if (!record || record.userId !== req.session.userId) {
-            return res.status(404).json({ error: 'Record not found or not authorized.' });
+            return res.status(404).json({error: 'Record not found or not authorized.'});
         }
 
         await prisma.record.delete({
-            where: { id: recordId },
+            where: {id: recordId},
         });
 
-        res.status(200).json({ message: 'Record deleted successfully!' });
+        res.status(200).json({message: 'Record deleted successfully!'});
     } catch (error) {
         console.error("Error deleting record:", error);
-        res.status(500).json({ error: 'Failed to delete record.', details: error.message });
+        res.status(500).json({error: 'Failed to delete record.', details: error.message});
     }
 });
-
-
 
 
 // API endpoint to fetch another user's records by exercise name
@@ -775,12 +762,12 @@ app.get('/api/user-records/:userId/exercise/:name', ensureAuthenticated, async (
 
     try {
         const userExists = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true },
+            where: {id: userId},
+            select: {id: true},
         });
 
         if (!userExists) {
-            return res.status(404).json({ error: 'User not found.' });
+            return res.status(404).json({error: 'User not found.'});
         }
 
         const records = await prisma.record.findMany({
@@ -804,7 +791,7 @@ app.get('/api/user-records/:userId/exercise/:name', ensureAuthenticated, async (
         res.json(records);
     } catch (error) {
         console.error('Error fetching user records by name:', error);
-        res.status(500).json({ error: 'Failed to fetch user records by name.' });
+        res.status(500).json({error: 'Failed to fetch user records by name.'});
     }
 });
 
@@ -815,12 +802,12 @@ app.get('/api/user-records/:userId', ensureAuthenticated, async (req, res) => {
 
     try {
         const userExists = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true },
+            where: {id: userId},
+            select: {id: true},
         });
 
         if (!userExists) {
-            return res.status(404).json({ error: 'User not found.' });
+            return res.status(404).json({error: 'User not found.'});
         }
 
         const records = await prisma.record.findMany({
@@ -847,7 +834,7 @@ app.get('/api/user-records/:userId', ensureAuthenticated, async (req, res) => {
         res.json(latestRecords);
     } catch (error) {
         console.error('Error fetching user records:', error);
-        res.status(500).json({ error: 'Failed to fetch user records.' });
+        res.status(500).json({error: 'Failed to fetch user records.'});
     }
 });
 
@@ -855,7 +842,7 @@ app.get('/api/user-records/:userId', ensureAuthenticated, async (req, res) => {
 
 // Route to display the Find Users page
 app.get('/find-users', ensureAuthenticated, (req, res) => {
-    res.render('findu', { title: 'Find Users' });
+    res.render('findu', {title: 'Find Users'});
 });
 
 // API endpoint for searching users
@@ -863,17 +850,17 @@ app.get('/api/search-users', ensureAuthenticated, async (req, res) => {
     const query = req.query.q;
 
     if (!query || query.trim() === '') {
-        return res.status(400).json({ error: 'Query parameter is required.' });
+        return res.status(400).json({error: 'Query parameter is required.'});
     }
 
     try {
         const users = await prisma.user.findMany({
             where: {
                 OR: [
-                    { username: { contains: query } },
-                    { fullName: { contains: query } },
+                    {username: {contains: query}},
+                    {fullName: {contains: query}},
                 ],
-                id: { not: req.session.userId }, // Exclude the current user
+                id: {not: req.session.userId}, // Exclude the current user
             },
             select: {
                 id: true,
@@ -886,7 +873,7 @@ app.get('/api/search-users', ensureAuthenticated, async (req, res) => {
         res.json(users);
     } catch (error) {
         console.error('Error searching users:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({error: 'Internal Server Error'});
     }
 });
 
@@ -896,7 +883,7 @@ app.get('/user-records/:id', ensureAuthenticated, async (req, res) => {
 
     try {
         const user = await prisma.user.findUnique({
-            where: { id: userId },
+            where: {id: userId},
             select: {
                 id: true,
                 username: true,
@@ -921,21 +908,21 @@ app.get('/user-records/:id', ensureAuthenticated, async (req, res) => {
 // Update training API
 app.put('/api/training/:id', ensureAuthenticated, async (req, res) => {
     const trainingId = parseInt(req.params.id);
-    const { type, date, wodName, wodType, score, exercises } = req.body;
+    const {type, date, wodName, wodType, score, exercises} = req.body;
 
     try {
         // Verify ownership
         const training = await prisma.training.findUnique({
-            where: { id: trainingId },
+            where: {id: trainingId},
         });
 
         if (!training || training.userId !== req.session.userId) {
-            return res.status(403).json({ error: 'Not authorized to update this training.' });
+            return res.status(403).json({error: 'Not authorized to update this training.'});
         }
 
         // Update the training
         const updatedTraining = await prisma.training.update({
-            where: { id: trainingId },
+            where: {id: trainingId},
             data: {
                 type,
                 date: new Date(date),
@@ -949,13 +936,13 @@ app.put('/api/training/:id', ensureAuthenticated, async (req, res) => {
                     })),
                 },
             },
-            include: { exercises: true },
+            include: {exercises: true},
         });
 
-        res.status(200).json({ message: 'Training updated successfully!', training: updatedTraining });
+        res.status(200).json({message: 'Training updated successfully!', training: updatedTraining});
     } catch (error) {
         console.error('Error updating training:', error);
-        res.status(500).json({ error: 'Failed to update training.' });
+        res.status(500).json({error: 'Failed to update training.'});
     }
 });
 
@@ -964,13 +951,13 @@ app.get('/api/search-default-wods', async (req, res) => {
     const query = req.query.q;
 
     if (!query || query.trim() === '') {
-        return res.status(400).json({ error: 'Query parameter is required.' });
+        return res.status(400).json({error: 'Query parameter is required.'});
     }
 
     try {
         const wods = await prisma.defaultWOD.findMany({
             where: {
-                name: { contains: query.toUpperCase() },
+                name: {contains: query.toUpperCase()},
             },
             take: 10,
         });
@@ -978,7 +965,7 @@ app.get('/api/search-default-wods', async (req, res) => {
         res.json(wods);
     } catch (error) {
         console.error('Error searching Default WODs:', error);
-        res.status(500).json({ error: 'Failed to search Default WODs.' });
+        res.status(500).json({error: 'Failed to search Default WODs.'});
     }
 });
 
@@ -989,7 +976,7 @@ app.get('/api/statistics', ensureAuthenticated, async (req, res) => {
         const userId = req.session.userId;
 
         // Total trainings
-        const totalTrainings = await prisma.training.count({ where: { userId } });
+        const totalTrainings = await prisma.training.count({where: {userId}});
 
         // Trainings per month for the last year
         const now = new Date();
@@ -1025,7 +1012,7 @@ app.get('/api/statistics', ensureAuthenticated, async (req, res) => {
         // Trainings by type
         const trainingsByType = await prisma.training.groupBy({
             by: ['type'],
-            where: { userId },
+            where: {userId},
             _count: {
                 type: true,
             },
@@ -1045,8 +1032,8 @@ app.get('/api/statistics', ensureAuthenticated, async (req, res) => {
 
         // User's monthly goal
         const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { monthlyGoal: true },
+            where: {id: userId},
+            select: {monthlyGoal: true},
         });
 
         res.json({
@@ -1058,24 +1045,24 @@ app.get('/api/statistics', ensureAuthenticated, async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching statistics:', error);
-        res.status(500).json({ error: 'Failed to fetch statistics.' });
+        res.status(500).json({error: 'Failed to fetch statistics.'});
     }
 });
 
 // API endpoint to update user's monthly goal
 app.post('/api/user/monthly-goal', ensureAuthenticated, async (req, res) => {
-    const { monthlyGoal } = req.body;
+    const {monthlyGoal} = req.body;
     try {
         await prisma.user.update({
-            where: { id: req.session.userId },
+            where: {id: req.session.userId},
             data: {
                 monthlyGoal: parseInt(monthlyGoal),
             },
         });
-        res.json({ message: 'Monthly goal updated successfully.' });
+        res.json({message: 'Monthly goal updated successfully.'});
     } catch (error) {
         console.error('Error updating monthly goal:', error);
-        res.status(500).json({ error: 'Failed to update monthly goal.' });
+        res.status(500).json({error: 'Failed to update monthly goal.'});
     }
 });
 
@@ -1083,7 +1070,7 @@ app.post('/api/user/monthly-goal', ensureAuthenticated, async (req, res) => {
 // Search affiliates by name (autocomplete)
 app.get('/api/search-affiliates', ensureAuthenticated, async (req, res) => {
     const q = req.query.q || '';
-    if (!q) return res.status(400).json({ error: 'Query required.' });
+    if (!q) return res.status(400).json({error: 'Query required.'});
 
     try {
         const affiliates = await prisma.affiliate.findMany({
@@ -1093,25 +1080,25 @@ app.get('/api/search-affiliates', ensureAuthenticated, async (req, res) => {
                     // eemalda mode: 'insensitive' või uuenda Prisma versioon
                 }
             },
-            select: { id: true, name: true },
+            select: {id: true, name: true},
             take: 10
         });
         res.json(affiliates); // Kui results on tühi, tagastatakse []
     } catch (error) {
         console.error('Error searching affiliates:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({error: 'Internal Server Error'});
     }
 });
 
 // Get affiliate by name + trainers
 app.get('/api/get-affiliate-by-name', ensureAuthenticated, async (req, res) => {
     const name = req.query.name;
-    if (!name) return res.status(400).json({ error: 'Name required.' });
+    if (!name) return res.status(400).json({error: 'Name required.'});
 
     try {
         const affiliate = await prisma.affiliate.findFirst({
             where: {
-                name: { equals: name}
+                name: {equals: name}
             },
             include: {
                 trainers: {
@@ -1123,7 +1110,7 @@ app.get('/api/get-affiliate-by-name', ensureAuthenticated, async (req, res) => {
         });
 
         if (!affiliate) {
-            return res.json({ affiliate: null });
+            return res.json({affiliate: null});
         }
 
         const trainers = affiliate.trainers.map(t => ({
@@ -1133,22 +1120,21 @@ app.get('/api/get-affiliate-by-name', ensureAuthenticated, async (req, res) => {
         }));
 
 
-
-        res.json({ affiliate, trainers });
+        res.json({affiliate, trainers});
     } catch (error) {
         console.error('Error getting affiliate:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({error: 'Internal Server Error'});
     }
 });
 
 // Classes view - read-only for a chosen affiliate
 app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
-    const { affiliateId, start, end } = req.query;
+    const {affiliateId, start, end} = req.query;
 
 
     if (!affiliateId || !start || !end) {
         console.log('Missing parameters.');
-        return res.status(400).json({ error: 'Missing parameters.' });
+        return res.status(400).json({error: 'Missing parameters.'});
     }
 
     const startDate = new Date(start);
@@ -1156,7 +1142,6 @@ app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
 
     startDate.setMinutes(startDate.getMinutes() - startDate.getTimezoneOffset()); // UTC → lokaal
     endDate.setMinutes(endDate.getMinutes() - endDate.getTimezoneOffset());
-
 
 
     endDate.setHours(23, 59, 59, 999); // Tagab, et pühapäeva lõpuni kaasatakse
@@ -1172,26 +1157,23 @@ app.get('/api/classes-view', ensureAuthenticated, async (req, res) => {
                     lte: new Date(endDate.toISOString())
                 }
             },
-            orderBy: { time: 'asc' }
+            orderBy: {time: 'asc'}
         });
-
-
-
 
 
         res.json(classes);
     } catch (error) {
         console.error('Error fetching classes:', error);
-        res.status(500).json({ error: 'Failed to fetch classes.' });
+        res.status(500).json({error: 'Failed to fetch classes.'});
     }
 });
 
 // Register user for a class
 app.post('/api/register-for-class', ensureAuthenticated, async (req, res) => {
-    const { classId, planId } = req.body;
+    const {classId, planId} = req.body;
 
 
-    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+    if (!classId) return res.status(400).json({error: 'Class ID required.'});
 
     try {
         const userPlan = await prisma.userPlan.findUnique({
@@ -1199,31 +1181,31 @@ app.post('/api/register-for-class', ensureAuthenticated, async (req, res) => {
         });
 
         if (!userPlan || userPlan.sessionsLeft <= 0) {
-            return res.status(400).json({ error: 'Insufficient sessions left in plan.' });
+            return res.status(400).json({error: 'Insufficient sessions left in plan.'});
         }
 
         // Decrement sessionsLeft
         await prisma.userPlan.update({
-            where: { id: userPlan.id },
-            data: { sessionsLeft: userPlan.sessionsLeft - 1 }
+            where: {id: userPlan.id},
+            data: {sessionsLeft: userPlan.sessionsLeft - 1}
         });
 
         // Kontrolli, kas klass on olemas
         const cls = await prisma.classSchedule.findUnique({
-            where: { id: parseInt(classId) }
+            where: {id: parseInt(classId)}
         });
 
         if (!cls) {
-            return res.status(404).json({ error: 'Class not found.' });
+            return res.status(404).json({error: 'Class not found.'});
         }
 
         // Kontrollime, kas capacity on täis?
         const count = await prisma.classAttendee.count({
-            where: { classId: cls.id }
+            where: {classId: cls.id}
         });
 
         if (count >= cls.memberCapacity) {
-            return res.status(400).json({ error: 'Class is full.' });
+            return res.status(400).json({error: 'Class is full.'});
         }
 
         // Lisa kasutaja sellele klassile
@@ -1236,20 +1218,17 @@ app.post('/api/register-for-class', ensureAuthenticated, async (req, res) => {
         });
 
 
-
-
-
-        res.json({ message: 'Registered successfully!' });
+        res.json({message: 'Registered successfully!'});
     } catch (error) {
         console.error('Error registering for class:', error);
-        res.status(500).json({ error: 'Failed to register for class.' });
+        res.status(500).json({error: 'Failed to register for class.'});
     }
 });
 
 // Kontrollib, kas kasutaja on juba klassis registreeritud
 app.get('/api/is-enrolled', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
-    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+    if (!classId) return res.status(400).json({error: 'Class ID required.'});
 
     try {
         const attendee = await prisma.classAttendee.findUnique({
@@ -1262,18 +1241,17 @@ app.get('/api/is-enrolled', ensureAuthenticated, async (req, res) => {
         });
 
         const isEnrolled = !!attendee;
-        res.json({ isEnrolled });
+        res.json({isEnrolled});
     } catch (error) {
         console.error('Error checking enrollment:', error);
-        res.status(500).json({ error: 'Internal server error.' });
+        res.status(500).json({error: 'Internal server error.'});
     }
 });
 
 // Tühistab kasutaja registreeringu antud klassist
 app.post('/api/cancel-class', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
-    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
-
+    if (!classId) return res.status(400).json({error: 'Class ID required.'});
 
 
     try {
@@ -1287,7 +1265,7 @@ app.post('/api/cancel-class', ensureAuthenticated, async (req, res) => {
         });
 
         if (!attendee) {
-            return res.status(404).json({ error: 'You are not enrolled in this class.' });
+            return res.status(404).json({error: 'You are not enrolled in this class.'});
         }
 
         await prisma.classAttendee.delete({
@@ -1300,36 +1278,36 @@ app.post('/api/cancel-class', ensureAuthenticated, async (req, res) => {
         });
 
         await prisma.userPlan.update({
-            where: { id: attendee.userPlanId },
-            data: { sessionsLeft: { increment: 1 } }
+            where: {id: attendee.userPlanId},
+            data: {sessionsLeft: {increment: 1}}
         });
 
-        res.json({ message: 'Your enrollment has been canceled.' });
+        res.json({message: 'Your enrollment has been canceled.'});
     } catch (error) {
         console.error('Error canceling enrollment:', error);
-        res.status(500).json({ error: 'Internal server error.' });
+        res.status(500).json({error: 'Internal server error.'});
     }
 });
 
 app.get('/api/class-info', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
-    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
+    if (!classId) return res.status(400).json({error: 'Class ID required.'});
 
     try {
         const cls = await prisma.classSchedule.findUnique({
-            where: { id: classId },
+            where: {id: classId},
             select: {
                 memberCapacity: true,
             }
         });
 
         if (!cls) {
-            return res.status(404).json({ error: 'Class not found.' });
+            return res.status(404).json({error: 'Class not found.'});
         }
 
         // Loe registreeritud kasutajate arv
         const count = await prisma.classAttendee.count({
-            where: { classId: classId }
+            where: {classId: classId}
         });
 
         res.json({
@@ -1338,17 +1316,9 @@ app.get('/api/class-info', ensureAuthenticated, async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching class info:', error);
-        res.status(500).json({ error: 'Internal server error.' });
+        res.status(500).json({error: 'Internal server error.'});
     }
 });
-
-
-
-
-
-
-
-
 
 
 // affiliate owner routes
@@ -1362,8 +1332,8 @@ app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
     let classes = [];
     if (req.session.isAffiliateOwner) {
         classes = await prisma.classSchedule.findMany({
-            where: { ownerId: req.session.userId },
-            orderBy: { time: 'asc' }
+            where: {ownerId: req.session.userId},
+            orderBy: {time: 'asc'}
         });
     } else if (req.session.isTrainer) {
         // Laeme kõik classid, mis kuuluvad affiliate'idele, mille treener ta on
@@ -1373,18 +1343,17 @@ app.get('/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
                     in: req.session.trainerAffiliateIds // Need affiliate'id kus ta treener
                 }
             },
-            orderBy: { time: 'asc' }
+            orderBy: {time: 'asc'}
         });
     }
 
-    res.render('classes', { title: 'Classes', layout: 'owner', classes });
+    res.render('classes', {title: 'Classes', layout: 'owner', classes});
 });
-
 
 
 // API endpoint to create a new class
 app.get('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
-    const { start, end } = req.query;
+    const {start, end} = req.query;
     const startDate = new Date(start);
     const endDate = new Date(end);
 
@@ -1405,26 +1374,26 @@ app.get('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, r
         } else if (req.session.currentRole === 'trainer') {
             // Treener näeb ainult nende affiliatide klasse, kus ta on treener
             const trainerAffiliates = await prisma.affiliateTrainer.findMany({
-                where: { trainerId: req.session.userId },
-                select: { affiliateId: true },
+                where: {trainerId: req.session.userId},
+                select: {affiliateId: true},
             });
 
             const affiliateIds = trainerAffiliates.map((relation) => relation.affiliateId);
-            whereClause.affiliateId = { in: affiliateIds };
+            whereClause.affiliateId = {in: affiliateIds};
         } else {
             // Regular user või pole rolli - teoorias siia ei jõua ensureOwnerOrTrainer tõttu
-            return res.status(403).json({ error: 'Forbidden' });
+            return res.status(403).json({error: 'Forbidden'});
         }
 
         const classes = await prisma.classSchedule.findMany({
             where: whereClause,
-            orderBy: { time: 'asc' }
+            orderBy: {time: 'asc'}
         });
 
         return res.json(classes);
     } catch (error) {
         console.error('Error fetching classes:', error);
-        res.status(500).json({ error: 'Failed to fetch classes.' });
+        res.status(500).json({error: 'Failed to fetch classes.'});
     }
 });
 
@@ -1450,7 +1419,7 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
 
     try {
         if (!req.session.currentRole) {
-            return res.status(403).json({ error: 'Role not selected.' });
+            return res.status(403).json({error: 'Role not selected.'});
         }
 
         // Parseeri repeatWeekly kindlalt booleaniksväärtuseks
@@ -1461,8 +1430,8 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
 
         if (req.session.currentRole === 'owner') {
             const affiliate = await prisma.affiliate.findFirst({
-                where: { ownerId: req.session.userId },
-                select: { id: true },
+                where: {ownerId: req.session.userId},
+                select: {id: true},
             });
 
             selectedOwnerId = req.session.userId;
@@ -1471,27 +1440,27 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
 
 
             const trainerAffiliates = await prisma.affiliateTrainer.findMany({
-                where: { trainerId: req.session.userId },
-                select: { affiliateId: true },
+                where: {trainerId: req.session.userId},
+                select: {affiliateId: true},
             });
 
             selectedAffiliateId = affiliateId || trainerAffiliates[0].affiliateId;
 
             const affiliate = await prisma.affiliate.findUnique({
-                where: { id: selectedAffiliateId },
-                select: { ownerId: true },
+                where: {id: selectedAffiliateId},
+                select: {ownerId: true},
             });
 
             selectedOwnerId = affiliate.ownerId;
 
 
         } else {
-            return res.status(403).json({ error: 'No permission.' });
+            return res.status(403).json({error: 'No permission.'});
         }
 
         const classTime = new Date(`${date}T${time}`);
-        
-        
+
+
         const newClass = await prisma.classSchedule.create({
             data: {
                 trainingType: classTrainingType,
@@ -1512,8 +1481,8 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
 
         // Uuenda seriesId põhiklassil
         await prisma.classSchedule.update({
-            where: { id: newClass.id },
-            data: { seriesId: newClass.id }
+            where: {id: newClass.id},
+            data: {seriesId: newClass.id}
         });
 
         // Kui repeatWeekly = true, loo tulevased klassid
@@ -1539,17 +1508,16 @@ app.post('/api/classes', ensureAuthenticated, ensureOwnerOrTrainer, async (req, 
                 });
             }
 
-            await prisma.classSchedule.createMany({ data: repeats });
+            await prisma.classSchedule.createMany({data: repeats});
         }
 
 
-        res.status(201).json({ message: 'Class created successfully!' });
+        res.status(201).json({message: 'Class created successfully!'});
     } catch (error) {
         console.error('Error creating class:', error);
-        res.status(500).json({ error: 'Failed to create class.' });
+        res.status(500).json({error: 'Failed to create class.'});
     }
 });
-
 
 
 // API endpoint to update a class
@@ -1573,15 +1541,15 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
 
     try {
         const existingClass = await prisma.classSchedule.findUnique({
-            where: { id: classId }
+            where: {id: classId}
         });
 
         if (!existingClass) {
-            return res.status(404).json({ error: 'Class not found.' });
+            return res.status(404).json({error: 'Class not found.'});
         }
 
         if (!req.session.currentRole) {
-            return res.status(403).json({ error: 'Role not selected.' });
+            return res.status(403).json({error: 'Role not selected.'});
         }
 
         let selectedAffiliateIds;
@@ -1592,18 +1560,17 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
             allowedOwnerIds = [req.session.userId];
 
             const affiliate = await prisma.affiliate.findFirst({
-                where: { ownerId: req.session.userId },
-                select: { id: true },
+                where: {ownerId: req.session.userId},
+                select: {id: true},
             });
 
             selectedAffiliateIds = affiliate.id;
         } else if (req.session.currentRole === 'trainer') {
 
 
-
             const trainerAffiliates = await prisma.affiliateTrainer.findMany({
-                where: { trainerId: req.session.userId },
-                select: { affiliateId: true },
+                where: {trainerId: req.session.userId},
+                select: {affiliateId: true},
             });
 
             // Võta kõik seotud affiliate'id
@@ -1611,17 +1578,17 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
 
             // Otsi nende affiliate'ide ownerId-d
             const affiliates = await prisma.affiliate.findMany({
-                where: { id: { in: affiliateIds } },
-                select: { ownerId: true },
+                where: {id: {in: affiliateIds}},
+                select: {ownerId: true},
             });
             selectedAffiliateIds = affiliateId || trainerAffiliates[0].affiliateId;
             allowedOwnerIds = affiliates.map((affiliate) => affiliate.ownerId);
         } else {
-            return res.status(403).json({ error: 'No permission.' });
+            return res.status(403).json({error: 'No permission.'});
         }
 
         if (!allowedOwnerIds.includes(existingClass.ownerId)) {
-            return res.status(403).json({ error: 'Not authorized to update this class.' });
+            return res.status(403).json({error: 'Not authorized to update this class.'});
         }
 
         const classTime = new Date(`${date}T${time}`);
@@ -1632,7 +1599,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
 
         // Uuenda põhi-treeningut
         const updatedClass = await prisma.classSchedule.update({
-            where: { id: classId },
+            where: {id: classId},
             data: {
                 trainingType: classTrainingType,
                 trainingName,
@@ -1657,7 +1624,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
                 await prisma.classSchedule.deleteMany({
                     where: {
                         seriesId: updatedClass.seriesId,
-                        time: { gt: updatedClass.time }
+                        time: {gt: updatedClass.time}
                     }
                 });
             } else {
@@ -1666,7 +1633,7 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
                 await prisma.classSchedule.deleteMany({
                     where: {
                         seriesId: updatedClass.seriesId,
-                        time: { gt: updatedClass.time }
+                        time: {gt: updatedClass.time}
                     }
                 });
 
@@ -1690,15 +1657,15 @@ app.put('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async (re
                 }
 
                 if (repeats.length > 0) {
-                    await prisma.classSchedule.createMany({ data: repeats });
+                    await prisma.classSchedule.createMany({data: repeats});
                 }
             }
         }
 
-        res.status(200).json({ message: 'Class updated successfully!' });
+        res.status(200).json({message: 'Class updated successfully!'});
     } catch (error) {
         console.error('Error updating class:', error);
-        res.status(500).json({ error: 'Failed to update class.' });
+        res.status(500).json({error: 'Failed to update class.'});
     }
 });
 
@@ -1709,15 +1676,15 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async 
 
     try {
         const existingClass = await prisma.classSchedule.findUnique({
-            where: { id: classId }
+            where: {id: classId}
         });
 
         if (!existingClass) {
-            return res.status(404).json({ error: 'Class not found.' });
+            return res.status(404).json({error: 'Class not found.'});
         }
 
         if (!req.session.currentRole) {
-            return res.status(403).json({ error: 'Role not selected.' });
+            return res.status(403).json({error: 'Role not selected.'});
         }
 
         let allowedOwnerIds = [];
@@ -1726,8 +1693,8 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async 
         } else if (req.session.currentRole === 'trainer') {
 
             const trainerAffiliates = await prisma.affiliateTrainer.findMany({
-                where: { trainerId: req.session.userId },
-                select: { affiliateId: true },
+                where: {trainerId: req.session.userId},
+                select: {affiliateId: true},
             });
 
             // Võta kõik seotud affiliate'id
@@ -1735,52 +1702,55 @@ app.delete('/api/classes/:id', ensureAuthenticated, ensureOwnerOrTrainer, async 
 
             // Otsi nende affiliate'ide ownerId-d
             const affiliates = await prisma.affiliate.findMany({
-                where: { id: { in: affiliateIds } },
-                select: { ownerId: true },
+                where: {id: {in: affiliateIds}},
+                select: {ownerId: true},
             });
 
             allowedOwnerIds = affiliates.map((affiliate) => affiliate.ownerId);
 
 
         } else {
-            return res.status(403).json({ error: 'No permission.' });
+            return res.status(403).json({error: 'No permission.'});
         }
 
         if (!allowedOwnerIds.includes(existingClass.ownerId)) {
-            return res.status(403).json({ error: 'Not authorized to delete this class.' });
+            return res.status(403).json({error: 'Not authorized to delete this class.'});
         }
 
         // Kustuta esmalt seotud andmed
         if (existingClass.seriesId) {
             // Kustuta seotud ClassAttendee kirjed
             await prisma.classAttendee.deleteMany({
-                where: { classId: { in: await prisma.classSchedule.findMany({
-                            where: { seriesId: existingClass.seriesId },
-                            select: { id: true },
-                        }).then((classes) => classes.map((cls) => cls.id)) },
+                where: {
+                    classId: {
+                        in: await prisma.classSchedule.findMany({
+                            where: {seriesId: existingClass.seriesId},
+                            select: {id: true},
+                        }).then((classes) => classes.map((cls) => cls.id))
+                    },
                 },
             });
 
             // Kustuta kõik sama seeria klassid
             await prisma.classSchedule.deleteMany({
-                where: { seriesId: existingClass.seriesId },
+                where: {seriesId: existingClass.seriesId},
             });
         } else {
             // Kustuta seotud ClassAttendee kirjed
             await prisma.classAttendee.deleteMany({
-                where: { classId: classId },
+                where: {classId: classId},
             });
 
             // Kustuta ainult see klass
             await prisma.classSchedule.delete({
-                where: { id: classId },
+                where: {id: classId},
             });
         }
 
-        res.status(200).json({ message: 'Class deleted successfully!' });
+        res.status(200).json({message: 'Class deleted successfully!'});
     } catch (error) {
         console.error('Error deleting class:', error);
-        res.status(500).json({ error: 'Failed to delete class.' });
+        res.status(500).json({error: 'Failed to delete class.'});
     }
 });
 
@@ -1789,17 +1759,16 @@ app.get('/api/class-attendees', ensureAuthenticated, ensureOwnerOrTrainer, async
     const classId = parseInt(req.query.classId);
 
 
-
     if (!classId) {
         return res.status(400).json({error: 'Class ID required".'});
     }
 
     try {
         const classAttendees = await prisma.classAttendee.findMany({
-            where: { classId },
+            where: {classId},
             include: {
                 user: {
-                    select: { id: true, username: true, fullName: true }
+                    select: {id: true, username: true, fullName: true}
                 }
             }
         });
@@ -1807,7 +1776,7 @@ app.get('/api/class-attendees', ensureAuthenticated, ensureOwnerOrTrainer, async
         res.json(classAttendees);
     } catch (error) {
         console.error('Error fetching class attendees:', error);
-        res.status(500).json({ error: 'Failed to fetch class attendees.' });
+        res.status(500).json({error: 'Failed to fetch class attendees.'});
     }
 
 });
@@ -1817,7 +1786,7 @@ app.get('/api/plans', ensureAuthenticated, async (req, res) => {
     const ownerId = req.query.ownerId ? parseInt(req.query.ownerId, 10) : null;
 
     // Ehita "where" objekt. Kui ownerId puudub, võime selle tühjaks jätta.
-    const whereClause = ownerId ? { ownerId } : {};
+    const whereClause = ownerId ? {ownerId} : {};
     try {
 
         // Kui currentRole on 'owner', kuva ainult Sinu plaane
@@ -1826,7 +1795,7 @@ app.get('/api/plans', ensureAuthenticated, async (req, res) => {
                 where: {
                     ownerId: req.session.userId
                 },
-                orderBy: { id: 'asc' }
+                orderBy: {id: 'asc'}
             });
             return res.json(plans);
 
@@ -1840,7 +1809,7 @@ app.get('/api/plans', ensureAuthenticated, async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching plans:', error);
-        res.status(500).json({ error: 'Failed to fetch plans.' });
+        res.status(500).json({error: 'Failed to fetch plans.'});
     }
 });
 
@@ -1870,10 +1839,10 @@ app.post('/api/plans', ensureAuthenticated, ensureAffiliateOwner, async (req, re
             data: planData
         });
 
-        res.status(201).json({ message: 'Plan created successfully!', plan: newPlan });
+        res.status(201).json({message: 'Plan created successfully!', plan: newPlan});
     } catch (error) {
         console.error('Error creating plan:', error);
-        res.status(500).json({ error: 'Failed to create plan.' });
+        res.status(500).json({error: 'Failed to create plan.'});
     }
 });
 
@@ -1892,11 +1861,11 @@ app.put('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (req,
     try {
         // Verify ownership
         const existingPlan = await prisma.plan.findUnique({
-            where: { id: planId }
+            where: {id: planId}
         });
 
         if (!existingPlan || existingPlan.ownerId !== ownerId) {
-            return res.status(403).json({ error: 'Not authorized to update this plan.' });
+            return res.status(403).json({error: 'Not authorized to update this plan.'});
         }
 
         const planData = {
@@ -1909,14 +1878,14 @@ app.put('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (req,
 
         // Update the plan
         const updatedPlan = await prisma.plan.update({
-            where: { id: planId },
+            where: {id: planId},
             data: planData
         });
 
-        res.status(200).json({ message: 'Plan updated successfully!', plan: updatedPlan });
+        res.status(200).json({message: 'Plan updated successfully!', plan: updatedPlan});
     } catch (error) {
         console.error('Error updating plan:', error);
-        res.status(500).json({ error: 'Failed to update plan.' });
+        res.status(500).json({error: 'Failed to update plan.'});
     }
 });
 
@@ -1928,27 +1897,27 @@ app.delete('/api/plans/:id', ensureAuthenticated, ensureAffiliateOwner, async (r
     try {
         // Verify ownership
         const existingPlan = await prisma.plan.findUnique({
-            where: { id: planId }
+            where: {id: planId}
         });
 
         if (!existingPlan || existingPlan.ownerId !== ownerId) {
-            return res.status(403).json({ error: 'Not authorized to delete this plan.' });
+            return res.status(403).json({error: 'Not authorized to delete this plan.'});
         }
 
         await prisma.plan.delete({
-            where: { id: planId }
+            where: {id: planId}
         });
 
-        res.status(200).json({ message: 'Plan deleted successfully!' });
+        res.status(200).json({message: 'Plan deleted successfully!'});
     } catch (error) {
         console.error('Error deleting plan:', error);
-        res.status(500).json({ error: 'Failed to delete plan.' });
+        res.status(500).json({error: 'Failed to delete plan.'});
     }
 });
 
 // API affiliate loomiseks või uuendamiseks
 app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req, res) => {
-    const { affiliateId, name, address, trainingType, trainers, email, phone, iban, bank } = req.body;
+    const {affiliateId, name, address, trainingType, trainers, email, phone, iban, bank} = req.body;
 
     try {
         const trainerIds = Array.isArray(trainers) ? trainers.map(id => parseInt(id)) : [];
@@ -1956,16 +1925,16 @@ app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req
         if (affiliateId) {
             // Kontrolli, kas kasutajal on õigus seda affiliate't muuta
             const existing = await prisma.affiliate.findUnique({
-                where: { id: parseInt(affiliateId) }
+                where: {id: parseInt(affiliateId)}
             });
 
             if (!existing || existing.ownerId !== req.session.userId) {
-                return res.status(403).json({ error: 'Not authorized or affiliate not found' });
+                return res.status(403).json({error: 'Not authorized or affiliate not found'});
             }
 
             // Uuenda põhivälju
             await prisma.affiliate.update({
-                where: { id: parseInt(affiliateId) },
+                where: {id: parseInt(affiliateId)},
                 data: {
                     name,
                     address,
@@ -1979,7 +1948,7 @@ app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req
 
             // Leia olemasolevad treeneri seosed
             const existingTrainers = await prisma.affiliateTrainer.findMany({
-                where: { affiliateId: parseInt(affiliateId) }
+                where: {affiliateId: parseInt(affiliateId)}
             });
 
             const existingTrainerIds = existingTrainers.map(t => t.trainerId);
@@ -2004,11 +1973,11 @@ app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req
             await prisma.affiliateTrainer.deleteMany({
                 where: {
                     affiliateId: parseInt(affiliateId),
-                    trainerId: { in: removedTrainerIds }
+                    trainerId: {in: removedTrainerIds}
                 }
             });
 
-            res.status(200).json({ message: 'Affiliate updated successfully!' });
+            res.status(200).json({message: 'Affiliate updated successfully!'});
         } else {
             // Loo uus affiliate ja treeneriseosed
             const newAffiliate = await prisma.affiliate.create({
@@ -2029,22 +1998,22 @@ app.post('/api/affiliate', ensureAuthenticated, ensureAffiliateOwner, async (req
                 data: createTrainers
             });
 
-            res.status(201).json({ message: 'Affiliate created successfully!', affiliate: newAffiliate });
+            res.status(201).json({message: 'Affiliate created successfully!', affiliate: newAffiliate});
         }
     } catch (error) {
         console.error('Error saving affiliate info:', error);
-        res.status(500).json({ error: 'Failed to save affiliate info.' });
+        res.status(500).json({error: 'Failed to save affiliate info.'});
     }
 });
 
 // get userPLans by affiliate id and userId
 // Endpoint kasutaja plaanide pärimiseks
 app.get('/api/user-plans', async (req, res) => {
-    const { affiliateId } = req.query;
+    const {affiliateId} = req.query;
     const userId = req.session.userId;
 
     if (!affiliateId || !userId) {
-        return res.status(400).json({ error: 'AffiliateId ja UserId on nõutud.' });
+        return res.status(400).json({error: 'AffiliateId ja UserId on nõutud.'});
     }
 
     try {
@@ -2070,7 +2039,7 @@ app.get('/api/user-plans', async (req, res) => {
         res.json(userPlans);
     } catch (error) {
         console.error('Viga kasutaja plaanide pärimisel:', error);
-        res.status(500).json({ error: 'Viga serveri töötlemisel.' });
+        res.status(500).json({error: 'Viga serveri töötlemisel.'});
     }
 });
 
@@ -2078,27 +2047,27 @@ app.get('/api/user-plans', async (req, res) => {
 app.post('/api/buy-plan', ensureAuthenticated, async (req, res) => {
     try {
         // Ootame body: { affiliateId, planId, planName, validityDays, price }
-        const { affiliateId, planId, planName, validityDays, price, sessionsLeft } = req.body;
+        const {affiliateId, planId, planName, validityDays, price, sessionsLeft} = req.body;
         const userId = req.session.userId; // kes ostab
 
         // 1) Leia kasutaja, kontrolli krediiti
         const user = await prisma.user.findUnique({
-            where: { id: userId }
+            where: {id: userId}
         });
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found.' });
+            return res.status(404).json({error: 'User not found.'});
         }
 
         // Kas kasutajal on piisavalt krediiti?
         if ((user.credit || 0) < price) {
-            return res.status(400).json({ error: 'Not enough credit.' });
+            return res.status(400).json({error: 'Not enough credit.'});
         }
 
         // 2) Vähendame kasutaja krediiti
         const newCredit = user.credit - price;
         await prisma.user.update({
-            where: { id: userId },
+            where: {id: userId},
             data: {
                 credit: newCredit
             }
@@ -2139,11 +2108,10 @@ app.post('/api/buy-plan', ensureAuthenticated, async (req, res) => {
         }
 
 
-
-        return res.json({ message: 'Plan purchased successfully!', newCredit });
+        return res.json({message: 'Plan purchased successfully!', newCredit});
     } catch (error) {
         console.error('Error buying plan:', error);
-        res.status(500).json({ error: 'Failed to buy plan.' });
+        res.status(500).json({error: 'Failed to buy plan.'});
     }
 });
 
@@ -2155,13 +2123,12 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
         if (req.session.currentRole === 'owner') {
             // Leia affiliate, mis kuulub sisseloginud ownerile
             const affiliate = await prisma.affiliate.findFirst({
-                where: { ownerId: req.session.userId },
+                where: {ownerId: req.session.userId},
             });
 
 
-
             if (!affiliate) {
-                return res.render('members', { title: 'Members', members: [] });
+                return res.render('members', {title: 'Members', members: []});
             }
             affiliateIds = [affiliate.id];
 
@@ -2169,7 +2136,7 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
         } else if (req.session.currentRole === 'trainer') {
             // Leia affiliate'id, kus kasutaja on treener
             const relations = await prisma.affiliateTrainer.findMany({
-                where: { trainerId: req.session.userId },
+                where: {trainerId: req.session.userId},
             });
             affiliateIds = relations.map(r => r.affiliateId);
         }
@@ -2177,15 +2144,14 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
         // Otsi kõik UserPlan kirjed, kus affiliateId on ülaltoodud loetelus
         // ja lae sealtkaudu ka user
         const userPlans = await prisma.userPlan.findMany({
-            where: { affiliateId: { in: affiliateIds }},
-            include: { user: true }
+            where: {affiliateId: {in: affiliateIds}},
+            include: {user: true}
         });
-
 
 
         // find members by home gym
         const userHomeGym = await prisma.user.findMany({
-            where: { homeAffiliate: { in: affiliateIds }},
+            where: {homeAffiliate: {in: affiliateIds}},
         });
 
 
@@ -2210,7 +2176,7 @@ app.get('/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) 
             plans: m.plans
         }));
 
-        res.render('members', { title: 'Members', members, layout: "owner" });
+        res.render('members', {title: 'Members', members, layout: "owner"});
     } catch (error) {
         console.error('Error loading members:', error);
         res.status(500).send('Error');
@@ -2223,8 +2189,8 @@ app.get('/api/member-info', ensureAuthenticated, ensureOwnerOrTrainer, async (re
     // Leia user + tema planid, mis kuuluvad affiliate’ile
     // (Muidu teoreetiliselt võib ta omada ka teisi planisid)
     try {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user) return res.status(404).json({ error: 'User not found.' });
+        const user = await prisma.user.findUnique({where: {id: userId}});
+        if (!user) return res.status(404).json({error: 'User not found.'});
 
         if (req.session.currentRole === 'owner') {
 
@@ -2242,9 +2208,11 @@ app.get('/api/member-info', ensureAuthenticated, ensureOwnerOrTrainer, async (re
         // Leia userPlan seosed (affiliateId in [??], aga sul on currentRole, leiad again affiliateId)
         // Siin võib teha lihtsustuse, et toome KÕIK useri plaanid:
         const userPlans = await prisma.userPlan.findMany({
-            where: {userId: userId,
-                affiliateId: parseInt(affiliateIds)},
-            orderBy: { id: 'asc' },
+            where: {
+                userId: userId,
+                affiliateId: parseInt(affiliateIds)
+            },
+            orderBy: {id: 'asc'},
         });
 
         // Koosta vastus
@@ -2260,7 +2228,7 @@ app.get('/api/member-info', ensureAuthenticated, ensureOwnerOrTrainer, async (re
         res.json(data);
     } catch (err) {
         console.error('Error in /api/member-info:', err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({error: 'Server error'});
     }
 });
 
@@ -2305,10 +2273,10 @@ app.get('/api/members', ensureAuthenticated, ensureOwnerOrTrainer, async (req, r
 
 // api for adding member
 app.post('/api/add-member', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
-    const { userId } = req.body;
+    const {userId} = req.body;
 
     if (!userId) {
-        return res.status(400).json({ error: 'Missing fields' });
+        return res.status(400).json({error: 'Missing fields'});
     }
 
     try {
@@ -2345,7 +2313,7 @@ app.post('/api/add-member', ensureAuthenticated, ensureOwnerOrTrainer, async (re
         });
 
         if (existingMember) {
-            return res.status(400).json({ error: 'User is already a member' });
+            return res.status(400).json({error: 'User is already a member'});
         }
 
         await prisma.members.create({
@@ -2355,79 +2323,79 @@ app.post('/api/add-member', ensureAuthenticated, ensureOwnerOrTrainer, async (re
             }
         });
 
-        res.status(201).json({ message: 'Member added successfully' });
+        res.status(201).json({message: 'Member added successfully'});
     } catch (error) {
         console.error('Error adding member:', error);
-        res.status(500).json({ error: 'Failed to add member' });
+        res.status(500).json({error: 'Failed to add member'});
     }
 });
 
 app.post('/api/add-credit', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
-    const { userId, amount } = req.body;
+    const {userId, amount} = req.body;
     const userIdNum = parseInt(userId, 10);
     if (!userId || !amount) {
-        return res.status(400).json({ error: 'Missing fields' });
+        return res.status(400).json({error: 'Missing fields'});
     }
     try {
         // Lae kasutaja
-        const user = await prisma.user.findUnique({ where: { id: userIdNum } });
+        const user = await prisma.user.findUnique({where: {id: userIdNum}});
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({error: 'User not found'});
         }
 
         // Lisa credit
         const newCredit = (user.credit || 0) + amount;
         await prisma.user.update({
-            where: { id: userIdNum },
-            data: { credit: newCredit }
+            where: {id: userIdNum},
+            data: {credit: newCredit}
         });
 
-        res.json({ message: 'Credit updated', newCredit });
+        res.json({message: 'Credit updated', newCredit});
     } catch (err) {
         console.error('Error adding credit:', err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({error: 'Server error'});
     }
 });
 
 app.patch('/api/userplan-enddate', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
-    const { userPlanId, endDate } = req.body;
+    const {userPlanId, endDate} = req.body;
     const userPlanIdNum = parseInt(userPlanId, 10);
 
     if (!userPlanId || !endDate) {
-        return res.status(400).json({ error: 'Missing fields' });
+        return res.status(400).json({error: 'Missing fields'});
     }
 
     try {
         // Uuenda userPlan
         const updated = await prisma.userPlan.update({
-            where: { id: userPlanIdNum },
+            where: {id: userPlanIdNum},
             data: {
                 endDate: new Date(endDate)
             }
         });
-        res.json({ message: 'Plan endDate updated' });
+        res.json({message: 'Plan endDate updated'});
     } catch (err) {
         console.error('Error updating endDate:', err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({error: 'Server error'});
     }
 });
 
 // add home affiliate
 app.post('/api/add-home-affiliate', ensureAuthenticated, async (req, res) => {
 
-    const { homeAffiliates } = req.body;
+    const {homeAffiliates} = req.body;
 
 
     try {
         await prisma.user.update({
-            where: { id: req.session.userId },
-            data: { homeAffiliate: parseInt(homeAffiliates) }
+            where: {id: req.session.userId},
+            data: {homeAffiliate: parseInt(homeAffiliates)}
         });
 
-        res.status(201).json({ message: 'Added for Home gym!' });
+        res.status(201).json({message: 'Added for Home gym!'});
     } catch (error) {
         console.error('Error adding Home gym:', error);
-        res.status(500).json({ error: 'Failed to add home gym!.' });
+        res.status(500).json({error: 'Failed to add home gym!.'});
     }
 });
 
@@ -2436,14 +2404,14 @@ app.post('/api/remove-home-affiliate', ensureAuthenticated, async (req, res) => 
 
     try {
         await prisma.user.update({
-            where: { id: req.session.userId },
-            data: { homeAffiliate: null }
+            where: {id: req.session.userId},
+            data: {homeAffiliate: null}
         });
 
-        res.status(201).json({ message: 'Affiliate removed successfully!' });
+        res.status(201).json({message: 'Affiliate removed successfully!'});
     } catch (error) {
         console.error('Error removing affiliate:', error);
-        res.status(500).json({ error: 'Failed to remove affiliate.' });
+        res.status(500).json({error: 'Failed to remove affiliate.'});
     }
 });
 
@@ -2452,23 +2420,23 @@ app.post('/api/remove-home-affiliate', ensureAuthenticated, async (req, res) => 
 app.get('/api/affiliate-name', ensureAuthenticated, async (req, res) => {
     const affiliateId = parseInt(req.query.affiliateId);
     if (!affiliateId) {
-        return res.status(400).json({ error: 'Affiliate ID required.' });
+        return res.status(400).json({error: 'Affiliate ID required.'});
     }
 
     try {
         const affiliate = await prisma.affiliate.findUnique({
-            where: { id: affiliateId },
-            select: { name: true }
+            where: {id: affiliateId},
+            select: {name: true}
         });
 
         if (!affiliate) {
-            return res.status(404).json({ error: 'Affiliate not found.' });
+            return res.status(404).json({error: 'Affiliate not found.'});
         }
 
         res.json(affiliate);
     } catch (error) {
         console.error('Error fetching affiliate name:', error);
-        res.status(500).json({ error: 'Failed to fetch affiliate name.' });
+        res.status(500).json({error: 'Failed to fetch affiliate name.'});
     }
 });
 
@@ -2477,8 +2445,7 @@ app.get('/api/affiliate-name', ensureAuthenticated, async (req, res) => {
 app.post('/api/remove-user', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
     const userId = parseInt(req.query.userId);
-    if (!classId) return res.status(400).json({ error: 'Class ID required.' });
-
+    if (!classId) return res.status(400).json({error: 'Class ID required.'});
 
 
     try {
@@ -2492,7 +2459,7 @@ app.post('/api/remove-user', ensureAuthenticated, async (req, res) => {
         });
 
         if (!attendee) {
-            return res.status(404).json({ error: 'You are not enrolled in this class.' });
+            return res.status(404).json({error: 'You are not enrolled in this class.'});
         }
 
         await prisma.classAttendee.delete({
@@ -2505,20 +2472,20 @@ app.post('/api/remove-user', ensureAuthenticated, async (req, res) => {
         });
 
         await prisma.userPlan.update({
-            where: { id: attendee.userPlanId },
-            data: { sessionsLeft: { increment: 1 } }
+            where: {id: attendee.userPlanId},
+            data: {sessionsLeft: {increment: 1}}
         });
 
-        res.json({ message: 'Your enrollment has been canceled.' });
+        res.json({message: 'Your enrollment has been canceled.'});
     } catch (error) {
         console.error('Error canceling enrollment:', error);
-        res.status(500).json({ error: 'Internal server error.' });
+        res.status(500).json({error: 'Internal server error.'});
     }
 });
 
 // add score
 app.post('/api/add-score', ensureAuthenticated, async (req, res) => {
-    const { scoreType, classId, scoreInput } = req.body;
+    const {scoreType, classId, scoreInput} = req.body;
 
     try {
         const newScore = await prisma.classLeaderboard.create({
@@ -2530,30 +2497,32 @@ app.post('/api/add-score', ensureAuthenticated, async (req, res) => {
             }
         });
 
-        res.status(201).json({ message: 'Score added successfully!', score: newScore });
+        res.status(201).json({message: 'Score added successfully!', score: newScore});
     } catch (error) {
         console.error('Error adding score:', error);
-        res.status(500).json({ error: 'Failed to add score.' });
+        res.status(500).json({error: 'Failed to add score.'});
     }
 });
 
 // edit score api
 app.put('/api/edit-score', ensureAuthenticated, async (req, res) => {
-    const { leaderboardId, scoreType, scoreInput } = req.body;
+    const {leaderboardId, scoreType, scoreInput} = req.body;
 
     try {
         const updatedScore = await prisma.classLeaderboard.update({
-            where: { id: parseInt(leaderboardId)
+            where: {
+                id: parseInt(leaderboardId)
             },
-            data: { score: scoreInput,
-                    scoreType: scoreType
+            data: {
+                score: scoreInput,
+                scoreType: scoreType
             }
         });
 
-        res.status(200).json({ message: 'Score updated successfully!', score: updatedScore });
+        res.status(200).json({message: 'Score updated successfully!', score: updatedScore});
     } catch (error) {
         console.error('Error updating score:', error);
-        res.status(500).json({ error: 'Failed to update score.' });
+        res.status(500).json({error: 'Failed to update score.'});
     }
 });
 
@@ -2562,19 +2531,20 @@ app.get('/api/leaderboard', ensureAuthenticated, async (req, res) => {
     const classId = parseInt(req.query.classId);
 
     if (!classId) {
-        return res.status(400).json({ error: 'Class ID required' });
-    };
+        return res.status(400).json({error: 'Class ID required'});
+    }
+    ;
     try {
         const leaderboard = await prisma.classLeaderboard.findMany({
-            where: { classId },
-            include: { user: true},
-            orderBy: { score: 'desc' }
+            where: {classId},
+            include: {user: true},
+            orderBy: {score: 'desc'}
         });
 
         res.json(leaderboard);
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
-        res.status(500).json({ error: 'Failed to fetch leaderboard.' });
+        res.status(500).json({error: 'Failed to fetch leaderboard.'});
     }
 
 });
@@ -2590,13 +2560,13 @@ app.get('/api/leaderboard-id', ensureAuthenticated, async (req, res) => {
 
     try {
         const leaderboardId = await prisma.classLeaderboard.findFirst({
-            where: { classId: parseInt(classId), userId: req.session.userId }
+            where: {classId: parseInt(classId), userId: req.session.userId}
         });
 
         res.json(leaderboardId);
     } catch (error) {
         console.error('Error fetching leaderboard ID:', error);
-        res.status(500).json({ error: 'Failed to fetch leaderboard ID.' });
+        res.status(500).json({error: 'Failed to fetch leaderboard ID.'});
     }
 });
 
@@ -2606,7 +2576,7 @@ app.get('/api/user-data', ensureAuthenticated, async (req, res) => {
     const userId = parseInt(req.query.userId);
     try {
         const user = await prisma.user.findUnique({
-            where: { id: userId }
+            where: {id: userId}
         });
 
         res.json(user);
@@ -2621,15 +2591,15 @@ app.get('/api/user-visit-history', ensureAuthenticated, async (req, res) => {
     const userId = req.session.userId;
     try {
         const visits = await prisma.classAttendee.findMany({
-            where: { userId },
-            include: { classSchedule: true },
-            orderBy: { classId: 'desc' }
+            where: {userId},
+            include: {classSchedule: true},
+            orderBy: {classId: 'desc'}
         });
 
         res.json(visits);
     } catch (error) {
         console.error('Error fetching user visit history:', error);
-        res.status(500).json({ error: 'Failed to fetch user visit history.' });
+        res.status(500).json({error: 'Failed to fetch user visit history.'});
     }
 });
 
@@ -2638,20 +2608,20 @@ app.get('/api/user-purchase-history', ensureAuthenticated, async (req, res) => {
     const userId = req.session.userId;
     try {
         const plans = await prisma.userPlan.findMany({
-            where: { userId },
-            orderBy: { id: 'desc' }
+            where: {userId},
+            orderBy: {id: 'desc'}
         });
 
         res.json(plans);
     } catch (error) {
         console.error('Error fetching user plans:', error);
-        res.status(500).json({ error: 'Failed to fetch user plans.' });
+        res.status(500).json({error: 'Failed to fetch user plans.'});
     }
 });
 
 // update classattandee checkin
 app.put('/api/check-in', ensureAuthenticated, async (req, res) => {
-    const { classId, userId } = req.body;
+    const {classId, userId} = req.body;
     try {
         const updatedCheckin = await prisma.classAttendee.update({
             where: {
@@ -2660,13 +2630,13 @@ app.put('/api/check-in', ensureAuthenticated, async (req, res) => {
                     userId: userId
                 }
             },
-            data: { checkIn: true }
+            data: {checkIn: true}
         });
 
-        res.status(200).json({ message: 'Checkin updated successfully!', checkin: updatedCheckin });
+        res.status(200).json({message: 'Checkin updated successfully!', checkin: updatedCheckin});
     } catch (error) {
         console.error('Error updating checkin:', error);
-        res.status(500).json({ error: 'Failed to update checkin.' });
+        res.status(500).json({error: 'Failed to update checkin.'});
     }
 });
 
@@ -2704,7 +2674,7 @@ app.get('/api/orders', async (req, res) => {
             },
             include: {
                 user: {
-                    select: { fullName: true, email: true }
+                    select: {fullName: true, email: true}
                 }
             },
             orderBy: {
@@ -2714,21 +2684,21 @@ app.get('/api/orders', async (req, res) => {
         res.json(orders);
     } catch (error) {
         console.error('Error fetching orders:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({error: 'Internal server error'});
     }
 });
 
 // 📌 Endpoint ühe kasutaja tellimuste jaoks (GET)
 app.get('/api/orders/:userId', async (req, res) => {
-    const { userId } = req.params;
+    const {userId} = req.params;
 
 
     try {
         const orders = await prisma.userPlan.findMany({
-            where: { userId: parseInt(userId) },
+            where: {userId: parseInt(userId)},
             include: {
                 user: {
-                    select: { username: true, email: true }
+                    select: {username: true, email: true}
                 }
             },
             orderBy: {
@@ -2738,14 +2708,14 @@ app.get('/api/orders/:userId', async (req, res) => {
         res.json(orders);
     } catch (error) {
         console.error('Error fetching user orders:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({error: 'Internal server error'});
     }
 });
 
 // 📌 Endpoint, et saada tulu ja plaanide müügi andmed määratud perioodi jooksul
 app.get('/api/finance', async (req, res) => {
     try {
-        const { startDate, endDate } = req.query;
+        const {startDate, endDate} = req.query;
 
         // Määrame vaikimisi kuupäevad jooksvale aastale
         const currentYear = new Date().getFullYear();
@@ -2834,7 +2804,7 @@ app.get('/api/finance', async (req, res) => {
                                 },
                                 affiliateId: parseInt(affiliateIds)
                             },
-                            select: { userId: true }
+                            select: {userId: true}
                         })
                     ).map(u => u.userId) // Eemalda need, kellel on aktiivne plaan
                 },
@@ -2858,9 +2828,233 @@ app.get('/api/finance', async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching finance data:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({error: 'Internal server error'});
     }
 });
+
+// get todayWod
+app.get('/api/get-today-wod', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+const date = req.query.date;
+
+    let affiliateIds = null;
+
+    if (req.session.currentRole === 'owner') {
+        // Leia affiliate, mis kuulub sisseloginud ownerile
+        const affiliate = await prisma.affiliate.findFirst({
+            where: {ownerId: req.session.userId},
+        });
+
+
+        if (!affiliate) {
+            return res.render('members', {title: 'Members', members: []});
+        }
+        affiliateIds = affiliate.id;
+
+
+    } else if (req.session.currentRole === 'trainer') {
+        // Leia affiliate'id, kus kasutaja on treener
+        const relations = await prisma.affiliateTrainer.findMany({
+            where: {trainerId: req.session.userId},
+        });
+        affiliateIds = relations.map(r => r.affiliateId);
+    }
+
+    try {
+
+        // Määra tänase kuupäeva algus (kellaaeg 00:00:00)
+        const todayStart = new Date(date);
+        todayStart.setHours(2, 10, 0, 0); // Nulli kellaaeg
+
+        // Määra tänase kuupäeva lõpp (kellaaeg 23:59:59.999)
+        const todayEnd = new Date(date);
+        todayEnd.setHours(23, 59, 59, 999); // Määra kellaaeg päeva lõpuni
+
+        const todayWod = await prisma.todayWOD.findFirst({
+            where: {
+                date: {
+                    gte: todayStart, // Kuupäev on suurem või võrdne tänase päeva algusega
+                    lt: todayEnd,     // Kuupäev on väiksem kui homme päeva algus
+                },
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+
+        res.json(todayWod);
+    } catch (error) {
+        console.error('Error fetching Today WOD:', error);
+        res.status(500).json({error: 'Failed to fetch Today WOD.'});
+    }
+});
+
+// apply todaywod for today classes
+app.post('/api/apply-wod', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const {date, wodName, wodType, description} = req.body;
+
+    let affiliateIds = null;
+
+    if (req.session.currentRole === 'owner') {
+        // Leia affiliate, mis kuulub sisseloginud ownerile
+        const affiliate = await prisma.affiliate.findFirst({
+            where: {ownerId: req.session.userId},
+        });
+
+
+        if (!affiliate) {
+            return res.render('members', {title: 'Members', members: []});
+        }
+        affiliateIds = affiliate.id;
+
+
+    } else if (req.session.currentRole === 'trainer') {
+        // Leia affiliate'id, kus kasutaja on treener
+        const relations = await prisma.affiliateTrainer.findMany({
+            where: {trainerId: req.session.userId},
+        });
+        affiliateIds = relations.map(r => r.affiliateId);
+    }
+
+    // find all classes for today and update wod
+    try {
+        const todayStart = new Date(date);
+        todayStart.setHours(2, 10, 0, 0); // Nulli kellaaeg
+
+        const todayEnd = new Date(date);
+        todayEnd.setHours(23, 59, 59, 999); // Määra kellaaeg päeva lõpuni
+
+        const classes = await prisma.classSchedule.findMany({
+            where: {
+                time: {
+                    gte: todayStart,
+                    lt: todayEnd
+                },
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+        for (let c of classes) {
+            await prisma.classSchedule.update({
+                where: {id: c.id},
+                data: {
+                    wodName,
+                    wodType,
+                    description
+                }
+            });
+        }
+
+        res.status(200).json({message: 'Today WOD applied to classes successfully!'});
+    } catch (error) {
+        console.error('Error applying Today WOD:', error);
+        res.status(500).json({error: 'Failed to apply Today WOD.'});
+    }
+});
+
+// add todayWOD
+app.post('/api/today-wod', ensureAuthenticated, ensureOwnerOrTrainer, async (req, res) => {
+    const {wodName, wodType, wodDescription, date} = req.body;
+
+    let affiliateIds = null;
+
+    if (req.session.currentRole === 'owner') {
+        // Leia affiliate, mis kuulub sisseloginud ownerile
+        const affiliate = await prisma.affiliate.findFirst({
+            where: {ownerId: req.session.userId},
+        });
+
+
+        if (!affiliate) {
+            return res.render('members', {title: 'Members', members: []});
+        }
+        affiliateIds = affiliate.id;
+
+
+    } else if (req.session.currentRole === 'trainer') {
+        // Leia affiliate'id, kus kasutaja on treener
+        const relations = await prisma.affiliateTrainer.findMany({
+            where: {trainerId: req.session.userId},
+        });
+        affiliateIds = relations.map(r => r.affiliateId);
+    }
+
+
+    try {
+
+
+        // Määra tänase kuupäeva algus (kellaaeg 00:00:00)
+        const todayStart = new Date(date);
+        todayStart.setHours(3, 0, 0, 0); // Nulli kellaaeg
+
+        // Määra tänase kuupäeva lõpp (kellaaeg 23:59:59.999)
+        const todayEnd = new Date(date);
+        todayEnd.setHours(23, 59, 59, 999); // Määra kellaaeg päeva lõpuni
+
+        // Kontrolli, kas tänase kuupäevaga on juba WOD olemas
+        const existingWod = await prisma.todayWOD.findFirst({
+            where: {
+                date: {
+                    gte: todayStart, // Kuupäev on suurem või võrdne tänase päeva algusega
+                    lt: todayEnd     // Kuupäev on väiksem kui homme päeva algus
+                },
+                affiliateId: parseInt(affiliateIds)
+            }
+        });
+
+        let wod;
+
+        if (existingWod) {
+            wod = await prisma.todayWOD.update({
+                where: {id: existingWod.id},
+                data: {
+                    wodName,
+                    type: wodType,
+                    description: wodDescription
+                }
+            });
+
+        } else {
+            wod = await prisma.todayWOD.create({
+                data: {
+                    wodName,
+                    type: wodType,
+                    description: wodDescription,
+                    date: todayStart,
+                    affiliateId: parseInt(affiliateIds)
+                }
+            });
+        }
+        res.status(201).json({message: 'Today WOD added successfully!', wod: wod});
+    } catch
+        (error) {
+        console.error('Error adding Today WOD:', error);
+        res.status(500).json({error: 'Failed to add Today WOD.'});
+    }
+
+    if (wodName) {
+
+        try {
+            // add defaultWod, if not exists
+            const defaultWod = await prisma.defaultWOD.findFirst({
+                where: {name: wodName}
+            });
+            if (!defaultWod) {
+                await prisma.defaultWOD.create({
+                    data: {
+                        name: wodName,
+                        type: wodType,
+                        description: wodDescription,
+
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error adding default WOD:', error);
+            res.status(500).json({error: 'Failed to add default WOD.'});
+        }
+    }
+})
+;
 
 // Start server
 app.listen(PORT, () => {

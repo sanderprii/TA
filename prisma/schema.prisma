@@ -136,6 +136,7 @@ model Affiliate {
   trainers      AffiliateTrainer[]
   ClassSchedule ClassSchedule[]
   members       Members[]
+  todayWOD      todayWOD[]
 }
 
 model AffiliateTrainer {
@@ -178,5 +179,15 @@ model Members {
   affiliateId Int
   userId      Int
   user        User      @relation(fields: [userId], references: [id])
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
+}
+
+model todayWOD {
+  id          Int       @id @default(autoincrement())
+  wodName     String?
+  type        String
+  description String
+  date        DateTime
+  affiliateId Int
   affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
 }

@@ -632,33 +632,37 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
 
             modalClassId.value = cls.id;
-            wodName.textContent = cls.wodName || 'N/A';
+            wodName.textContent = cls.wodName;
             wodType.textContent = cls.wodType || 'N/A';
-            modalDescription.textContent = cls.description || 'N/A';
-
-            if (!cls.wodName || cls.wodName.trim() === '') {
-                wodName3.style.display = 'none';
-
-            } else {
-                wodName3.style.display = 'block';
-            }
-            if (!cls.description || cls.description.trim() === '') {
-                wodInfo.style.display = 'none';
-                addScoreBtn.style.display = 'none';
-                editScoreBtn.style.display = 'none';
-            } else {
-
-                wodInfo.style.display = 'block';
-                addScoreBtn.style.display = 'inline-block';
-            }
+            modalDescription.textContent = cls.description;
 
             if (cls.trainingType === 'WOD') {
-                wodName3.style.display = 'inline-block';
-                wodType3.style.display = 'inline-block';
+                wodName3.style.display = 'block';
+
+                if (!cls.wodName || cls.wodName.trim() === '') {
+                    wodName3.style.display = 'none';
+
+                } else {
+                    wodName3.style.display = 'block';
+                }
+
+                wodType3.style.display = 'block';
                 leaderboardBtn.style.display = 'inline-block';
                 addScoreDiv.style.display = 'block';
                 addScoreBtn.style.display = 'inline-block';
                 addToTrainingsBtn.style.display = 'none';
+
+                if (!cls.description || cls.description.trim() === '') {
+                    wodDescription.style.display = 'none';
+                    addScoreBtn.style.display = 'none';
+                    editScoreBtn.style.display = 'none';
+                    wodType3.style.display = 'none';
+                } else {
+                    wodType3.style.display = 'block';
+                    wodDescription.style.display = 'block';
+                    addScoreBtn.style.display = 'inline-block';
+                }
+
             } else {
                 wodName3.style.display = 'none';
                 wodType3.style.display = 'none';
@@ -668,6 +672,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                 editScoreBtn.style.display = 'none';
                 addToTrainingsBtn.style.display = 'inline-block';
             }
+
+
+
+
+
             currentClassId = cls.id;
 
             // Uus samm: lae class info (capacity, enrolled count)
@@ -701,7 +710,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 cancelClassBtn.style.display = 'none';
                 planDivs.style.display = 'none';
             }
-
 
 
             checkScoreAdded(cls.id);
@@ -841,7 +849,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             classModal.show();
         }
-
 
 
         // Example: "leaderboardBtn" is the button that opens the leaderboard

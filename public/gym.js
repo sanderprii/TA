@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const trainingModalSearch = new bootstrap.Modal(document.getElementById('training-modal'));
     const trainingModalBody = document.getElementById('training-modal-body');
+    const searchModal = new bootstrap.Modal(document.getElementById('search-modal'));
 
     const editClassBtn = document.getElementById('edit-class-btn');
 
@@ -40,6 +41,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const leaderboardBtn = document.getElementById('showLeaderboard');
     const leaderboardModal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
     const leaderboardBody = document.getElementById('leaderboardBody');
+
+    const addWODButton = document.createElement('button');
+    const wodFormModal = new bootstrap.Modal(document.getElementById('wodFormModal'));
+    const wodModal = new bootstrap.Modal(document.getElementById('wodModal'));
+    const editWodBtn = document.getElementById('editWod');
+    const addTodayWodBtn = document.getElementById('add-today-wod-btn');
+
+    const todayWodSaveBtn = document.getElementById('todayWodSave-btn');
+
+    const applyWODbtn = document.getElementById('applyForTodayClasses');
 
     let currentDate = new Date(); // Start with the current date
     let classesData = [];
@@ -80,12 +91,13 @@ document.addEventListener('DOMContentLoaded', function () {
         openTrainingModal();
     });
 
+
     trainingForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         const trainingId = document.getElementById('trainingId').value;
         const repeatWeeklyValue = document.querySelector('input[name="repeatWeekly"]:checked').value;
         const trainingData = {
-            classTrainingType: document.getElementById('classTrainingType').value,
+                classTrainingType: document.getElementById('classTrainingType').value,
                 trainingName: document.getElementById('trainingName').value.toUpperCase(),
                 date: document.getElementById('trainingDate').value,
                 time: document.getElementById('trainingTime').value,
@@ -185,6 +197,23 @@ document.addEventListener('DOMContentLoaded', function () {
             dayNumber.classList.add('day-number');
             dayColumn.appendChild(dayNumber);
 
+            // button for adding WOD
+
+            addWODButton.textContent = 'Add todays WOD';
+            addWODButton.classList.add('btn', 'btn-primary', 'mb-3');
+            addWODButton.style.width = '100%';
+            addWODButton.style.height = '40px';
+            addWODButton.style.fontSize = '14px';
+            addWODButton.style.fontWeight = 'bold';
+            addWODButton.style.cursor = 'pointer';
+            addWODButton.style.borderRadius = '4px';
+            addWODButton.style.border = 'none';
+            addWODButton.style.marginBottom = '10px';
+            addWODButton.addEventListener('click', () => {
+
+            });
+            dayColumn.appendChild(addWODButton);
+
             // Filtreerime treeningud selle päeva jaoks ja sorteerime aja järgi
             const classesForDay = classesData
                 .filter(c => {
@@ -213,6 +242,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         scheduleElement.appendChild(scheduleContainer);
     }
+
+    // open wod modal
+
 
     // Lisame treeningud päeva tulpadesse
     async function renderClasses(classesForDay, dayColumn) {
@@ -257,6 +289,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             btn.addEventListener('click', () => {
                 selectedDayIndex = i;
+
+                const selectedDate = new Date(startOfWeek);
+                selectedDate.setDate(startOfWeek.getDate() + i);
+                currentDate = selectedDate;
+
                 // uuenda nuppude stiili
                 document.querySelectorAll('.day-btn').forEach((b, idx) => {
                     b.classList.remove('btn-primary');
@@ -267,6 +304,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
                 renderSchedule(startOfWeek);
+
+
             });
 
             dayButtonsContainer.appendChild(btn);
@@ -399,65 +438,96 @@ document.addEventListener('DOMContentLoaded', function () {
         return [];
     }
 
-    // Handle WOD search input
-    wodSearchInput.addEventListener('input', async () => {
-        const query = wodSearchInput.value.trim();
-        if (query.length === 0) {
-            wodSearchResults.style.display = 'none';
-            wodSearchResults.innerHTML = '';
+    // Kutsume välja funktsiooni mõlema otsinguvälja jaoks
+    setupWODSearch('wod-search-modal1', 'wod-search-results-modal1', 'todayWod');
+    setupWODSearch('wod-search-modal2', 'wod-search-results-modal2', 'class');
+
+    function setupWODSearch(inputId, resultsId, modalType) {
+        const wodSearchInput = document.getElementById(inputId);
+        const wodSearchResults = document.getElementById(resultsId);
+
+        if (!wodSearchInput || !wodSearchResults) {
+            console.error(`Element not found: ${inputId} or ${resultsId}`);
             return;
         }
 
-        const results = await searchWODs(query);
-        wodSearchResults.innerHTML = '';
+        wodSearchInput.addEventListener('input', async () => {
+            const query = wodSearchInput.value.trim();
+            if (query.length === 0) {
+                wodSearchResults.style.display = 'none';
+                wodSearchResults.innerHTML = '';
+                return;
+            }
 
-        if (results.length > 0) {
-            results.slice(0, 10).forEach(wod => {
-                const li = document.createElement('li');
-                li.textContent = wod.name;
-                li.className = 'list-group-item';
-                li.style.cursor = 'pointer';
+            const results = await searchWODs(query);
+            wodSearchResults.innerHTML = '';
 
-                // Click handler to show modal
-                li.addEventListener('click', () => {
-                    showWODModal(wod);
+            if (results.length > 0) {
+                results.slice(0, 10).forEach(wod => {
+                    const li = document.createElement('li');
+                    li.textContent = wod.name;
+                    li.className = 'list-group-item';
+                    li.style.cursor = 'pointer';
+
+                    // Klikkimisel avaneb WOD modali õige modalType-ga
+                    li.addEventListener('click', () => {
+
+                        showWODModal(wod, modalType);
+                        wodSearchResults.style.display = 'none';
+                        wodSearchInput.value = '';
+                    });
+
+                    wodSearchResults.appendChild(li);
                 });
+                wodSearchResults.style.display = 'block';
+            } else {
+                wodSearchResults.style.display = 'none';
+            }
+        });
+    }
 
-                wodSearchResults.appendChild(li);
-            });
-            wodSearchResults.style.display = 'block';
-        } else {
-            wodSearchResults.style.display = 'none';
-        }
-    });
 
-    function showWODModal(wod) {
-        trainingModalElement.style.display = 'none';
-        classModalElement.style.display = 'none';
-        trainingModalBody.innerHTML = `
-            <h5>${wod.name}</h5>
-            <p>${wod.type}</p>
-            <p>${formatModalDescription(wod.description)}</p>
-        `;
+    function showWODModal(wod, modalType) {
+        // Peida teised modalid
+        document.getElementById('trainingModal').style.display = 'none';
+        document.getElementById('classModal').style.display = 'none';
 
-        addTrainingBtnSave.style.display = 'block';
-        addTrainingBtnSave.textContent = 'Add Training';
+        // Kuvame WOD-i info
+        document.getElementById('training-modal-body-search').innerHTML = `
+        <h5>${wod.name}</h5>
+        <p>${wod.type}</p>
+        <p>${formatModalDescription(wod.description)}</p>
+    `;
 
-        editTrainingBtn.style.display = 'none';
 
-        // Add click event to Add Training button
-        addTrainingBtnSave.onclick = () => {
-            document.getElementById('wod-name').value = wod.name;
-            document.querySelector(`input[name="wod-type"][value="${wod.type}"]`).checked = true;
-            document.getElementById('trainingDescription').value = formatDescription(wod.description);
+        // Avame WOD modali
+        searchModal.show();
 
-            wodSearchResults.style.display = 'none';
-            trainingModalElement.style.display = 'block';
-            classModalElement.style.display = 'block';
-            trainingModalSearch.hide();
-        };
+        addTodayWodBtn.addEventListener('click', () => {
+            console.log("Vajutati 'Add WOD' nuppu:", wod.name); // Kontrolli, kas sündmus töötab
 
-        trainingModalSearch.show();
+            if (modalType === 'todayWod') {
+                document.getElementById('wodName1').value = wod.name;
+                document.querySelector(`input[name="today-wod-type"][value="${wod.type}"]`).checked = true;
+                document.getElementById('wodDescription1').value = formatDescription(wod.description);
+
+                wodFormModal.show();
+
+
+            } else if (modalType === 'class') {
+                document.getElementById('wod-name').value = wod.name;
+                document.querySelector(`input[name="wod-type"][value="${wod.type}"]`).checked = true;
+                document.getElementById('trainingDescription').value = formatDescription(wod.description);
+                document.getElementById('trainingModal').style.display = 'block';
+                document.getElementById('classModal').style.display = 'block';
+
+
+            }
+
+            searchModal.hide()
+        });
+
+
     }
 
 
@@ -743,71 +813,171 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    async function loadClassInfo(classId) {
-        try {
-            const response = await fetch(`/api/class-info?classId=${classId}`);
+    // open wodModal
+    addWODButton.addEventListener('click', () => {
 
-            const data = await response.json();
-            if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
-                let freeSpots = data.memberCapacity - data.memberCapacity + data.enrolledCount;
-                document.getElementById('freeSpots').textContent = freeSpots;
-                document.getElementById('classCapacity').textContent = data.memberCapacity;
-            } else {
-                // Kui andmete lugemine ebaõnnestus, pane mingid vaikimisi väärtused
-                document.getElementById('freeSpots').textContent = '?';
-                document.getElementById('classCapacity').textContent = '?';
+
+        getTodayWod()
+
+        wodModal.show();
+
+        editWodBtn.addEventListener('click', () => {
+            wodFormModal.show();
+            wodModal.hide();
+        });
+
+    });
+
+    applyWODbtn.addEventListener('click', () => {
+        applyForTodayClasses()
+    });
+
+    async function applyForTodayClasses() {
+
+        try {
+            const selectedDate = currentDate;
+            const responseget = await fetch(`/api/get-today-wod?date=${selectedDate.toISOString()}`);
+            const data = await responseget.json();
+
+
+            // update selected date classes
+            const response = await fetch('/api/apply-wod', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({date: selectedDate.toISOString(),
+                    wodName: data.wodName,
+                    wodType: data.type,
+                    description: data.description})
+            });
+
+
+            if (response.ok) {
+                alert('Classes applied successfully!');
+                loadSchedule();
             }
-        } catch (err) {
-            console.error('Error loading class info:', err);
+        } catch (error) {
+            console.error('Error applying for classes:', error);
+
+        }
+    };
+
+
+
+todayWodSaveBtn.addEventListener('click', saveTodayWod);
+
+async function getTodayWod() {
+    // clear the form
+    document.getElementById('todayWodName').textContent = '';
+    document.getElementById('todayWodType').textContent = '';
+    document.getElementById('todayWodDescription').textContent = '';
+    try {
+        const selectedDate = currentDate;
+
+        const response = await fetch(`/api/get-today-wod?date=${selectedDate.toISOString()}`);
+        const data = await response.json();
+
+        if (data) {
+            applyWODbtn.style.display = 'block';
+            document.getElementById('todayWodName').textContent = data.wodName || 'N/A';
+            document.getElementById('todayWodType').textContent = data.type;
+            document.getElementById('todayWodDescription').textContent = data.description || 'N/A';
+        } else {
+            applyWODbtn.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading today\'s WOD:', error);
+    }
+}
+
+
+async function saveTodayWod() {
+    const wodName = document.getElementById('wodName1').value.toUpperCase();
+    const wodType = document.querySelector('input[name="today-wod-type"]:checked').value;
+    const wodDescription = document.getElementById('wodDescription1').value;
+
+    const selectedDate = currentDate;
+
+    try {
+        await fetch('/api/today-wod', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({wodName, wodType, wodDescription, date: selectedDate.toISOString()})
+        });
+
+        wodFormModal.hide();
+        loadSchedule()
+    } catch (error) {
+        console.error('Error saving WOD:', error);
+    }
+}
+
+
+async function loadClassInfo(classId) {
+    try {
+        const response = await fetch(`/api/class-info?classId=${classId}`);
+
+        const data = await response.json();
+        if (data.memberCapacity !== undefined && data.enrolledCount !== undefined) {
+            let freeSpots = data.memberCapacity - data.memberCapacity + data.enrolledCount;
+            document.getElementById('freeSpots').textContent = freeSpots;
+            document.getElementById('classCapacity').textContent = data.memberCapacity;
+        } else {
+            // Kui andmete lugemine ebaõnnestus, pane mingid vaikimisi väärtused
             document.getElementById('freeSpots').textContent = '?';
             document.getElementById('classCapacity').textContent = '?';
         }
+    } catch (err) {
+        console.error('Error loading class info:', err);
+        document.getElementById('freeSpots').textContent = '?';
+        document.getElementById('classCapacity').textContent = '?';
     }
+}
 
-    async function checkEnrollment(classId) {
-        try {
-            const response = await fetch(`/api/is-enrolled?classId=${classId}`);
-            const data = await response.json();
+async function checkEnrollment(classId) {
+    try {
+        const response = await fetch(`/api/is-enrolled?classId=${classId}`);
+        const data = await response.json();
 
-        } catch (err) {
-            console.error('Error checking enrollment:', err);
-        }
+    } catch (err) {
+        console.error('Error checking enrollment:', err);
     }
+}
 
-    // Format description to add new lines after ":" and ","
-    function formatModalDescription(description) {
-        return description
-            .replace(/:/g, ':<br>') // Add a line break after ":"
-            .replace(/,/g, '<br>'); // Add a line break after ","
-    }
+// Format description to add new lines after ":" and ","
+function formatModalDescription(description) {
+    return description
+        .replace(/:/g, ':<br>') // Add a line break after ":"
+        .replace(/,/g, '<br>'); // Add a line break after ","
+}
 
-    function formatDescription(description) {
-        return description
-            .replace(/:/g, ':\n')  // Lisa rea vahetus pärast ":"
-            .replace(/,/g, '\n');  // Asenda "," rea vahetusega
-    }
+function formatDescription(description) {
+    return description
+        .replace(/:/g, ':\n')  // Lisa rea vahetus pärast ":"
+        .replace(/,/g, '\n');  // Asenda "," rea vahetusega
+}
 
-    // Helper functions
-    function getStartOfWeek(date) {
-        const d = new Date(date);
-        const day = d.getDay(); // 0 (Sunday) - 6 (Saturday)
-        const diff = (day === 0 ? -6 : 1) - day;
-        d.setDate(d.getDate() + diff);
-        d.setHours(0, 0, 0, 0);
-        return d;
-    }
+// Helper functions
+function getStartOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0 (Sunday) - 6 (Saturday)
+    const diff = (day === 0 ? -6 : 1) - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
 
-    function formatDate(date) {
-        return date.toLocaleDateString();
-    }
+function formatDate(date) {
+    return date.toLocaleDateString();
+}
 
-    function formatDateInput(date) {
-        return date.toISOString().split('T')[0];
-    }
+function formatDateInput(date) {
+    return date.toISOString().split('T')[0];
+}
 
-    function formatTimeInput(date) {
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-    }
-});
+function formatTimeInput(date) {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+})
+;
